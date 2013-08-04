@@ -1,14 +1,15 @@
 var simplex1 = new SimplexNoise();
 var simplex2 = new SimplexNoise();
 var canvas = document.getElementById('c');
+canvas.width = document.documentElement.clientWidth;
+canvas.height = document.documentElement.clientHeight;
 var ctx = canvas.getContext('2d');
 var imgdata = ctx.getImageData(0, 0, canvas.width, canvas.height);
 var data = imgdata.data;
-var t = 0;
+var factor = 50;
 
 for (var x = 0; x < canvas.width; x++) {
   for (var y = 0; y < canvas.height; y++) {
-    var factor = 50;
     var heightNoise = Math.sin(
               - 4* Math.abs(simplex1.noise2D(1/4*x/factor, 1/4*y/factor))
               + simplex1.noise2D(x/factor, y/factor)
