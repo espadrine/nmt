@@ -1,5 +1,6 @@
-var simplex1 = new SimplexNoise();
-var simplex2 = new SimplexNoise();
+var prng = new MersenneTwister(0);
+var simplex1 = new SimplexNoise(prng.random.bind(prng));
+var simplex2 = new SimplexNoise(prng.random.bind(prng));
 var canvas = document.getElementById('c');
 canvas.width = document.documentElement.clientWidth;
 canvas.height = document.documentElement.clientHeight;
@@ -8,8 +9,8 @@ var imgdata = ctx.getImageData(0, 0, canvas.width, canvas.height);
 var data = imgdata.data;
 var factor = 50;
 
-for (var x = 0; x < canvas.width; x++) {
-  for (var y = 0; y < canvas.height; y++) {
+for (var y = 0; y < canvas.height; y++) {
+  for (var x = 0; x < canvas.width; x++) {
     var heightNoise = Math.sin(
               - 4* Math.abs(simplex1.noise2D(1/4*x/factor, 1/4*y/factor))
               + simplex1.noise2D(x/factor, y/factor)

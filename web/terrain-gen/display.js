@@ -1,5 +1,6 @@
-var simplex1 = new SimplexNoise();
-var simplex2 = new SimplexNoise();
+var prng = new MersenneTwister(0);
+var simplex1 = new SimplexNoise(prng.random.bind(prng));
+var simplex2 = new SimplexNoise(prng.random.bind(prng));
 var canvas = document.getElementById('c');
 var ctx = canvas.getContext('2d');
 canvas.width = document.documentElement.clientWidth;
@@ -51,7 +52,9 @@ function tile(coord) {
     (heightNoise < 1 - (riverNoise*0.42)) ?
         hills:
         mountain);
-  var vegetation = vegetationNoise-seaNoise/18+Math.abs(heightNoise+0.15) < 0;
+  var vegetation = (vegetationNoise
+      - (height === water? 2 * seaNoise: 0)   // Less vegetation on water.
+      + Math.abs(heightNoise + 0.15)) < 0;
 
   return {
     height: height,
@@ -59,8 +62,10 @@ function tile(coord) {
   };
 }
 
-for (var x = 0; x < canvas.width; x++) {
-  for (var y = 0; y < canvas.height; y++) {
+var width = canvas.width;
+var height = canvas.height;
+for (var y = 0; y < height; y++) {
+  for (var x = 0; x < width; x++) {
     var t = tile({ x: x + origin[0], y: y + origin[0] });
     var color = [0, 0, 0];
     if (t.height == water) {
@@ -70,10 +75,11 @@ for (var x = 0; x < canvas.width; x++) {
     } else if (t.height == hills) {
       color = [255, 0, 0];
     }
-    data[(x + y * canvas.width) * 4 + 0] = color[0];
-    data[(x + y * canvas.width) * 4 + 1] = color[1];
-    data[(x + y * canvas.width) * 4 + 2] = color[2];
-    data[(x + y * canvas.width) * 4 + 3] = t.vegetation? 155: 255;
+    var position = (x + y * width) * 4;
+    data[position + 0] = color[0];
+    data[position + 1] = color[1];
+    data[position + 2] = color[2];
+    data[position + 3] = t.vegetation? 155: 255;
   }
 }
 
