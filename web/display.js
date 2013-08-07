@@ -24,6 +24,9 @@ var altitude = {
 };
 
 
+// (Sparse) Array of array of tiles.
+var memoizedTiles = [];
+
 // Get information about the tile at coordinates `coord`.
 // Returns
 //  - height: altitude level. See `altitude`.
@@ -31,6 +34,9 @@ var altitude = {
 function tile(coord) {
   var x = coord.x;
   var y = coord.y;
+  if (memoizedTiles[x] !== undefined && memoizedTiles[x][y] !== undefined) {
+    return memoizedTiles[x][y];
+  }
   var size = simplex2.noise2D(y/500, x/500) * 5;
   var heightNoise = Math.sin(
       - (size) * Math.abs(simplex1.noise2D(1/4*x/factor, 1/4*y/factor))
@@ -70,10 +76,15 @@ function tile(coord) {
       - (height === water? 2 * seaNoise: 0)   // Less vegetation on water.
       + Math.abs(heightNoise + 0.15)) < 0;
 
-  return {
+  var tile = {
     height: height,
     vegetation: vegetation
   };
+  if (memoizedTiles[x] === undefined) {
+    memoizedTiles[x] = [];
+  }
+  memoizedTiles[x][y] = tile;
+  return tile;
 }
 
 // For each altitude level, [plain name, vegetation name].
@@ -163,7 +174,7 @@ var hexaSize = 20
 var origin = { xs0: 0, ys0: 0 };
 paintTiles(canvas, hexaSize, origin);
 
-window.onkeypress = function(event) {
+window.onkeydown = function(event) {
   if (event.keyCode === 39) {           // →
     origin.xs0 += hexaSize * 20;
   } else if (event.keyCode === 38) {    // ↑
