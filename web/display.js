@@ -159,5 +159,20 @@ function paintTiles(canvas, size, origin) {
   ctx.putImageData(imgdata, 0, 0);
 }
 
-paintTiles(canvas, 20, { xs0: 0, ys0: 0 });
+var hexaSize = 20
+var origin = { xs0: 0, ys0: 0 };
+paintTiles(canvas, hexaSize, origin);
+
+window.onkeypress = function(event) {
+  if (event.keyCode === 39) {           // →
+    origin.xs0 += hexaSize * 20;
+  } else if (event.keyCode === 38) {    // ↑
+    origin.ys0 -= hexaSize * 20;
+  } else if (event.keyCode === 37) {    // ←
+    origin.xs0 -= hexaSize * 20;
+  } else if (event.keyCode === 40) {    // ↓
+    origin.ys0 += hexaSize * 20;
+  }
+  paintTiles(canvas, hexaSize, origin);
+};
 
