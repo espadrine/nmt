@@ -34,7 +34,7 @@ var memoizedTiles = [];
 function tile(coord) {
   var x = coord.x;
   var y = coord.y;
-  if (memoizedTiles[x] !== undefined && memoizedTiles[x][y] !== undefined) {
+  if (memoizedTiles[x] != null && memoizedTiles[x][y] != null) {
     return memoizedTiles[x][y];
   }
   var size = simplex2.noise2D(y/500, x/500) * 5;
@@ -80,7 +80,7 @@ function tile(coord) {
     height: height,
     vegetation: vegetation
   };
-  if (memoizedTiles[x] === undefined) {
+  if (memoizedTiles[x] == null) {
     memoizedTiles[x] = [];
   }
   memoizedTiles[x][y] = tile;
@@ -175,15 +175,30 @@ var origin = { xs0: 0, ys0: 0 };
 paintTiles(canvas, hexaSize, origin);
 
 window.onkeydown = function(event) {
+  var redraw = false;
   if (event.keyCode === 39) {           // →
-    origin.xs0 += hexaSize * 20;
+    origin.xs0 += canvas.width / 2;
+    redraw = true;
   } else if (event.keyCode === 38) {    // ↑
-    origin.ys0 -= hexaSize * 20;
+    origin.ys0 -= canvas.height / 2;
+    redraw = true;
   } else if (event.keyCode === 37) {    // ←
-    origin.xs0 -= hexaSize * 20;
+    origin.xs0 -= canvas.width / 2;
+    redraw = true;
   } else if (event.keyCode === 40) {    // ↓
-    origin.ys0 += hexaSize * 20;
+    origin.ys0 += canvas.height / 2;
+    redraw = true;
+  } else if (((event.keyCode === 61 || event.keyCode === 187) && event.shiftKey)
+          || event.keyCode === 107) {  // +
+    hexaSize *= 2;
+    redraw = true;
+  } else if (event.keyCode === 173 || event.keyCode === 189
+          || event.keyCode === 109) {   // -
+    hexaSize = Math.ceil(hexaSize / 2);
+    redraw = true;
   }
-  paintTiles(canvas, hexaSize, origin);
+  if (redraw) {
+    paintTiles(canvas, hexaSize, origin);
+  }
 };
 
