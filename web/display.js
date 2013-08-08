@@ -78,7 +78,8 @@ function tile(coord) {
 
   var tile = {
     height: height,
-    vegetation: vegetation
+    vegetation: vegetation,
+    rain: -vegetationNoise / 2
   };
   if (memoizedTiles[x] == null) {
     memoizedTiles[x] = [];
@@ -152,26 +153,42 @@ function paintTiles(canvas, size, origin) {
     for (var x = 0; x < width; x++) {
       var tilePos = tileFromPixel({ xs: x, ys: y }, origin, size);
       var t = tile(tilePos);
-      var color = [0, 0, 0];
+      var color = [180, 0, 0];
       if (t.height == water) {
-        color = [0, 0, 255];
+        color = [50, 50, 180];
       } else if (t.height == steppe) {
-        color = [0, 255, 0];
+        color = [0, 180, 0];
       } else if (t.height == hills) {
-        color = [255, 0, 0];
+        color = [180, 100, 0];
+      }
+      // Rainfall
+      var rain = Math.min(Math.abs(color[0] - color[1]) / 2 * t.rain, 255);
+      color[0] -= rain; // darker red
+      color[1] -= rain; // darker green
+      color[2] -= Math.min(t.rain * 50, 255);   // darker blue
+      // Vegetation
+      if (t.vegetation) {
+        color[0] -= 100;
+        color[1] -= 50;
+        color[2] -= 100;
       }
       var position = (x + y * width) * 4;
       data[position + 0] = color[0];
       data[position + 1] = color[1];
       data[position + 2] = color[2];
-      data[position + 3] = t.vegetation? 155: 255;
+      data[position + 3] = 255;
     }
   }
   ctx.putImageData(imgdata, 0, 0);
 }
 
-var hexaSize = 20
+// Size of radius of the smallest disk containing the hexagon.
+var hexaSize = 20;
+// Pixel position of the top left screen pixel,
+// compared to the origin of the map.
 var origin = { xs0: 0, ys0: 0 };
+
+
 paintTiles(canvas, hexaSize, origin);
 
 window.onkeydown = function(event) {
