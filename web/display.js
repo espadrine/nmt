@@ -53,23 +53,23 @@ function tile(coord) {
       - 1/2 * Math.abs(simplex1.noise2D(2*x/factor, 2*y/factor))
       + 1/4 * Math.abs(simplex1.noise2D(4*x/factor, 4*y/factor))
       - 1/8 * Math.abs(simplex1.noise2D(8*x/factor, 8*y/factor)));
-  var seaNoise = simplex1.noise2D(y/factor/5, x/factor/5)
-      + 1/2 * simplex1.noise2D(2*y/factor/5, 2*x/factor/5);
-  var vegetationNoise = simplex2.noise2D(x/factor, y/factor)
+  var seaNoise = (size / 2) * simplex1.noise2D(y/factor/8, x/factor/8)
+      + 1/2 * simplex1.noise2D(2*y/factor/8, 2*x/factor/8);
+  var vegetationNoise = (size / 5) * simplex2.noise2D(x/factor, y/factor)
       + 1/2 * simplex2.noise2D(2*x/factor, 2*y/factor)
       + 1/4 * simplex2.noise2D(4*x/factor, 4*y/factor)
       + 1/8 * simplex2.noise2D(8*x/factor, 8*y/factor)
       + 1/16 * simplex2.noise2D(16*x/factor, 16*y/factor);
   var height =
     // Rivers are thinner in mountains.
-    ((riverNoise < -0.99 - (heightNoise*0.013)
+    ((riverNoise < -0.99 - (heightNoise * 0.013)
     // Seas are smaller in mountains.
-    || heightNoise + seaNoise < -1) ?
+    || heightNoise + seaNoise < -1.3) ?
         water:
     (heightNoise < 0.1) ?
         steppe:
     // Mountains are cut off (by hills) to avoid circular mountain formations.
-    (heightNoise < 1 - (riverNoise*0.42)) ?
+    (heightNoise < 1 - (riverNoise * 0.42)) ?
         hills:
         mountain);
   var vegetation = (vegetationNoise
