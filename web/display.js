@@ -219,9 +219,9 @@ function paintTiles(canvas, size, origin) {
 
 // Movements.
 var distances = [];
-distances[water]  = 2;
-distances[steppe] = 2;
-distances[hills]  = 4;
+distances[water]    = 2;
+distances[steppe]   = 2;
+distances[hills]    = 4;
 distances[mountain] = 16;
 distances[swamp]    = 3;
 distances[meadow]   = 3;
