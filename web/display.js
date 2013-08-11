@@ -218,16 +218,19 @@ function paintTiles(canvas, size, origin) {
 
 
 // Movements.
-var distances = {};
+var distances = [];
 distances[water]  = 2;
 distances[steppe] = 2;
 distances[hills]  = 4;
 distances[mountain] = 16;
+distances[swamp]    = 3;
+distances[meadow]   = 3;
+distances[forest]   = 8;
+distances[taiga]    = 24;
 
 function distance(tpos) {
   var t = tile(tpos);
-  var d = distances[t.steepness];
-  if (t.vegetation) { d *= 2; }
+  var d = distances[t.type];
   return d;
 }
 
