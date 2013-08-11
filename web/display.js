@@ -16,51 +16,89 @@ var water = 0;
 var steppe = 1;
 var hills = 2;
 var mountain = 3;
-var altitude = {
+var swamp = 4;
+var meadow = 5;
+var forest = 6;
+var taiga = 7;
+var tileTypes = {
   water: water,
   steppe: steppe,
   hills: hills,
   mountain: mountain,
+  swamp: swamp,
+  meadow: meadow,
+  forest: forest,
+  taiga: taiga
 };
+
+// For each altitude level, [plain name, vegetation name].
+var nameFromTile = [];
+nameFromTile[water]    = "water";
+nameFromTile[steppe]   = "steppe";
+nameFromTile[hills]    = "hills";
+nameFromTile[mountain] = "mountain";
+nameFromTile[swamp]    = "swamp";
+nameFromTile[meadow]   = "meadow";
+nameFromTile[forest]   = "forest";
+nameFromTile[taiga]    = "taiga";
+
+// Input a tile, output the tile name.
+function tileName(tile) {
+  return nameFromTile[tile.type];
+}
+
+var tileVegetationTypeFromSteepness = [];
+tileVegetationTypeFromSteepness[water] = swamp;
+tileVegetationTypeFromSteepness[steppe] = meadow;
+tileVegetationTypeFromSteepness[hills] = forest;
+tileVegetationTypeFromSteepness[mountain] = taiga;
+
+function tileType(steepness, vegetation) {
+  if (vegetation) { return tileVegetationTypeFromSteepness[steepness]; }
+  else { return steepness; }
+}
 
 
 // (Sparse) Array of array of tiles.
 var memoizedTiles = [];
 
-// Get information about the tile at coordinates `coord`.
+// Get information about the tile at hexagonal coordinates `coord` {q, r}.
 // Returns
-//  - height: altitude level. See `altitude`.
+//  - steepness: altitude level. See `tileTypes`.
 //  - vegetation: boolean; whether there is vegetation.
+//  - type: tile type. See `tileTypes`.
+//  - rain: floating point number between -1 and 1, representing how heavy the
+//  rainfall is.
 function tile(coord) {
-  var x = coord.x;
-  var y = coord.y;
-  if (memoizedTiles[x] != null && memoizedTiles[x][y] != null) {
-    return memoizedTiles[x][y];
+  var q = coord.q;
+  var r = coord.r;
+  if (memoizedTiles[q] != null && memoizedTiles[q][r] != null) {
+    return memoizedTiles[q][r];
   }
-  var size = simplex2.noise2D(y/500, x/500) * 5;
+  var size = simplex2.noise2D(r/500, q/500) * 5;
   var heightNoise = Math.sin(
-      - (size) * Math.abs(simplex1.noise2D(1/4*x/factor, 1/4*y/factor))
-      + simplex1.noise2D(x/factor, y/factor)
-      - 1/2 * Math.abs(simplex1.noise2D(2*x/factor, 2*y/factor))
-      + 1/4 * Math.abs(simplex1.noise2D(4*x/factor, 4*y/factor))
-      - 1/8 * Math.abs(simplex1.noise2D(8*x/factor, 8*y/factor))
-      + 1/16 * Math.abs(simplex1.noise2D(16*x/factor, 16*y/factor)));
+      - (size) * Math.abs(simplex1.noise2D(1/4*q/factor, 1/4*r/factor))
+      + simplex1.noise2D(q/factor, r/factor)
+      - 1/2 * Math.abs(simplex1.noise2D(2*q/factor, 2*r/factor))
+      + 1/4 * Math.abs(simplex1.noise2D(4*q/factor, 4*r/factor))
+      - 1/8 * Math.abs(simplex1.noise2D(8*q/factor, 8*r/factor))
+      + 1/16 * Math.abs(simplex1.noise2D(16*q/factor, 16*r/factor)));
   var riverNoise = Math.sin(
-      - 16 * Math.abs(simplex1.noise2D(x/16/factor, y/16/factor))
-      + 8 * Math.abs(simplex1.noise2D(x/8/factor, y/8/factor))
-      - 4 * Math.abs(simplex1.noise2D(x/4/factor, y/4/factor))
-      + 2 * Math.abs(simplex1.noise2D(x/2/factor, y/2/factor))
-      - 1/2 * Math.abs(simplex1.noise2D(2*x/factor, 2*y/factor))
-      + 1/4 * Math.abs(simplex1.noise2D(4*x/factor, 4*y/factor))
-      - 1/8 * Math.abs(simplex1.noise2D(8*x/factor, 8*y/factor)));
-  var seaNoise = (size / 2) * simplex1.noise2D(y/factor/8, x/factor/8)
-      + 1/2 * simplex1.noise2D(2*y/factor/8, 2*x/factor/8);
-  var vegetationNoise = (size / 5) * simplex2.noise2D(x/factor, y/factor)
-      + 1/2 * simplex2.noise2D(2*x/factor, 2*y/factor)
-      + 1/4 * simplex2.noise2D(4*x/factor, 4*y/factor)
-      + 1/8 * simplex2.noise2D(8*x/factor, 8*y/factor)
-      + 1/16 * simplex2.noise2D(16*x/factor, 16*y/factor);
-  var height =
+      - 16 * Math.abs(simplex1.noise2D(q/16/factor, r/16/factor))
+      + 8 * Math.abs(simplex1.noise2D(q/8/factor, r/8/factor))
+      - 4 * Math.abs(simplex1.noise2D(q/4/factor, r/4/factor))
+      + 2 * Math.abs(simplex1.noise2D(q/2/factor, r/2/factor))
+      - 1/2 * Math.abs(simplex1.noise2D(2*q/factor, 2*r/factor))
+      + 1/4 * Math.abs(simplex1.noise2D(4*q/factor, 4*r/factor))
+      - 1/8 * Math.abs(simplex1.noise2D(8*q/factor, 8*r/factor)));
+  var seaNoise = (size / 2) * simplex1.noise2D(r/factor/8, q/factor/8)
+      + 1/2 * simplex1.noise2D(2*r/factor/8, 2*q/factor/8);
+  var vegetationNoise = (size / 5) * simplex2.noise2D(q/factor, r/factor)
+      + 1/2 * simplex2.noise2D(2*q/factor, 2*r/factor)
+      + 1/4 * simplex2.noise2D(4*q/factor, 4*r/factor)
+      + 1/8 * simplex2.noise2D(8*q/factor, 8*r/factor)
+      + 1/16 * simplex2.noise2D(16*q/factor, 16*r/factor);
+  var steepness =
     // Rivers are thinner in mountains.
     ((riverNoise < -0.99 - (heightNoise * 0.013)
     // Seas are smaller in mountains.
@@ -73,39 +111,27 @@ function tile(coord) {
         hills:
         mountain);
   var vegetation = (vegetationNoise
-      - (height === water? 2 * seaNoise: 0)   // Less vegetation on water.
+      - (steepness === water? 2 * seaNoise: 0)   // Less vegetation on water.
       + Math.abs(heightNoise + 0.15)) < 0;
 
   var tile = {
-    height: height,
+    steepness: steepness,
     vegetation: vegetation,
+    type: tileType(steepness, vegetation),
     rain: -vegetationNoise / 2
   };
-  if (memoizedTiles[x] == null) {
-    memoizedTiles[x] = [];
+  if (memoizedTiles[q] == null) {
+    memoizedTiles[q] = [];
   }
-  memoizedTiles[x][y] = tile;
+  memoizedTiles[q][r] = tile;
   return tile;
 }
 
-// For each altitude level, [plain name, vegetation name].
-var nameFromTile = {};
-nameFromTile[water]    = ["water", "swamp"];
-nameFromTile[steppe]   = ["steppe", "meadow"];
-nameFromTile[hills]    = ["hills", "forest"];
-nameFromTile[mountain] = ["mountain", "taiga"];
-
-// Input a tile, output the tile name.
-function tilename(tile) {
-  return nameFromTile[tile.height][+tile.vegetation];
-}
-
-
-// Given real hexagonal coordinates p = {x, y}, round to the nearest integer
+// Given real hexagonal coordinates p = {q, r}, round to the nearest integer
 // hexagonal coordinate.
 function intPointFromReal(p) {
-  var x = p.x;
-  var z = p.y;
+  var x = p.q;
+  var z = p.r;
   var y = - x - z;
   var rx = Math.round(x);
   var ry = Math.round(y);
@@ -122,22 +148,22 @@ function intPointFromReal(p) {
   }
 
   return {
-    x: rx,
-    y: rz
+    q: rx,
+    r: rz
   };
 }
 
 
-// Given a point ps = {xs, ys} representing a pixel position on the screen,
-// and given a position ps0 = {xs0, ys0} of the screen on the map,
-// return a point {x, y} of the hexagon on the map.
+// Given a point px = {x, y} representing a pixel position on the screen,
+// and given a position px0 = {x0, y0} of the screen on the map,
+// return a point {q, r} of the hexagon on the map.
 // `size` is the radius of the smallest disk containing the hexagon.
-function tileFromPixel(ps, ps0, size) {
-  var xm = ps.xs + ps0.xs0;
-  var ym = ps.ys + ps0.ys0;
+function tileFromPixel(px, px0, size) {
+  var xm = px.x + px0.x0;
+  var ym = px.y + px0.y0;
   return intPointFromReal({
-    x: (Math.sqrt(3) * xm - ym) / 3 / size,
-    y: 2 * ym / 3 / size
+    q: (Math.sqrt(3) * xm - ym) / 3 / size,
+    r: 2 * ym / 3 / size
   });
 }
 
@@ -145,21 +171,21 @@ var accessibleTiles = [];
 
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
-// The `origin` {xs0, ys0} is the position of the top left pixel on the screen,
+// The `origin` {x0, y0} is the position of the top left pixel on the screen,
 // compared to the pixel (0, 0) on the map.
 function paintTiles(canvas, size, origin) {
   var width = canvas.width;
   var height = canvas.height;
   for (var y = 0; y < height; y++) {
     for (var x = 0; x < width; x++) {
-      var tilePos = tileFromPixel({ xs: x, ys: y }, origin, size);
+      var tilePos = tileFromPixel({ x:x, y:y }, origin, size);
       var t = tile(tilePos);
       var color = [180, 0, 0];
-      if (t.height == water) {
+      if (t.steepness == water) {
         color = [50, 50, 180];
-      } else if (t.height == steppe) {
+      } else if (t.steepness == steppe) {
         color = [0, 180, 0];
-      } else if (t.height == hills) {
+      } else if (t.steepness == hills) {
         color = [180, 100, 0];
       }
       // Rainfall
@@ -175,8 +201,8 @@ function paintTiles(canvas, size, origin) {
       }
       var travelable = 255;
       for (var i = 0; i < accessibleTiles.length; i++) {
-        if (tilePos.x === accessibleTiles[i].x
-            && tilePos.y === accessibleTiles[i].y) {
+        if (tilePos.q === accessibleTiles[i].q
+            && tilePos.r === accessibleTiles[i].r) {
           travelable = 170;
         }
       }
@@ -200,27 +226,30 @@ distances[mountain] = 16;
 
 function distance(tpos) {
   var t = tile(tpos);
-  var d = distances[t.height];
+  var d = distances[t.steepness];
   if (t.vegetation) { d *= 2; }
   return d;
 }
 
-// Find a neighboring tile. `orientation` is 0 for right, 1 for top right, and
+// Find a neighboring tile.
+// `tile` is {q, r}.
+// `orientation` is 0 for right, 1 for top right, and
 // so on counter-clockwise until 5 for bottom right.
 function neighborFromTile(tile, orientation) {
-  if (orientation === 0) { return { x: tile.x + 1, y: tile.y };
-  } else if (orientation === 1) { return { x: tile.x + 1, y: tile.y - 1 };
-  } else if (orientation === 2) { return { x: tile.x, y: tile.y - 1};
-  } else if (orientation === 3) { return { x: tile.x - 1, y: tile.y };
-  } else if (orientation === 4) { return { x: tile.x - 1, y: tile.y + 1 };
-  } else if (orientation === 5) { return { x: tile.x, y: tile.y + 1 };
+  if (orientation === 0) { return { q: tile.q + 1, r: tile.r };
+  } else if (orientation === 1) { return { q: tile.q + 1, r: tile.r - 1 };
+  } else if (orientation === 2) { return { q: tile.q, r: tile.r - 1};
+  } else if (orientation === 3) { return { q: tile.q - 1, r: tile.r };
+  } else if (orientation === 4) { return { q: tile.q - 1, r: tile.r + 1 };
+  } else if (orientation === 5) { return { q: tile.q, r: tile.r + 1 };
   }
 }
 
 // Whether `tile` is in the list of tiles `tiles`.
+// `tile` is {q, r}.
 function tileInTiles(tile, tiles) {
   for (var i = 0; i < tiles.length; i++) {
-    if (tile.x === tiles[i].x && tile.y === tiles[i].y) {
+    if (tile.q === tiles[i].q && tile.r === tiles[i].r) {
       return true;
     }
   }
@@ -228,7 +257,7 @@ function tileInTiles(tile, tiles) {
 }
 
 // Find the set of tiles one can move to, from a starter tile.
-// `tpos` is an {x, y} tile position.
+// `tpos` is a {q, r} tile position.
 function travelFrom(tpos, speed) {
   var walkedTiles = [];
   var consideredTiles = [tpos]; // We consider the tile we're on.
@@ -261,7 +290,7 @@ function travelFrom(tpos, speed) {
 var hexaSize = 20;
 // Pixel position of the top left screen pixel,
 // compared to the origin of the map.
-var origin = { xs0: 0, ys0: 0 };
+var origin = { x0: 0, y0: 0 };
 
 
 paintTiles(canvas, hexaSize, origin);
@@ -269,16 +298,16 @@ paintTiles(canvas, hexaSize, origin);
 window.onkeydown = function(event) {
   var redraw = false;
   if (event.keyCode === 39) {           // →
-    origin.xs0 += canvas.width / 2;
+    origin.x0 += canvas.width / 2;
     redraw = true;
   } else if (event.keyCode === 38) {    // ↑
-    origin.ys0 -= canvas.height / 2;
+    origin.y0 -= canvas.height / 2;
     redraw = true;
   } else if (event.keyCode === 37) {    // ←
-    origin.xs0 -= canvas.width / 2;
+    origin.x0 -= canvas.width / 2;
     redraw = true;
   } else if (event.keyCode === 40) {    // ↓
-    origin.ys0 += canvas.height / 2;
+    origin.y0 += canvas.height / 2;
     redraw = true;
   } else if (((event.keyCode === 61 || event.keyCode === 187) && event.shiftKey)
           || event.keyCode === 107) {  // +
@@ -295,7 +324,8 @@ window.onkeydown = function(event) {
 };
 
 window.onclick = function(event) {
-  var startTile = tileFromPixel({ xs: event.clientX, ys: event.clientY }, origin, hexaSize);
+  var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
+      origin, hexaSize);
   accessibleTiles = travelFrom(startTile, 8);
   paintTiles(canvas, hexaSize, origin);
 };
