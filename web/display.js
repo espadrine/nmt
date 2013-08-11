@@ -141,6 +141,7 @@ function tileFromPixel(ps, ps0, size) {
   });
 }
 
+var accessibleTiles = [];
 
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
@@ -172,15 +173,89 @@ function paintTiles(canvas, size, origin) {
         color[1] -= 50;
         color[2] -= 100;
       }
+      var travelable = 255;
+      for (var i = 0; i < accessibleTiles.length; i++) {
+        if (tilePos.x === accessibleTiles[i].x
+            && tilePos.y === accessibleTiles[i].y) {
+          travelable = 170;
+        }
+      }
       var position = (x + y * width) * 4;
       data[position + 0] = color[0];
       data[position + 1] = color[1];
       data[position + 2] = color[2];
-      data[position + 3] = 255;
+      data[position + 3] = travelable;
     }
   }
   ctx.putImageData(imgdata, 0, 0);
 }
+
+
+// Movements.
+var distances = {};
+distances[water]  = 2;
+distances[steppe] = 2;
+distances[hills]  = 4;
+distances[mountain] = 16;
+
+function distance(tpos) {
+  var t = tile(tpos);
+  var d = distances[t.height];
+  if (t.vegetation) { d *= 2; }
+  return d;
+}
+
+// Find a neighboring tile. `orientation` is 0 for right, 1 for top right, and
+// so on counter-clockwise until 5 for bottom right.
+function neighborFromTile(tile, orientation) {
+  if (orientation === 0) { return { x: tile.x + 1, y: tile.y };
+  } else if (orientation === 1) { return { x: tile.x + 1, y: tile.y - 1 };
+  } else if (orientation === 2) { return { x: tile.x, y: tile.y - 1};
+  } else if (orientation === 3) { return { x: tile.x - 1, y: tile.y };
+  } else if (orientation === 4) { return { x: tile.x - 1, y: tile.y + 1 };
+  } else if (orientation === 5) { return { x: tile.x, y: tile.y + 1 };
+  }
+}
+
+// Whether `tile` is in the list of tiles `tiles`.
+function tileInTiles(tile, tiles) {
+  for (var i = 0; i < tiles.length; i++) {
+    if (tile.x === tiles[i].x && tile.y === tiles[i].y) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Find the set of tiles one can move to, from a starter tile.
+// `tpos` is an {x, y} tile position.
+function travelFrom(tpos, speed) {
+  var walkedTiles = [];
+  var consideredTiles = [tpos]; // We consider the tile we're on.
+  var walkedDistance = [0];     // On that tile, we haven't walked at all.
+  // Going through each considered tile; `ti` means tile index.
+  for (var ti = 0; ti < consideredTiles.length; ti++) {
+    // Going through each neighbor.
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(consideredTiles[ti], i);
+      var newDistance = walkedDistance[ti] + distance(neighbor);
+      if (!tileInTiles(neighbor, walkedTiles)
+          && !tileInTiles(neighbor, consideredTiles)
+          && (newDistance <= speed)) {
+        consideredTiles.push(neighbor);
+        walkedDistance.push(newDistance);
+      }
+    }
+    walkedTiles.push(consideredTiles[ti]);
+  }
+  return walkedTiles;
+}
+
+
+
+
+// Initialization and event management.
+//
 
 // Size of radius of the smallest disk containing the hexagon.
 var hexaSize = 20;
@@ -217,5 +292,11 @@ window.onkeydown = function(event) {
   if (redraw) {
     paintTiles(canvas, hexaSize, origin);
   }
+};
+
+window.onclick = function(event) {
+  var startTile = tileFromPixel({ xs: event.clientX, ys: event.clientY }, origin, hexaSize);
+  accessibleTiles = travelFrom(startTile, 8);
+  paintTiles(canvas, hexaSize, origin);
 };
 
