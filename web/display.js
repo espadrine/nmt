@@ -10,6 +10,13 @@ var data = imgdata.data;
 
 // Parameter to how stretched the map is.
 var factor = 50;
+// Size of radius of the smallest disk containing the hexagon.
+var hexaSize = 20;
+// Pixel position of the top left screen pixel,
+// compared to the origin of the map.
+var origin = { x0: 0, y0: 0 };
+
+
 
 // The following are actually constants.
 var water = 0;
@@ -167,55 +174,16 @@ function tileFromPixel(px, px0, size) {
   });
 }
 
-var accessibleTiles = [];
-
-// Paint on a canvas with hexagonal tiles with `size` being the radius of the
-// smallest disk containing the hexagon.
-// The `origin` {x0, y0} is the position of the top left pixel on the screen,
-// compared to the pixel (0, 0) on the map.
-function paintTiles(canvas, size, origin) {
-  var width = canvas.width;
-  var height = canvas.height;
-  for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
-      var tilePos = tileFromPixel({ x:x, y:y }, origin, size);
-      var t = tile(tilePos);
-      var color = [180, 0, 0];
-      if (t.steepness == water) {
-        color = [50, 50, 180];
-      } else if (t.steepness == steppe) {
-        color = [0, 180, 0];
-      } else if (t.steepness == hills) {
-        color = [180, 100, 0];
-      }
-      // Rainfall
-      var rain = Math.min(Math.abs(color[0] - color[1]) / 2 * t.rain, 255);
-      color[0] -= rain; // darker red
-      color[1] -= rain; // darker green
-      color[2] -= Math.min(t.rain * 50, 255);   // darker blue
-      // Vegetation
-      if (t.vegetation) {
-        color[0] -= 100;
-        color[1] -= 50;
-        color[2] -= 100;
-      }
-      var travelable = 255;
-      for (var i = 0; i < accessibleTiles.length; i++) {
-        if (tilePos.q === accessibleTiles[i].q
-            && tilePos.r === accessibleTiles[i].r) {
-          travelable = 170;
-        }
-      }
-      var position = (x + y * width) * 4;
-      data[position + 0] = color[0];
-      data[position + 1] = color[1];
-      data[position + 2] = color[2];
-      data[position + 3] = travelable;
-    }
-  }
-  ctx.putImageData(imgdata, 0, 0);
+// Given a point p = {q, r} representing a hexagonal coordinate,
+// and given a position px0 = {x0, y0} of the screen on the map,
+// return a pixel {x, y} of the hexagon's center.
+// `size` is the radius of the smallest disk containing the hexagon.
+function pixelFromTile(p, px0, size) {
+  return {
+    x: (size * Math.sqrt(3) * (p.q + p.r / 2)) - px0.x0,
+    y: (size * 3/2 * p.r) - px0.y0
+  };
 }
-
 
 // Movements.
 var distances = [];
@@ -286,17 +254,141 @@ function travelFrom(tpos, speed) {
 
 
 
+// Painting primitives.
+//
+
+function loadSprites() {
+  var img = new Image();
+  img.src = 'sprites.png';
+  return img;
+}
+var sprites = loadSprites();
+var spritesWidth = hexaSize * 2;  // Each element of the sprite is 20px squared.
+
+// Paint on a canvas with hexagonal tiles with `size` being the radius of the
+// smallest disk containing the hexagon.
+// The `origin` {x0, y0} is the position of the top left pixel on the screen,
+// compared to the pixel (0, 0) on the map.
+function paintTilesSprited(canvas, size, origin) {
+  var width = canvas.width;
+  var height = canvas.height;
+  var ctx = canvas.getContext('2d');
+  // This is a jigsaw. We want the corner tiles of the screen.
+  var tilePos = tileFromPixel({ x:0, y:0 }, origin, size);
+  var centerPixel = pixelFromTile(tilePos, origin, size);
+  var cx = centerPixel.x;
+  var cy = centerPixel.y;
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+
+  var offLeft = true;     // Each row is offset from the row above.
+  while (cy - hexVertDistance < height) {
+    while (cx - hexHorizDistance < width) {
+      tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
+      var t = tile(tilePos);
+      ctx.drawImage(sprites,
+          0, spritesWidth * t.type, spritesWidth, spritesWidth,
+          cx - size, cy - size, size * 2, size * 2);
+      // Heavy rain makes it darker.
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - size);    // top
+      ctx.lineTo(cx - hexHorizDistance/2, cy - size/2); // top left
+      ctx.lineTo(cx - hexHorizDistance/2, cy + size/2); // bottom left
+      ctx.lineTo(cx, cy + size);    // bottom
+      ctx.lineTo(cx + hexHorizDistance/2, cy + size/2); // bottom right
+      ctx.lineTo(cx + hexHorizDistance/2, cy - size/2); // top right
+      ctx.closePath();
+      var grey = Math.floor((-t.rain + 1) / 2 * 127);
+      var transparency = (t.rain + 1) / 3;
+      ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ','
+          + transparency + ')';
+      ctx.fill();
+      cx += hexHorizDistance;
+    }
+    cy += hexVertDistance;
+    cx = centerPixel.x;
+    if (offLeft) {
+      cx -= hexHorizDistance / 2;   // This row is offset.
+      offLeft = false;
+    } else {
+      offLeft = true;
+    }
+    cx = Math.floor(cx);
+    cy = Math.floor(cy);
+  }
+}
+
+var accessibleTiles = [];
+
+// Paint on a canvas with hexagonal tiles with `size` being the radius of the
+// smallest disk containing the hexagon.
+// The `origin` {x0, y0} is the position of the top left pixel on the screen,
+// compared to the pixel (0, 0) on the map.
+function paintTilesRaw(canvas, size, origin) {
+  var width = canvas.width;
+  var height = canvas.height;
+  for (var y = 0; y < height; y++) {
+    for (var x = 0; x < width; x++) {
+      var tilePos = tileFromPixel({ x:x, y:y }, origin, size);
+      var t = tile(tilePos);
+      var color = [180, 0, 0];
+      if (t.steepness == water) {
+        color = [50, 50, 180];
+      } else if (t.steepness == steppe) {
+        color = [0, 180, 0];
+      } else if (t.steepness == hills) {
+        color = [180, 100, 0];
+      }
+      // Rainfall
+      var rain = Math.min(Math.abs(color[0] - color[1]) / 2 * t.rain, 255);
+      color[0] -= rain; // darker red
+      color[1] -= rain; // darker green
+      color[2] -= Math.min(t.rain * 50, 255);   // darker blue
+      // Vegetation
+      if (t.vegetation) {
+        color[0] -= 100;
+        color[1] -= 50;
+        color[2] -= 100;
+      }
+      var travelable = 255;
+      for (var i = 0; i < accessibleTiles.length; i++) {
+        if (tilePos.q === accessibleTiles[i].q
+            && tilePos.r === accessibleTiles[i].r) {
+          travelable = 170;
+        }
+      }
+      var position = (x + y * width) * 4;
+      data[position + 0] = color[0];
+      data[position + 1] = color[1];
+      data[position + 2] = color[2];
+      data[position + 3] = travelable;
+    }
+  }
+  ctx.putImageData(imgdata, 0, 0);
+}
+
+// Paint on a canvas with hexagonal tiles with `size` being the radius of the
+// smallest disk containing the hexagon.
+// The `origin` {x0, y0} is the position of the top left pixel on the screen,
+// compared to the pixel (0, 0) on the map.
+function paint(canvas, size, origin) {
+  if (size < 5) {
+    // Special case: we're from too far above, use direct pixel manipulation.
+    paintTilesRaw(canvas, size, origin);
+  } else {
+    paintTilesSprited(canvas, size, origin);
+  }
+}
+
+
+
+
 // Initialization and event management.
 //
 
-// Size of radius of the smallest disk containing the hexagon.
-var hexaSize = 20;
-// Pixel position of the top left screen pixel,
-// compared to the origin of the map.
-var origin = { x0: 0, y0: 0 };
-
-
-paintTiles(canvas, hexaSize, origin);
+sprites.onload = function() {
+  paint(canvas, hexaSize, origin);
+};
 
 window.onkeydown = function(event) {
   var redraw = false;
@@ -322,7 +414,7 @@ window.onkeydown = function(event) {
     redraw = true;
   }
   if (redraw) {
-    paintTiles(canvas, hexaSize, origin);
+    paint(canvas, hexaSize, origin);
   }
 };
 
@@ -330,6 +422,6 @@ window.onclick = function(event) {
   var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
       origin, hexaSize);
   accessibleTiles = travelFrom(startTile, 8);
-  paintTiles(canvas, hexaSize, origin);
+  paint(canvas, hexaSize, origin);
 };
 
