@@ -386,11 +386,11 @@ function paint(canvas, size, origin) {
 // Initialization and event management.
 //
 
-sprites.onload = function() {
+sprites.onload = function loadingSprites() {
   paint(canvas, hexaSize, origin);
 };
 
-window.onkeydown = function(event) {
+window.onkeydown = function keyInputManagement(event) {
   var redraw = false;
   if (event.keyCode === 39) {           // →
     origin.x0 += canvas.width / 2;
@@ -418,7 +418,7 @@ window.onkeydown = function(event) {
   }
 };
 
-window.onclick = function(event) {
+window.onclick = function mouseInputManagement(event) {
   var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
       origin, hexaSize);
   accessibleTiles = travelFrom(startTile, 8);
