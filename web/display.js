@@ -265,6 +265,25 @@ function loadSprites() {
 var sprites = loadSprites();
 var spritesWidth = hexaSize * 2;  // Each element of the sprite is 20px squared.
 
+// Given a set of pixels {x, y} representing the center of hexagons,
+// construct the path around those hexagons.
+function pathFromHex(ctx, pixels, size, hexHorizDistance, hexVertDistance) {
+  ctx.beginPath();
+  for (var i = 0; i < pixels.length; i++) {
+    var cx = pixels[i].x;
+    var cy = pixels[i].y;
+    ctx.moveTo(cx, cy - size);    // top
+    ctx.lineTo(cx - hexHorizDistance/2, cy - size/2); // top left
+    ctx.lineTo(cx - hexHorizDistance/2, cy + size/2); // bottom left
+    ctx.lineTo(cx, cy + size);    // bottom
+    ctx.lineTo(cx + hexHorizDistance/2, cy + size/2); // bottom right
+    ctx.lineTo(cx + hexHorizDistance/2, cy - size/2); // top right
+  }
+  ctx.closePath();
+}
+
+var accessibleTiles = [];
+
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
@@ -290,19 +309,19 @@ function paintTilesSprited(canvas, size, origin) {
           0, spritesWidth * t.type, spritesWidth, spritesWidth,
           cx - size, cy - size, size * 2, size * 2);
       // Heavy rain makes it darker.
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - size);    // top
-      ctx.lineTo(cx - hexHorizDistance/2, cy - size/2); // top left
-      ctx.lineTo(cx - hexHorizDistance/2, cy + size/2); // bottom left
-      ctx.lineTo(cx, cy + size);    // bottom
-      ctx.lineTo(cx + hexHorizDistance/2, cy + size/2); // bottom right
-      ctx.lineTo(cx + hexHorizDistance/2, cy - size/2); // top right
-      ctx.closePath();
+      pathFromHex(ctx, [{ x:cx, y:cy }], size, hexHorizDistance, hexVertDistance);
       var grey = Math.floor((-t.rain + 1) / 2 * 127);
       var transparency = (t.rain + 1) / 3;
       ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ','
           + transparency + ')';
       ctx.fill();
+      // Accessible tiles for travel. TODO: put it in a separate pass.
+      if (tileInTiles(tilePos, accessibleTiles)) {
+        pathFromHex(ctx, [{ x:cx, y:cy }], size,
+          hexHorizDistance, hexVertDistance);
+        ctx.strokeStyle = 'white';
+        ctx.stroke();
+      }
       cx += hexHorizDistance;
     }
     cy += hexVertDistance;
@@ -317,8 +336,6 @@ function paintTilesSprited(canvas, size, origin) {
     cy = Math.floor(cy);
   }
 }
-
-var accessibleTiles = [];
 
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
@@ -350,18 +367,11 @@ function paintTilesRaw(canvas, size, origin) {
         color[1] -= 50;
         color[2] -= 100;
       }
-      var travelable = 255;
-      for (var i = 0; i < accessibleTiles.length; i++) {
-        if (tilePos.q === accessibleTiles[i].q
-            && tilePos.r === accessibleTiles[i].r) {
-          travelable = 170;
-        }
-      }
       var position = (x + y * width) * 4;
       data[position + 0] = color[0];
       data[position + 1] = color[1];
       data[position + 2] = color[2];
-      data[position + 3] = travelable;
+      data[position + 3] = 255;
     }
   }
   ctx.putImageData(imgdata, 0, 0);
