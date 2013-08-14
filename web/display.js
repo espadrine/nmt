@@ -282,8 +282,6 @@ function pathFromHex(ctx, pixels, size, hexHorizDistance, hexVertDistance) {
   ctx.closePath();
 }
 
-var accessibleTiles = [];
-
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
@@ -315,13 +313,6 @@ function paintTilesSprited(canvas, size, origin) {
       ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ','
           + transparency + ')';
       ctx.fill();
-      // Accessible tiles for travel. TODO: put it in a separate pass.
-      if (tileInTiles(tilePos, accessibleTiles)) {
-        pathFromHex(ctx, [{ x:cx, y:cy }], size,
-          hexHorizDistance, hexVertDistance);
-        ctx.strokeStyle = 'white';
-        ctx.stroke();
-      }
       cx += hexHorizDistance;
     }
     cy += hexVertDistance;
@@ -335,6 +326,24 @@ function paintTilesSprited(canvas, size, origin) {
     cx = Math.floor(cx);
     cy = Math.floor(cy);
   }
+}
+
+var accessibleTiles = [];
+
+// Paint a white line around `tiles`
+// (a list of {q, r} representing the coordinates of a hexagon).
+// Requires a canvas context `ctx` and the size of a hexagon
+// (ie, the radius of the smallest disk containing the hexagon).
+function paintAroundTiles(ctx, size, origin, tiles) {
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+  var cTiles = [];  // List of pixel center of tiles.
+  for (var i = 0; i < tiles.length; i++) {
+    cTiles.push(pixelFromTile(tiles[i], origin, size));
+  }
+  pathFromHex(ctx, cTiles, size, hexHorizDistance, hexVertDistance);
+  ctx.strokeStyle = 'white';
+  ctx.stroke();
 }
 
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
@@ -387,6 +396,7 @@ function paint(canvas, size, origin) {
     paintTilesRaw(canvas, size, origin);
   } else {
     paintTilesSprited(canvas, size, origin);
+    paintAroundTiles(ctx, size, origin, accessibleTiles);
   }
 }
 
