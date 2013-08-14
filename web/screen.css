@@ -1,6 +1,4 @@
-body {
-  margin: 0;
-}
+body { margin: 0; }
 
 canvas#c {
   position: absolute;
@@ -8,3 +6,14 @@ canvas#c {
   bottom: 0;
   right: 0;
 }
+
+div#controller {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+}
+div#controller > svg { width: 50px; height: 50px; }
+div#controller > svg > path { cursor: pointer; }
+path.hex { stroke: white; stroke-width: 1.8px; }
+path.gum { stroke: white; stroke-width: 1.5px; }
+path.dust { stroke: #aaa }
