@@ -265,22 +265,95 @@ function loadSprites() {
 var sprites = loadSprites();
 var spritesWidth = hexaSize * 2;  // Each element of the sprite is 20px squared.
 
-// Given a set of pixels {x, y} representing the center of hexagons,
+// Given a set of tiles {q, r} representing hexagon coordinates,
 // construct the path around those hexagons.
-function pathFromHex(ctx, pixels, size, hexHorizDistance, hexVertDistance) {
+function pathFromTiles(ctx, size, origin, tiles,
+                       hexHorizDistance, hexVertDistance) {
   ctx.beginPath();
-  for (var i = 0; i < pixels.length; i++) {
-    var cx = pixels[i].x;
-    var cy = pixels[i].y;
-    ctx.moveTo(cx, cy - size);    // top
-    ctx.lineTo(cx - hexHorizDistance/2, cy - size/2); // top left
-    ctx.lineTo(cx - hexHorizDistance/2, cy + size/2); // bottom left
-    ctx.lineTo(cx, cy + size);    // bottom
-    ctx.lineTo(cx + hexHorizDistance/2, cy + size/2); // bottom right
-    ctx.lineTo(cx + hexHorizDistance/2, cy - size/2); // top right
-    ctx.lineTo(cx, cy - size);    // top
+  for (var i = 0; i < tiles.length; i++) {
+    var cp = pixelFromTile(tiles[i], origin, size);
+    var cx = cp.x;
+    var cy = cp.y;
+    var mask = 0|0;
+    for (var f = 0; f < 6; f++) {
+      // For each, face, set the mask.
+      mask |= ((tileInTiles(neighborFromTile(tiles[i], f), tiles)|0) << f);
+    }
+    partialPathFromHex(ctx, size, cp, mask, hexHorizDistance, hexVertDistance);
   }
   ctx.closePath();
+}
+
+// Draw a hexagon of size given, from the center point cp = {x, y},
+// on the canvas context ctx.
+// The mask is a sequence of six bits, each representing a hexagon edge,
+// that are set to 1 in order to hide that edge.
+function partialPathFromHex(ctx, size, cp, mask,
+                            hexHorizDistance, hexVertDistance) {
+  mask = mask|0;
+  var cx = cp.x;
+  var cy = cp.y;
+  ctx.moveTo(cx, cy - size);    // top
+  if ((mask & 4) === 0) {
+    ctx.lineTo(cx - hexHorizDistance/2, cy - size/2); // top left
+  } else {
+    ctx.moveTo(cx - hexHorizDistance/2, cy - size/2); // top left
+  }
+  if ((mask & 8) === 0) {
+    ctx.lineTo(cx - hexHorizDistance/2, cy + size/2); // bottom left
+  } else {
+    ctx.moveTo(cx - hexHorizDistance/2, cy + size/2); // bottom left
+  }
+  if ((mask & 16) === 0) {
+    ctx.lineTo(cx, cy + size);    // bottom
+  } else {
+    ctx.moveTo(cx, cy + size);    // bottom
+  }
+  if ((mask & 32) === 0) {
+    ctx.lineTo(cx + hexHorizDistance/2, cy + size/2); // bottom right
+  } else {
+    ctx.moveTo(cx + hexHorizDistance/2, cy + size/2); // bottom right
+  }
+  if ((mask & 1) === 0) {
+    ctx.lineTo(cx + hexHorizDistance/2, cy - size/2); // top right
+  } else {
+    ctx.moveTo(cx + hexHorizDistance/2, cy - size/2); // top right
+  }
+  if ((mask & 2) === 0) {
+    ctx.lineTo(cx, cy - size);    // top
+  } else {
+    ctx.moveTo(cx, cy - size);    // top
+  }
+}
+
+// Draw a hexagon of size given, from the center point cp = {x, y},
+// on the canvas context ctx.
+function pathFromHex(ctx, size, cp,
+                     hexHorizDistance, hexVertDistance) {
+  ctx.beginPath();
+  partialPathFromHex(ctx, size, cp, 0, hexHorizDistance, hexVertDistance);
+  ctx.closePath();
+}
+
+// Paint a white line around `tiles`
+// (a list of {q, r} representing the coordinates of a hexagon).
+// Requires a canvas context `ctx` and the size of a hexagon
+// (ie, the radius of the smallest disk containing the hexagon).
+function paintAroundTiles(ctx, size, origin, tiles) {
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+  pathFromTiles(ctx, size, origin, tiles, hexHorizDistance, hexVertDistance);
+  ctx.strokeStyle = 'white';
+  ctx.stroke();
+}
+
+function paintCurrentTile(ctx, size, origin, tile) {
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+  var cp = pixelFromTile(tile, origin, size);
+  pathFromHex(ctx, size, cp, hexHorizDistance, hexVertDistance);
+  ctx.strokeStyle = '#99f';
+  ctx.stroke();
 }
 
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
@@ -308,7 +381,7 @@ function paintTilesSprited(canvas, size, origin) {
           0, spritesWidth * t.type, spritesWidth, spritesWidth,
           cx - size, cy - size, size * 2, size * 2);
       // Heavy rain makes it darker.
-      pathFromHex(ctx, [{ x:cx, y:cy }], size, hexHorizDistance, hexVertDistance);
+      pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
       var grey = Math.floor((-t.rain + 1) / 2 * 127);
       var transparency = (t.rain + 1) / 3;
       ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ','
@@ -329,23 +402,6 @@ function paintTilesSprited(canvas, size, origin) {
   }
 }
 
-var accessibleTiles = [];
-
-// Paint a white line around `tiles`
-// (a list of {q, r} representing the coordinates of a hexagon).
-// Requires a canvas context `ctx` and the size of a hexagon
-// (ie, the radius of the smallest disk containing the hexagon).
-function paintAroundTiles(ctx, size, origin, tiles) {
-  var hexHorizDistance = size * Math.sqrt(3);
-  var hexVertDistance = size * 3/2;
-  var cTiles = [];  // List of pixel center of tiles.
-  for (var i = 0; i < tiles.length; i++) {
-    cTiles.push(pixelFromTile(tiles[i], origin, size));
-  }
-  pathFromHex(ctx, cTiles, size, hexHorizDistance, hexVertDistance);
-  ctx.strokeStyle = 'white';
-  ctx.stroke();
-}
 
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
@@ -398,6 +454,7 @@ function paint(canvas, size, origin) {
   } else {
     paintTilesSprited(canvas, size, origin);
     paintAroundTiles(ctx, size, origin, accessibleTiles);
+    paintCurrentTile(ctx, size, origin, currentTile);
   }
 }
 
@@ -439,9 +496,13 @@ window.onkeydown = function keyInputManagement(event) {
   }
 };
 
+var accessibleTiles = [];
+var currentTile;
+
 window.onclick = function mouseInputManagement(event) {
   var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
       origin, hexaSize);
+  currentTile = startTile;
   accessibleTiles = travelFrom(startTile, 8);
   paint(canvas, hexaSize, origin);
 };
