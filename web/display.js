@@ -278,6 +278,7 @@ function pathFromHex(ctx, pixels, size, hexHorizDistance, hexVertDistance) {
     ctx.lineTo(cx, cy + size);    // bottom
     ctx.lineTo(cx + hexHorizDistance/2, cy + size/2); // bottom right
     ctx.lineTo(cx + hexHorizDistance/2, cy - size/2); // top right
+    ctx.lineTo(cx, cy - size);    // top
   }
   ctx.closePath();
 }
