@@ -454,7 +454,9 @@ function paint(canvas, size, origin) {
   } else {
     paintTilesSprited(canvas, size, origin);
     paintAroundTiles(ctx, size, origin, accessibleTiles);
-    paintCurrentTile(ctx, size, origin, currentTile);
+    if (currentTile !== undefined) {
+      paintCurrentTile(ctx, size, origin, currentTile);
+    }
   }
 }
 
