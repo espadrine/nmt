@@ -281,7 +281,6 @@ function pathFromTiles(ctx, size, origin, tiles,
     }
     partialPathFromHex(ctx, size, cp, mask, hexHorizDistance, hexVertDistance);
   }
-  ctx.closePath();
 }
 
 // Draw a hexagon of size given, from the center point cp = {x, y},
@@ -332,7 +331,6 @@ function pathFromHex(ctx, size, cp,
                      hexHorizDistance, hexVertDistance) {
   ctx.beginPath();
   partialPathFromHex(ctx, size, cp, 0, hexHorizDistance, hexVertDistance);
-  ctx.closePath();
 }
 
 // Paint a white line around `tiles`
