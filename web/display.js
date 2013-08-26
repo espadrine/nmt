@@ -1,70 +1,57 @@
 var prng = new MersenneTwister(0);
 var simplex1 = new SimplexNoise(prng.random.bind(prng));
 var simplex2 = new SimplexNoise(prng.random.bind(prng));
-var canvas = document.getElementById('c');
-var ctx = canvas.getContext('2d');
-canvas.width = document.documentElement.clientWidth;
-canvas.height = document.documentElement.clientHeight;
-var imgdata = ctx.getImageData(0, 0, canvas.width, canvas.height);
-var data = imgdata.data;
 
 // Parameter to how stretched the map is.
 var factor = 50;
-// Size of radius of the smallest disk containing the hexagon.
-var hexaSize = 20;
-// Pixel position of the top left screen pixel,
-// compared to the origin of the map.
-var origin = { x0: 0, y0: 0 };
-
-
 
 // The following are actually constants.
-var water = 0;
-var steppe = 1;
-var hills = 2;
-var mountain = 3;
-var swamp = 4;
-var meadow = 5;
-var forest = 6;
-var taiga = 7;
 var tileTypes = {
-  water: water,
-  steppe: steppe,
-  hills: hills,
-  mountain: mountain,
-  swamp: swamp,
-  meadow: meadow,
-  forest: forest,
-  taiga: taiga
+  water:        0,
+  steppe:       1,
+  hills:        2,
+  mountain:     3,
+  swamp:        4,
+  meadow:       5,
+  forest:       6,
+  taiga:        7,
+  farm:         8,
+  residence:    9,
+  skyscraper:   10,
+  factory:      11,
+  docks:        12,
+  airland:      13,
+  airport:      14,
+  gunsmith:     15,
+  road:         16,
+  wall:         17
 };
 
 // For each altitude level, [plain name, vegetation name].
 var nameFromTile = [];
-nameFromTile[water]    = "water";
-nameFromTile[steppe]   = "steppe";
-nameFromTile[hills]    = "hills";
-nameFromTile[mountain] = "mountain";
-nameFromTile[swamp]    = "swamp";
-nameFromTile[meadow]   = "meadow";
-nameFromTile[forest]   = "forest";
-nameFromTile[taiga]    = "taiga";
+(function attributeNameFromTile() {
+  var i = 0;
+  for (var name in tileTypes) {
+    nameFromTile[i++] = name;
+  }
+});
 
 // Input a tile, output the tile name.
 function tileName(tile) {
   return nameFromTile[tile.type];
 }
 
+
 var tileVegetationTypeFromSteepness = [];
-tileVegetationTypeFromSteepness[water] = swamp;
-tileVegetationTypeFromSteepness[steppe] = meadow;
-tileVegetationTypeFromSteepness[hills] = forest;
-tileVegetationTypeFromSteepness[mountain] = taiga;
+tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
+tileVegetationTypeFromSteepness[tileTypes.steppe]   = tileTypes.meadow;
+tileVegetationTypeFromSteepness[tileTypes.hills]    = tileTypes.forest;
+tileVegetationTypeFromSteepness[tileTypes.mountain] = tileTypes.taiga;
 
 function tileType(steepness, vegetation) {
   if (vegetation) { return tileVegetationTypeFromSteepness[steepness]; }
   else { return steepness; }
 }
-
 
 // (Sparse) Array of array of tiles.
 var memoizedTiles = [];
@@ -110,15 +97,16 @@ function tile(coord) {
     ((riverNoise < -0.99 - (heightNoise * 0.013)
     // Seas are smaller in mountains.
     || heightNoise + seaNoise < -1.3) ?
-        water:
+        tileTypes.water:
     (heightNoise < 0.1) ?
-        steppe:
+        tileTypes.steppe:
     // Mountains are cut off (by hills) to avoid circular mountain formations.
     (heightNoise < 1 - (riverNoise * 0.42)) ?
-        hills:
-        mountain);
+        tileTypes.hills:
+        tileTypes.mountain);
   var vegetation = (vegetationNoise
-      - (steepness === water? 2 * seaNoise: 0)   // Less vegetation on water.
+      // Less vegetation on water.
+      - (steepness === tileTypes.water? 2 * seaNoise: 0)
       + Math.abs(heightNoise + 0.15)) < 0;
 
   var tile = {
@@ -187,14 +175,14 @@ function pixelFromTile(p, px0, size) {
 
 // Movements.
 var distances = [];
-distances[water]    = 2;
-distances[steppe]   = 2;
-distances[hills]    = 4;
-distances[mountain] = 16;
-distances[swamp]    = 3;
-distances[meadow]   = 3;
-distances[forest]   = 8;
-distances[taiga]    = 24;
+distances[tileTypes.water]    = 2;
+distances[tileTypes.steppe]   = 2;
+distances[tileTypes.hills]    = 4;
+distances[tileTypes.mountain] = 16;
+distances[tileTypes.swamp]    = 3;
+distances[tileTypes.meadow]   = 3;
+distances[tileTypes.forest]   = 8;
+distances[tileTypes.taiga]    = 24;
 
 function distance(tpos) {
   var t = tile(tpos);
@@ -254,8 +242,67 @@ function travelFrom(tpos, speed) {
 
 
 
+// Remote connection.
+//
+
+var manufacture = {
+  car: 1,
+  boat: 2,
+  plane: 4,
+  gun: 8
+};
+
+// Data change in humanity information.
+// {q, r}: tile coordinates;
+// {b}: building;
+// {c}: number of humans;
+// {o}: manufactured goods owned;
+var humanityChange = [
+  { q:0, r:0, b:tileTypes.farm, c:3, o: 0 },
+  { q:1, r:5, b:tileTypes.residence, c:1, o: 0 }
+];
+
+var humanityData = [];
+
+// Takes a tile = {q, r}, returns the humanity information for that tile.
+// (See above for humanity information.)
+function humanity(tile) {
+  if (humanityData[tile.q]) { return humanityData[tile.q][tile.r]; }
+}
+
+function changeHumanity(humanity, change) {
+  for (var i = 0; i < change.length; i++) {
+    var q = change[i].q;
+    var r = change[i].r;
+    if (!humanity[q]) { humanity[q] = []; }
+    if (!humanity[q][r]) { humanity[q][r] = []; }
+    humanity[q][r] = {
+      b: change[i].b,
+      c: change[i].c,
+      o: change[i].o
+    };
+  }
+}
+
+// For the purpose of testing…
+changeHumanity(humanityData, humanityChange);
+
+
 // Painting primitives.
 //
+
+// Size of radius of the smallest disk containing the hexagon.
+var hexaSize = 20;
+// Pixel position of the top left screen pixel,
+// compared to the origin of the map.
+var origin = { x0: 0, y0: 0 };
+// Canvas.
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+canvas.width = document.documentElement.clientWidth;
+canvas.height = document.documentElement.clientHeight;
+var imgdata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+var data = imgdata.data;
 
 function loadSprites() {
   var img = new Image();
@@ -375,9 +422,17 @@ function paintTilesSprited(canvas, size, origin) {
     while (cx - hexHorizDistance < width) {
       tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
       var t = tile(tilePos);
+      // Draw terrain.
       ctx.drawImage(sprites,
           0, spritesWidth * t.type, spritesWidth, spritesWidth,
           cx - size, cy - size, size * 2, size * 2);
+      // Draw building.
+      var human = humanity(tilePos);
+      if (human != null) {
+        ctx.drawImage(sprites,
+            0, spritesWidth * human.b, spritesWidth, spritesWidth,
+            cx - size, cy - size, size * 2, size * 2);
+      }
       // Heavy rain makes it darker.
       pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
       var grey = Math.floor((-t.rain + 1) / 2 * 127);

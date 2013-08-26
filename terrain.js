@@ -9,35 +9,35 @@ var simplex2 = new SimplexNoise(prng.random.bind(prng));
 var factor = 50;
 
 // The following are actually constants.
-var water = 0;
-var steppe = 1;
-var hills = 2;
-var mountain = 3;
-var swamp = 4;
-var meadow = 5;
-var forest = 6;
-var taiga = 7;
 var tileTypes = {
-  water: water,
-  steppe: steppe,
-  hills: hills,
-  mountain: mountain,
-  swamp: swamp,
-  meadow: meadow,
-  forest: forest,
-  taiga: taiga
+  water:        0,
+  steppe:       1,
+  hills:        2,
+  mountain:     3,
+  swamp:        4,
+  meadow:       5,
+  forest:       6,
+  taiga:        7,
+  farm:         8,
+  residence:    9,
+  skyscraper:   10,
+  factory:      11,
+  docks:        12,
+  airland:      13,
+  airport:      14,
+  gunsmith:     15,
+  road:         16,
+  wall:         17
 };
 
 // For each altitude level, [plain name, vegetation name].
 var nameFromTile = [];
-nameFromTile[water]    = "water";
-nameFromTile[steppe]   = "steppe";
-nameFromTile[hills]    = "hills";
-nameFromTile[mountain] = "mountain";
-nameFromTile[swamp]    = "swamp";
-nameFromTile[meadow]   = "meadow";
-nameFromTile[forest]   = "forest";
-nameFromTile[taiga]    = "taiga";
+(function attributeNameFromTile() {
+  var i = 0;
+  for (var name in tileTypes) {
+    nameFromTile[i++] = name;
+  }
+});
 
 // Input a tile, output the tile name.
 function tileName(tile) {
@@ -46,10 +46,10 @@ function tileName(tile) {
 
 
 var tileVegetationTypeFromSteepness = [];
-tileVegetationTypeFromSteepness[water] = swamp;
-tileVegetationTypeFromSteepness[steppe] = meadow;
-tileVegetationTypeFromSteepness[hills] = forest;
-tileVegetationTypeFromSteepness[mountain] = taiga;
+tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
+tileVegetationTypeFromSteepness[tileTypes.steppe]   = tileTypes.meadow;
+tileVegetationTypeFromSteepness[tileTypes.hills]    = tileTypes.forest;
+tileVegetationTypeFromSteepness[tileTypes.mountain] = tileTypes.taiga;
 
 function tileType(steepness, vegetation) {
   if (vegetation) { return tileVegetationTypeFromSteepness[steepness]; }
@@ -100,15 +100,16 @@ function tile(coord) {
     ((riverNoise < -0.99 - (heightNoise * 0.013)
     // Seas are smaller in mountains.
     || heightNoise + seaNoise < -1.3) ?
-        water:
+        tileTypes.water:
     (heightNoise < 0.1) ?
-        steppe:
+        tileTypes.steppe:
     // Mountains are cut off (by hills) to avoid circular mountain formations.
     (heightNoise < 1 - (riverNoise * 0.42)) ?
-        hills:
-        mountain);
+        tileTypes.hills:
+        tileTypes.mountain);
   var vegetation = (vegetationNoise
-      - (steepness === water? 2 * seaNoise: 0)   // Less vegetation on water.
+      // Less vegetation on water.
+      - (steepness === tileTypes.water? 2 * seaNoise: 0)
       + Math.abs(heightNoise + 0.15)) < 0;
 
   var tile = {
