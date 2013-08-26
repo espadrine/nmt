@@ -13,7 +13,7 @@
     "test": "make test"
   },
   "dependencies": {
-    "camp": ">=13.4.27",
+    "camp": ">=13.8.24",
     "fleau": ">=13.6.6",
     "simplex-noise": ">=2.1.1"
   },
