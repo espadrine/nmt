@@ -559,7 +559,9 @@ function paintHumans(ctx, size, origin, humanity) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   for (var q in humanity) {
+    q = +q;
     for (var r in humanity[q]) {
+      r = +r;
       var human = humanity[q][r];
       var tilePos = { q:+q, r:+r };
       var centerPixel = pixelFromTile(tilePos, origin, size);
@@ -571,9 +573,10 @@ function paintHumans(ctx, size, origin, humanity) {
       var number = human.h;
       if (number > humanAnimation.length) { number = humanAnimation.length; }
       for (var i = 0; i < number; i++) {
+        var animation = humanAnimation[(i+q+r) % humanAnimation.length];
         ctx.fillStyle = 'black';
-        ctx.fillRect(cx - size/2 + humanAnimation[i].x * size,
-            cy - size/2 + humanAnimation[i].y * size,
+        ctx.fillRect(cx - size/2 + animation.x * size,
+            cy - size/2 + animation.y * size,
             size/20, size/10);
       }
     }
