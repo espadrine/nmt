@@ -255,11 +255,14 @@ var manufacture = {
 // Data change in humanity information.
 // {q, r}: tile coordinates;
 // {b}: building;
-// {c}: number of humans;
+// {h}: number of humans;
+// {c}: camp (territory to which it belongs);
+// {f}: food (how much there is in the group);
 // {o}: manufactured goods owned;
 var humanityChange = [
-  { q:0, r:0, b:tileTypes.farm, c:3, o: 0 },
-  { q:1, r:5, b:tileTypes.residence, c:1, o: 0 }
+  { q:0, r:0, b:tileTypes.farm, h:3, c:1, f:20, o: 0 },
+  { q:1, r:5, b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
+  { q:3, r:4, b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
 ];
 
 var humanityData = [];
@@ -278,7 +281,9 @@ function changeHumanity(humanity, change) {
     if (!humanity[q][r]) { humanity[q][r] = []; }
     humanity[q][r] = {
       b: change[i].b,
+      h: change[i].h,
       c: change[i].c,
+      f: change[i].f,
       o: change[i].o
     };
   }
@@ -301,8 +306,6 @@ var canvas = document.getElementById('c');
 var ctx = canvas.getContext('2d');
 canvas.width = document.documentElement.clientWidth;
 canvas.height = document.documentElement.clientHeight;
-var imgdata = ctx.getImageData(0, 0, canvas.width, canvas.height);
-var data = imgdata.data;
 
 function loadSprites() {
   var img = new Image();
@@ -401,14 +404,36 @@ function paintCurrentTile(ctx, size, origin, tile) {
   ctx.stroke();
 }
 
+function paintTerrain(ctx, size, cx, cy,
+    hexHorizDistance, hexVertDistance, tilePos) {
+  var t = tile(tilePos);
+  // Draw terrain.
+  ctx.drawImage(sprites,
+      0, spritesWidth * t.type, spritesWidth, spritesWidth,
+      cx - size, cy - size, size * 2, size * 2);
+  // Draw building.
+  var human = humanity(tilePos);
+  if (human != null) {
+    ctx.drawImage(sprites,
+        0, spritesWidth * human.b, spritesWidth, spritesWidth,
+        cx - size, cy - size, size * 2, size * 2);
+  }
+  // Heavy rain makes it darker.
+  pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
+  var grey = Math.floor((-t.rain + 1) / 2 * 127);
+  var transparency = (t.rain + 1) / 3;
+  ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ','
+      + transparency + ')';
+  ctx.fill();
+}
+
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
 // compared to the pixel (0, 0) on the map.
-function paintTilesSprited(canvas, size, origin) {
-  var width = canvas.width;
-  var height = canvas.height;
-  var ctx = canvas.getContext('2d');
+function paintTilesSprited(ctx, size, origin) {
+  var width = ctx.canvas.width;
+  var height = ctx.canvas.height;
   // This is a jigsaw. We want the corner tiles of the screen.
   var tilePos = tileFromPixel({ x:0, y:0 }, origin, size);
   var centerPixel = pixelFromTile(tilePos, origin, size);
@@ -421,25 +446,9 @@ function paintTilesSprited(canvas, size, origin) {
   while (cy - hexVertDistance < height) {
     while (cx - hexHorizDistance < width) {
       tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
-      var t = tile(tilePos);
       // Draw terrain.
-      ctx.drawImage(sprites,
-          0, spritesWidth * t.type, spritesWidth, spritesWidth,
-          cx - size, cy - size, size * 2, size * 2);
-      // Draw building.
-      var human = humanity(tilePos);
-      if (human != null) {
-        ctx.drawImage(sprites,
-            0, spritesWidth * human.b, spritesWidth, spritesWidth,
-            cx - size, cy - size, size * 2, size * 2);
-      }
-      // Heavy rain makes it darker.
-      pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
-      var grey = Math.floor((-t.rain + 1) / 2 * 127);
-      var transparency = (t.rain + 1) / 3;
-      ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ','
-          + transparency + ')';
-      ctx.fill();
+      paintTerrain(ctx, size, cx, cy,
+          hexHorizDistance, hexVertDistance, tilePos);
       cx += hexHorizDistance;
     }
     cy += hexVertDistance;
@@ -460,19 +469,21 @@ function paintTilesSprited(canvas, size, origin) {
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
 // compared to the pixel (0, 0) on the map.
-function paintTilesRaw(canvas, size, origin) {
-  var width = canvas.width;
-  var height = canvas.height;
+function paintTilesRaw(ctx, size, origin) {
+  var width = ctx.canvas.width;
+  var height = ctx.canvas.height;
+  var imgdata = ctx.getImageData(0, 0, width, height);
+  var data = imgdata.data;
   for (var y = 0; y < height; y++) {
     for (var x = 0; x < width; x++) {
       var tilePos = tileFromPixel({ x:x, y:y }, origin, size);
       var t = tile(tilePos);
       var color = [180, 0, 0];
-      if (t.steepness == water) {
+      if (t.steepness == tileTypes.water) {
         color = [50, 50, 180];
-      } else if (t.steepness == steppe) {
+      } else if (t.steepness == tileTypes.steppe) {
         color = [0, 180, 0];
-      } else if (t.steepness == hills) {
+      } else if (t.steepness == tileTypes.hills) {
         color = [180, 100, 0];
       }
       // Rainfall
@@ -500,18 +511,79 @@ function paintTilesRaw(canvas, size, origin) {
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
 // compared to the pixel (0, 0) on the map.
-function paint(canvas, size, origin) {
+function paint(ctx, size, origin) {
   if (size < 5) {
     // Special case: we're from too far above, use direct pixel manipulation.
-    paintTilesRaw(canvas, size, origin);
+    paintTilesRaw(ctx, size, origin);
   } else {
-    paintTilesSprited(canvas, size, origin);
+    paintTilesSprited(ctx, size, origin);
     paintAroundTiles(ctx, size, origin, accessibleTiles);
     if (currentTile !== undefined) {
       paintCurrentTile(ctx, size, origin, currentTile);
     }
   }
 }
+
+var humanAnimation = [];
+(function initHumans() {
+  for (var i = 0; i < 10; i++) {
+    // Position is in a square of width 1.
+    humanAnimation[i] = {
+      x: Math.random(),
+      y: Math.random(),
+      targetx: Math.random(),
+      targety: Math.random(),
+      period: (Math.random() * 10 + 3)|0,
+      tick: 0
+    };
+  }
+}());
+
+function updateHumans() {
+  for (var i = 0; i < humanAnimation.length; i++) {
+    var human = humanAnimation[i];
+    human.x += (human.targetx - human.x) / human.period;
+    human.y += (human.targety - human.y) / human.period;
+    human.tick++;
+    if (human.tick > human.period) {
+      // New target.
+      human.targetx = Math.random();
+      human.targety = Math.random();
+      human.tick = 0;
+    }
+  }
+}
+
+// Paint the animation of people moving around.
+function paintHumans(ctx, size, origin, humanity) {
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+  for (var q in humanity) {
+    for (var r in humanity[q]) {
+      var human = humanity[q][r];
+      var tilePos = { q:+q, r:+r };
+      var centerPixel = pixelFromTile(tilePos, origin, size);
+      var cx = centerPixel.x;
+      var cy = centerPixel.y;
+      paintTerrain(ctx, size, cx, cy,
+        hexHorizDistance, hexVertDistance, tilePos);
+      // Paint people.
+      var number = human.h;
+      if (number > humanAnimation.length) { number = humanAnimation.length; }
+      for (var i = 0; i < number; i++) {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(cx - size/2 + humanAnimation[i].x * size,
+            cy - size/2 + humanAnimation[i].y * size,
+            size/20, size/10);
+      }
+    }
+  }
+  updateHumans();
+}
+
+setInterval(function animateHumans() {
+  paintHumans(ctx, hexaSize, origin, humanityData);
+}, 100);
 
 
 
@@ -520,7 +592,7 @@ function paint(canvas, size, origin) {
 //
 
 sprites.onload = function loadingSprites() {
-  paint(canvas, hexaSize, origin);
+  paint(ctx, hexaSize, origin);
 };
 
 window.onkeydown = function keyInputManagement(event) {
@@ -547,7 +619,7 @@ window.onkeydown = function keyInputManagement(event) {
     redraw = true;
   }
   if (redraw) {
-    paint(canvas, hexaSize, origin);
+    paint(ctx, hexaSize, origin);
   }
 };
 
@@ -559,6 +631,6 @@ window.onclick = function mouseInputManagement(event) {
       origin, hexaSize);
   currentTile = startTile;
   accessibleTiles = travelFrom(startTile, 8);
-  paint(canvas, hexaSize, origin);
+  paint(ctx, hexaSize, origin);
 };
 
