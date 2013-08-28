@@ -260,9 +260,23 @@ var manufacture = {
 // {f}: food (how much there is in the group);
 // {o}: manufactured goods owned;
 var humanityChange = [
+  { q:24, r:15, b:null, h:5, c:1, f:20, o: 0 },
   { q:0, r:0, b:tileTypes.farm, h:3, c:1, f:20, o: 0 },
   { q:1, r:5, b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
-  { q:3, r:4, b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
+  { q:3, r:4, b:tileTypes.residence, h:1, c:1, f:20, o: 0 },
+  { q:3, r:5, b:tileTypes.skyscraper, h:0, c:2, f:20, o: 0 },
+  { q:4, r:5, b:tileTypes.factory, h:0, c:2, f:20, o: 0 },
+  { q:25, r:17, b:tileTypes.docks, h:0, c:2, f:20, o: 0 },
+  { q:6, r:3, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
+  { q:6, r:4, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
+  { q:5, r:4, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
+  { q:5, r:3, b:tileTypes.airport, h:0, c:2, f:20, o: 0 },
+  { q:5, r:10, b:tileTypes.gunsmith, h:0, c:2, f:20, o: 0 },
+  { q:5, r:5, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
+  { q:6, r:5, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
+  { q:5, r:6, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
+  { q:8, r:8, b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
+  { q:8, r:9, b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
 ];
 
 var humanityData = [];
@@ -422,8 +436,13 @@ function paintTerrain(ctx, size, cx, cy,
   pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
   var grey = Math.floor((-t.rain + 1) / 2 * 127);
   var transparency = (t.rain + 1) / 3;
-  ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ','
-      + transparency + ')';
+  if (t.type === tileTypes.water) {
+    ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + (grey-42) + ','
+        + transparency + ')';
+  } else {
+    ctx.fillStyle = 'rgba(' + grey + ',' + (grey+50) + ',' + grey + ','
+        + transparency + ')';
+  }
   ctx.fill();
 }
 
