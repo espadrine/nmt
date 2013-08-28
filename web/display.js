@@ -418,19 +418,26 @@ function paintCurrentTile(ctx, size, origin, tile) {
   ctx.stroke();
 }
 
+function paintSprite(ctx, size, cx, cy, sprite, rotation) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation * Math.PI / 3);
+  ctx.drawImage(sprites,
+      0, spritesWidth * sprite, spritesWidth, spritesWidth,
+      (-size)|0, (-size)|0, size * 2, size * 2);
+  ctx.restore();
+}
+
 function paintTerrain(ctx, size, cx, cy,
     hexHorizDistance, hexVertDistance, tilePos) {
   var t = tile(tilePos);
   // Draw terrain.
-  ctx.drawImage(sprites,
-      0, spritesWidth * t.type, spritesWidth, spritesWidth,
-      (cx - size)|0, (cy - size)|0, size * 2, size * 2);
+  var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
+  paintSprite(ctx, size, cx, cy, t.type, rotation);
   // Draw building.
   var human = humanity(tilePos);
-  if (human != null) {
-    ctx.drawImage(sprites,
-        0, spritesWidth * human.b, spritesWidth, spritesWidth,
-        cx - size, cy - size, size * 2, size * 2);
+  if (human != null && human.b != null) {
+    paintSprite(ctx, size, cx, cy, human.b, rotation);
   }
   // Heavy rain makes it darker.
   pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
