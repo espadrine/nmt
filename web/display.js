@@ -340,8 +340,8 @@ function pathFromTiles(ctx, size, origin, tiles,
 function partialPathFromHex(ctx, size, cp, mask,
                             hexHorizDistance, hexVertDistance) {
   mask = mask|0;
-  var cx = cp.x;
-  var cy = cp.y;
+  var cx = cp.x|0;
+  var cy = cp.y|0;
   ctx.moveTo(cx, cy - size);    // top
   if ((mask & 4) === 0) {
     ctx.lineTo(cx - hexHorizDistance/2, cy - size/2); // top left
@@ -410,7 +410,7 @@ function paintTerrain(ctx, size, cx, cy,
   // Draw terrain.
   ctx.drawImage(sprites,
       0, spritesWidth * t.type, spritesWidth, spritesWidth,
-      (cx - size), (cy - size), size * 2, size * 2);
+      (cx - size)|0, (cy - size)|0, size * 2, size * 2);
   // Draw building.
   var human = humanity(tilePos);
   if (human != null) {
