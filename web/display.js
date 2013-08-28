@@ -410,7 +410,7 @@ function paintTerrain(ctx, size, cx, cy,
   // Draw terrain.
   ctx.drawImage(sprites,
       0, spritesWidth * t.type, spritesWidth, spritesWidth,
-      cx - size, cy - size, size * 2, size * 2);
+      (cx - size), (cy - size), size * 2, size * 2);
   // Draw building.
   var human = humanity(tilePos);
   if (human != null) {
@@ -507,6 +507,8 @@ function paintTilesRaw(ctx, size, origin) {
   ctx.putImageData(imgdata, 0, 0);
 }
 
+var cachedPaint;
+
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
@@ -522,6 +524,7 @@ function paint(ctx, size, origin) {
       paintCurrentTile(ctx, size, origin, currentTile);
     }
   }
+  cachedPaint = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
 }
 
 var humanAnimation = [];
@@ -556,6 +559,7 @@ function updateHumans() {
 
 // Paint the animation of people moving around.
 function paintHumans(ctx, size, origin, humanity) {
+  ctx.putImageData(cachedPaint, 0, 0);
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   for (var q in humanity) {
@@ -567,8 +571,6 @@ function paintHumans(ctx, size, origin, humanity) {
       var centerPixel = pixelFromTile(tilePos, origin, size);
       var cx = centerPixel.x;
       var cy = centerPixel.y;
-      paintTerrain(ctx, size, cx, cy,
-        hexHorizDistance, hexVertDistance, tilePos);
       // Paint people.
       var number = human.h;
       if (number > humanAnimation.length) { number = humanAnimation.length; }
