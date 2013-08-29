@@ -489,7 +489,8 @@ function paintTilesSprited(ctx, size, origin) {
   var height = ctx.canvas.height;
   // This is a jigsaw. We want the corner tiles of the screen.
   var tilePos = tileFromPixel({ x:0, y:0 }, origin, size);
-  var centerPixel = pixelFromTile(tilePos, origin, size);
+  var centerPixel = pixelFromTile({ q: tilePos.q, r: tilePos.r-1 },
+    origin, size);
   var cx = centerPixel.x;
   var cy = centerPixel.y;
   var hexHorizDistance = size * Math.sqrt(3);
@@ -656,24 +657,29 @@ sprites.onload = function loadingSprites() {
 window.onkeydown = function keyInputManagement(event) {
   var redraw = false;
   if (event.keyCode === 39) {           // →
-    origin.x0 += canvas.width / 2;
+    origin.x0 += (canvas.width / 2)|0;
     redraw = true;
   } else if (event.keyCode === 38) {    // ↑
-    origin.y0 -= canvas.height / 2;
+    origin.y0 -= (canvas.height / 2)|0;
     redraw = true;
   } else if (event.keyCode === 37) {    // ←
-    origin.x0 -= canvas.width / 2;
+    origin.x0 -= (canvas.width / 2)|0;
     redraw = true;
   } else if (event.keyCode === 40) {    // ↓
-    origin.y0 += canvas.height / 2;
+    origin.y0 += (canvas.height / 2)|0;
     redraw = true;
   } else if (((event.keyCode === 61 || event.keyCode === 187) && event.shiftKey)
            || event.keyCode === 187 || event.keyCode === 61) {  // +=
     hexaSize *= 2;
+    origin.x0 = origin.x0 * 2 + (canvas.width / 2)|0;
+    origin.y0 = origin.y0 * 2 + (canvas.height / 2)|0;
     redraw = true;
   } else if (event.keyCode === 173 || event.keyCode === 189
           || event.keyCode === 109) {   // -
-    hexaSize = Math.ceil(hexaSize / 2);
+    hexaSize = (hexaSize / 2)|0;
+    if (hexaSize === 0) { hexaSize++; }
+    origin.x0 = (origin.x0 / 2 - canvas.width / 4)|0;
+    origin.y0 = (origin.y0 / 2 - canvas.height / 4)|0;
     redraw = true;
   }
   if (redraw) {
