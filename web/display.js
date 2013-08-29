@@ -668,7 +668,7 @@ window.onkeydown = function keyInputManagement(event) {
     origin.y0 += canvas.height / 2;
     redraw = true;
   } else if (((event.keyCode === 61 || event.keyCode === 187) && event.shiftKey)
-          || event.keyCode === 107) {  // +
+           || event.keyCode === 187 || event.keyCode === 61) {  // +=
     hexaSize *= 2;
     redraw = true;
   } else if (event.keyCode === 173 || event.keyCode === 189
