@@ -594,7 +594,7 @@ function paintTilesFromCache(ctx, size, origin) {
   var height = canvas.height;
   // Coordinates of top left screen pixel in top left buffer.
   var x = (origin.x0 % width);
-  if (x < 0) { x =  width + x; }
+  if (x < 0) { x =  width + x; }    // x must be the distance from the right.
   var y = (origin.y0 % height);
   if (y < 0) { y =  height + y; }
   var left   = origin.x0 - x;
@@ -763,7 +763,7 @@ function mouseSelection(event) {
 };
 
 function mouseDrag(event) {
-  // TODO: add the correct mouse cursor.
+  canvas.style.cursor = 'move';
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
   canvas.addEventListener('mouseup', mouseEndDrag);
@@ -773,6 +773,7 @@ function mouseDrag(event) {
 }
 
 function mouseEndDrag(event) {
+  canvas.style.cursor = '';
   canvas.removeEventListener('mousemove', dragMap);
   canvas.removeEventListener('mouseup', mouseEndDrag);
   humanAnimationTimeout = setInterval(animateHumans, 100);
@@ -802,3 +803,7 @@ function dragMap(event) {
     drawingWhileDragging = false;
   });
 }
+
+// Prevents Chrome from displaying a silly text cursor
+// while dragging on the canvas.
+canvas.onselectstart = function() { return false; }

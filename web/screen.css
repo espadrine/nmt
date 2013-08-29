@@ -1,5 +1,4 @@
 body { margin: 0; }
-
 canvas#c, canvas#cbuffer {
   position: absolute;
   top: 0;
