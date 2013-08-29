@@ -581,9 +581,10 @@ function paint(ctx, size, origin) {
   cachedPaint = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
 }
 
-var humanAnimation = [];
+var numberOfHumanAnimations = 10;
+var humanAnimation = new Array(numberOfHumanAnimations);
 (function initHumans() {
-  for (var i = 0; i < 10; i++) {
+  for (var i = 0; i < numberOfHumanAnimations; i++) {
     // Position is in a square of width 1.
     humanAnimation[i] = {
       x: Math.random(),
@@ -690,11 +691,40 @@ window.onkeydown = function keyInputManagement(event) {
 var accessibleTiles = [];
 var currentTile;
 
-window.onclick = function mouseInputManagement(event) {
+function mouseSelection(event) {
   var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
       origin, hexaSize);
   currentTile = startTile;
   accessibleTiles = travelFrom(startTile, 8);
   paint(ctx, hexaSize, origin);
+  canvas.removeEventListener('mousemove', mouseDrag);
+  canvas.removeEventListener('mouseup', mouseSelection);
 };
 
+function mouseDrag(event) {
+  canvas.removeEventListener('mousemove', mouseDrag);
+  canvas.removeEventListener('mouseup', mouseSelection);
+  canvas.addEventListener('mouseup', mouseEndDrag);
+  canvas.addEventListener('mousemove', dragMap);
+}
+
+function mouseEndDrag(event) {
+  canvas.removeEventListener('mousemove', dragMap);
+  canvas.removeEventListener('mouseup', mouseEndDrag);
+}
+
+window.onmousedown = function mouseInputManagement(event) {
+  canvas.addEventListener('mouseup', mouseSelection);
+  canvas.addEventListener('mousemove', mouseDrag);
+  lastMousePosition.clientX = event.clientX;
+  lastMousePosition.clientY = event.clientY;
+};
+
+var lastMousePosition = { clientX: 0, clientY: 0 };
+function dragMap(event) {
+  origin.x0 += (lastMousePosition.clientX - event.clientX);
+  origin.y0 += (lastMousePosition.clientY - event.clientY);
+  lastMousePosition.clientX = event.clientX;
+  lastMousePosition.clientY = event.clientY;
+  paint(ctx, hexaSize, origin);
+}
