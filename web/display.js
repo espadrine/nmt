@@ -272,11 +272,13 @@ var humanityChange = [
   { q:5, r:4, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
   { q:5, r:3, b:tileTypes.airport, h:0, c:2, f:20, o: 0 },
   { q:5, r:10, b:tileTypes.gunsmith, h:0, c:2, f:20, o: 0 },
+  { q:4, r:6, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
   { q:5, r:5, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
   { q:6, r:5, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
-  { q:5, r:6, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
+  { q:7, r:5, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
   { q:8, r:8, b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
   { q:8, r:9, b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
+  { q:9, r:7, b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
 ];
 
 var humanityData = [];
@@ -418,16 +420,44 @@ function paintCurrentTile(ctx, size, origin, tile) {
   ctx.stroke();
 }
 
+// tilePos = {q, r} is the tile's hexagonal coordinates,
+// cx and cy are the hexagon's center pixel coordinates on the screen,
+// rotation = {0…5} is the orientation where to orient the sprite.
 function paintSprite(ctx, size, cx, cy, sprite, rotation) {
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate(rotation * Math.PI / 3);
+  ctx.rotate(-rotation * Math.PI / 3);
   ctx.drawImage(sprites,
       0, spritesWidth * sprite, spritesWidth, spritesWidth,
       (-size)|0, (-size)|0, size * 2, size * 2);
   ctx.restore();
 }
 
+// tilePos = {q, r} is the tile's hexagonal coordinates,
+// cx and cy are the hexagon's center pixel coordinates on the screen,
+// rotation = {0…5} is the orientation where to orient the building.
+function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
+  var human = humanity(tilePos);
+  if (human != null && human.b != null) {
+    if (human.b === tileTypes.road || human.b === tileTypes.wall) {
+      // Orient roads along other roads, walls against walls.
+      var oriented = false;
+      for (var i = 0; i < 6; i++) {
+        var neighbor = humanity(neighborFromTile(tilePos, i));
+        if (neighbor && neighbor.b === human.b) {
+          paintSprite(ctx, size, cx, cy, human.b, i);
+          oriented = true;
+        }
+      }
+      if (!oriented) { paintSprite(ctx, size, cx, cy, human.b, 0); }
+    } else {
+      paintSprite(ctx, size, cx, cy, human.b, rotation);
+    }
+  }
+}
+
+// tilePos = {q, r} is the tile's hexagonal coordinates,
+// cx and cy are the hexagon's center pixel coordinates on the screen.
 function paintTerrain(ctx, size, cx, cy,
     hexHorizDistance, hexVertDistance, tilePos) {
   var t = tile(tilePos);
@@ -435,10 +465,7 @@ function paintTerrain(ctx, size, cx, cy,
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
   paintSprite(ctx, size, cx, cy, t.type, rotation);
   // Draw building.
-  var human = humanity(tilePos);
-  if (human != null && human.b != null) {
-    paintSprite(ctx, size, cx, cy, human.b, rotation);
-  }
+  paintBuilding(ctx, size, cx, cy, tilePos, rotation);
   // Heavy rain makes it darker.
   pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
   var grey = Math.floor((-t.rain + 1) / 2 * 127);
