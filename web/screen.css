@@ -1,16 +1,14 @@
 body { margin: 0; }
 
-canvas#c {
+canvas#c, canvas#cbuffer {
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
 }
+canvas#cbuffer { display: none; }
 
-div#controller {
-  position: absolute;
-  z-index: 1;
-}
+div#controller { position: absolute; z-index: 1; }
 div#controller > svg { width: 50px; height: 50px; }
 div#controller > svg > path { cursor: pointer; }
 path.hex { stroke: white; stroke-width: 1.8px; }

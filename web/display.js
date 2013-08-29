@@ -322,6 +322,10 @@ var canvas = document.getElementById('c');
 var ctx = canvas.getContext('2d');
 canvas.width = document.documentElement.clientWidth;
 canvas.height = document.documentElement.clientHeight;
+var canvasBuffer = document.getElementById('cbuffer');
+var ctxBuffer = canvasBuffer.getContext('2d');
+canvasBuffer.width = document.documentElement.clientWidth;
+canvasBuffer.height = document.documentElement.clientHeight;
 
 function loadSprites() {
   var img = new Image();
@@ -561,25 +565,73 @@ function paintTilesRaw(ctx, size, origin) {
   ctx.putImageData(imgdata, 0, 0);
 }
 
-var cachedPaint;
+function paintTiles(ctx, size, origin) {
+  if (size < 5) {
+    // Special case: we're from too far above, use direct pixel manipulation.
+    paintTilesRaw(ctx, size, origin);
+  } else {
+    paintTilesSprited(ctx, size, origin);
+  }
+}
+
+// Cached paint reference is centered on the map origin.
+var cachedPaint = {};
+function getCachedPaint(size, origin, cacheX, cacheY) {
+  var cache = cachedPaint[cacheX + ':' + cacheY];
+  if (cache === undefined) {
+    paintTiles(ctxBuffer, size, { x0: cacheX, y0: cacheY });
+    cache = cachedPaint[cacheX + ':' + cacheY]
+          = ctxBuffer.getImageData(0, 0,
+              ctxBuffer.canvas.width, ctxBuffer.canvas.height);
+  }
+  return cache;
+}
+
+function paintTilesFromCache(ctx, size, origin) {
+  // We assume that the window width does not change.
+  // We can have up to 4 caches to draw.
+  var width = canvas.width;
+  var height = canvas.height;
+  // Coordinates of top left screen pixel in top left buffer.
+  var x = (origin.x0 % width);
+  if (x < 0) { x =  width + x; }
+  var y = (origin.y0 % height);
+  if (y < 0) { y =  height + y; }
+  var left   = origin.x0 - x;
+  var right  = origin.x0 + width - x;
+  var top    = origin.y0 - y;
+  var bottom = origin.y0 + height - y;
+  ctx.putImageData(getCachedPaint(size, origin, left, top), -x, -y,
+      x, y, width - x, height - y);
+  ctx.putImageData(getCachedPaint(size, origin, right, top), width - x, -y,
+      0, y, x, height - y);
+  ctx.putImageData(getCachedPaint(size, origin, left, bottom), -x, height - y,
+      x, 0, width - x, y);
+  ctx.putImageData(getCachedPaint(size, origin, right, bottom), width - x, height - y,
+      0, 0, x, y);
+}
+
+// Pixels currently on display. Useful for smooth animations.
+var displayedPaint;
 
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
 // compared to the pixel (0, 0) on the map.
 function paint(ctx, size, origin) {
-  if (size < 5) {
-    // Special case: we're from too far above, use direct pixel manipulation.
-    paintTilesRaw(ctx, size, origin);
-  } else {
-    paintTilesSprited(ctx, size, origin);
+  paintTilesFromCache(ctx, size, origin);
+  if (!currentlyDragging) {
     paintAroundTiles(ctx, size, origin, accessibleTiles);
     if (currentTile !== undefined) {
       paintCurrentTile(ctx, size, origin, currentTile);
     }
+    displayedPaint = ctx.getImageData(0, 0,
+        ctx.canvas.width, ctx.canvas.height);
   }
-  cachedPaint = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
 }
+
+
+// Animations.
 
 var numberOfHumanAnimations = 10;
 var humanAnimation = new Array(numberOfHumanAnimations);
@@ -614,7 +666,7 @@ function updateHumans() {
 
 // Paint the animation of people moving around.
 function paintHumans(ctx, size, origin, humanity) {
-  ctx.putImageData(cachedPaint, 0, 0);
+  ctx.putImageData(displayedPaint, 0, 0);
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   for (var q in humanity) {
@@ -641,9 +693,10 @@ function paintHumans(ctx, size, origin, humanity) {
   updateHumans();
 }
 
-setInterval(function animateHumans() {
+function animateHumans() {
   paintHumans(ctx, hexaSize, origin, humanityData);
-}, 100);
+}
+var humanAnimationTimeout = setInterval(animateHumans, 100);
 
 
 
@@ -656,6 +709,7 @@ sprites.onload = function loadingSprites() {
 };
 
 window.onkeydown = function keyInputManagement(event) {
+  var voidCache = false;
   var redraw = false;
   if (event.keyCode === 39) {           // →
     origin.x0 += (canvas.width / 2)|0;
@@ -671,17 +725,24 @@ window.onkeydown = function keyInputManagement(event) {
     redraw = true;
   } else if (((event.keyCode === 61 || event.keyCode === 187) && event.shiftKey)
            || event.keyCode === 187 || event.keyCode === 61) {  // +=
+    // Zoom.
     hexaSize *= 2;
     origin.x0 = origin.x0 * 2 + (canvas.width / 2)|0;
     origin.y0 = origin.y0 * 2 + (canvas.height / 2)|0;
+    voidCache = true;
     redraw = true;
   } else if (event.keyCode === 173 || event.keyCode === 189
           || event.keyCode === 109) {   // -
+    // Unzoom.
     hexaSize = (hexaSize / 2)|0;
     if (hexaSize === 0) { hexaSize++; }
     origin.x0 = (origin.x0 / 2 - canvas.width / 4)|0;
     origin.y0 = (origin.y0 / 2 - canvas.height / 4)|0;
+    voidCache = true;
     redraw = true;
+  }
+  if (voidCache) {
+    cachedPaint = {};
   }
   if (redraw) {
     paint(ctx, hexaSize, origin);
@@ -702,15 +763,21 @@ function mouseSelection(event) {
 };
 
 function mouseDrag(event) {
+  // TODO: add the correct mouse cursor.
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
   canvas.addEventListener('mouseup', mouseEndDrag);
   canvas.addEventListener('mousemove', dragMap);
+  clearInterval(humanAnimationTimeout);
+  currentlyDragging = true;
 }
 
 function mouseEndDrag(event) {
   canvas.removeEventListener('mousemove', dragMap);
   canvas.removeEventListener('mouseup', mouseEndDrag);
+  humanAnimationTimeout = setInterval(animateHumans, 100);
+  currentlyDragging = false;
+  paint(ctx, hexaSize, origin);
 }
 
 window.onmousedown = function mouseInputManagement(event) {
@@ -721,10 +788,17 @@ window.onmousedown = function mouseInputManagement(event) {
 };
 
 var lastMousePosition = { clientX: 0, clientY: 0 };
+var drawingWhileDragging = false;
+var currentlyDragging = false;
 function dragMap(event) {
+  if (drawingWhileDragging) { return; }
+  drawingWhileDragging = true;
   origin.x0 += (lastMousePosition.clientX - event.clientX);
   origin.y0 += (lastMousePosition.clientY - event.clientY);
   lastMousePosition.clientX = event.clientX;
   lastMousePosition.clientY = event.clientY;
   paint(ctx, hexaSize, origin);
+  requestAnimationFrame(function() {
+    drawingWhileDragging = false;
+  });
 }
