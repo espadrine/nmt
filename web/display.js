@@ -296,15 +296,15 @@ var humanityChange = [
   { q:24, r:15, b:null, h:5, c:1, f:20, o: 6 },
   { q:0, r:0, b:tileTypes.farm, h:3, c:1, f:20, o: 1 },
   { q:1, r:5, b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
-  { q:3, r:4, b:tileTypes.residence, h:1, c:1, f:20, o: 0 },
+  { q:2, r:6, b:tileTypes.residence, h:1, c:1, f:20, o: 0 },
   { q:8, r:5, b:tileTypes.residence, h:2, c:1, f:20, o: 0 },
   { q:3, r:5, b:tileTypes.skyscraper, h:0, c:2, f:20, o: 0 },
   { q:4, r:5, b:tileTypes.factory, h:0, c:2, f:20, o: 0 },
   { q:25, r:17, b:tileTypes.docks, h:0, c:2, f:20, o: 0 },
-  { q:6, r:3, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
+  { q:5, r:3, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
   { q:6, r:4, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
   { q:5, r:4, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  { q:5, r:3, b:tileTypes.airport, h:0, c:2, f:20, o: 0 },
+  { q:6, r:3, b:tileTypes.airport, h:0, c:2, f:20, o: 0 },
   { q:5, r:10, b:tileTypes.gunsmith, h:0, c:2, f:20, o: 0 },
   { q:4, r:6, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
   { q:5, r:5, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
@@ -480,7 +480,8 @@ function paintSprite(ctx, size, cx, cy, sprite, rotation) {
 function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
   var human = humanity(tilePos);
   if (human != null && human.b != null) {
-    if (human.b === tileTypes.road || human.b === tileTypes.wall) {
+    if (human.b === tileTypes.road || human.b === tileTypes.wall
+        || human.b === tileTypes.airland) {
       // Orient roads along other roads, walls against walls.
       var oriented = false;
       for (var i = 0; i < 6; i++) {
@@ -491,6 +492,8 @@ function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
         }
       }
       if (!oriented) { paintSprite(ctx, size, cx, cy, human.b, 0); }
+    } else if (human.b === tileTypes.airport) {
+      paintSprite(ctx, size, cx, cy, human.b, 0);
     } else {
       paintSprite(ctx, size, cx, cy, human.b, rotation);
     }
