@@ -204,37 +204,44 @@ function neighborFromTile(tile, orientation) {
   }
 }
 
-// Whether `tile` is in the list of tiles `tiles`.
-// `tile` is {q, r}.
-function tileInTiles(tile, tiles) {
-  for (var i = 0; i < tiles.length; i++) {
-    if (tile.q === tiles[i].q && tile.r === tiles[i].r) {
-      return true;
-    }
-  }
-  return false;
+// Return a string key unique to the tile.
+function keyFromTile(tile) { return tile.q + ':' + tile.r; }
+function tileFromKey(key) {
+  var values = key.split(':');
+  return { q: +values[0], r: +values[1] };
 }
 
 // Find the set of tiles one can move to, from a starter tile.
 // `tpos` is a {q, r} tile position.
+// Returns a map from tile keys (see keyFromTile) to truthy values.
 function travelFrom(tpos, speed) {
-  var walkedTiles = [];
-  var consideredTiles = [tpos]; // We consider the tile we're on.
-  var walkedDistance = [0];     // On that tile, we haven't walked at all.
-  // Going through each considered tile; `ti` means tile index.
-  for (var ti = 0; ti < consideredTiles.length; ti++) {
-    // Going through each neighbor.
-    for (var i = 0; i < 6; i++) {
-      var neighbor = neighborFromTile(consideredTiles[ti], i);
-      var newDistance = walkedDistance[ti] + distance(neighbor);
-      if (!tileInTiles(neighbor, walkedTiles)
-          && !tileInTiles(neighbor, consideredTiles)
-          && (newDistance <= speed)) {
-        consideredTiles.push(neighbor);
-        walkedDistance.push(newDistance);
+  var walkedTiles = {};     // Valid accessible tiles.
+  var consideredTiles = {}; // Map from tiles to distance walked.
+  consideredTiles[keyFromTile(tpos)] = 0;
+  var nConsideredTiles = 1; // Number of considered tiles.
+  // Going through each considered tile.
+  while (nConsideredTiles > 0) {
+    for (var tileKey in consideredTiles) {
+      for (var i = 0; i < 6; i++) {
+        var neighbor = neighborFromTile(tileFromKey(tileKey), i);
+        var newDistance = consideredTiles[tileKey] + distance(neighbor);
+        if (newDistance <= speed) {
+          var neighborKey = keyFromTile(neighbor);
+          if (consideredTiles[neighborKey] !== undefined) {
+            if (consideredTiles[neighborKey] > newDistance) {
+              // We have a better path to this tile.
+              consideredTiles[neighborKey] = newDistance;
+            }
+          } else if (walkedTiles[neighborKey] === undefined) {
+            consideredTiles[neighborKey] = newDistance;
+            nConsideredTiles++;
+          }
+        }
       }
+      walkedTiles[tileKey] = true;
+      delete consideredTiles[tileKey];
+      nConsideredTiles--;
     }
-    walkedTiles.push(consideredTiles[ti]);
   }
   return walkedTiles;
 }
@@ -333,21 +340,23 @@ function loadSprites() {
   return img;
 }
 var sprites = loadSprites();
-var spritesWidth = hexaSize * 2;  // Each element of the sprite is 20px squared.
+var spritesWidth = hexaSize * 2;  // Each element of the sprite is 2x20px.
 
 // Given a set of tiles {q, r} representing hexagon coordinates,
 // construct the path around those hexagons.
 function pathFromTiles(ctx, size, origin, tiles,
                        hexHorizDistance, hexVertDistance) {
   ctx.beginPath();
-  for (var i = 0; i < tiles.length; i++) {
-    var cp = pixelFromTile(tiles[i], origin, size);
+  for (var tileKey in tiles) {
+    var tile = tileFromKey(tileKey);
+    var cp = pixelFromTile(tile, origin, size);
     var cx = cp.x;
     var cy = cp.y;
     var mask = 0|0;
     for (var f = 0; f < 6; f++) {
       // For each, face, set the mask.
-      mask |= ((tileInTiles(neighborFromTile(tiles[i], f), tiles)|0) << f);
+      var neighbor = neighborFromTile(tile, f);
+      mask |= (((tiles[keyFromTile(neighbor)] !== undefined)|0) << f);
     }
     partialPathFromHex(ctx, size, cp, mask, hexHorizDistance, hexVertDistance);
   }
@@ -404,7 +413,8 @@ function pathFromHex(ctx, size, cp,
 }
 
 // Paint a white line around `tiles`
-// (a list of {q, r} representing the coordinates of a hexagon).
+// (a map from tile keys (see keyFromTile) representing the coordinates of a
+// hexagon, to a truthy value).
 // Requires a canvas context `ctx` and the size of a hexagon
 // (ie, the radius of the smallest disk containing the hexagon).
 function paintAroundTiles(ctx, size, origin, tiles) {
@@ -749,7 +759,7 @@ window.onkeydown = function keyInputManagement(event) {
   }
 };
 
-var accessibleTiles = [];
+var accessibleTiles;
 var currentTile;
 
 function mouseSelection(event) {
