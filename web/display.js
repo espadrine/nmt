@@ -252,7 +252,7 @@ function travelFrom(tpos, speed) {
 
 function humanTravel(tpos) {
   var h = humanity(tpos);
-  if (!h) { return {}; }
+  if (!h || h.h <= 0) { return {}; }
   var normalWater = distances[tileTypes.water];
   if ((h.o & manufacture.boat) !== 0) {
     distances[tileTypes.water] = 1;
@@ -827,6 +827,13 @@ window.onmousedown = function mouseInputManagement(event) {
   lastMousePosition.clientX = event.clientX;
   lastMousePosition.clientY = event.clientY;
 };
+
+(function() {
+  var requestAnimationFrame = window.requestAnimationFrame ||
+  window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame ||
+  window.msRequestAnimationFrame || function(f) { setTimeout(f, 0) };
+  window.requestAnimationFrame = requestAnimationFrame;
+}());
 
 var lastMousePosition = { clientX: 0, clientY: 0 };
 var drawingWhileDragging = false;
