@@ -286,57 +286,45 @@ function speedFromHuman(human) {
 }
 
 // Data change in humanity information.
-// {q, r}: tile coordinates;
+// tileKey (string 'q:r'): tile coordinates;
 // {b}: building;
 // {h}: number of humans;
 // {c}: camp (territory to which it belongs);
 // {f}: food (how much there is in the group);
 // {o}: manufactured goods owned;
-var humanityChange = [
-  { q:24, r:15, b:null, h:5, c:1, f:20, o: 6 },
-  { q:0, r:0, b:tileTypes.farm, h:3, c:1, f:20, o: 1 },
-  { q:1, r:5, b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
-  { q:2, r:6, b:tileTypes.residence, h:1, c:1, f:20, o: 0 },
-  { q:8, r:5, b:tileTypes.residence, h:2, c:1, f:20, o: 0 },
-  { q:3, r:5, b:tileTypes.skyscraper, h:0, c:2, f:20, o: 0 },
-  { q:4, r:5, b:tileTypes.factory, h:0, c:2, f:20, o: 0 },
-  { q:25, r:17, b:tileTypes.docks, h:0, c:2, f:20, o: 0 },
-  { q:5, r:3, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  { q:6, r:4, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  { q:5, r:4, b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  { q:6, r:3, b:tileTypes.airport, h:0, c:2, f:20, o: 0 },
-  { q:5, r:10, b:tileTypes.gunsmith, h:0, c:2, f:20, o: 0 },
-  { q:4, r:6, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
-  { q:5, r:5, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
-  { q:6, r:5, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
-  { q:7, r:5, b:tileTypes.road, h:0, c:2, f:20, o: 0 },
-  { q:8, r:8, b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
-  { q:8, r:9, b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
-  { q:9, r:7, b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
-];
+var humanityChange = {
+  '24:15': { b:null, h:5, c:1, f:20, o: 6 },
+  '0:0': { b:tileTypes.farm, h:3, c:1, f:20, o: 1 },
+  '1:5': { b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
+  '2:6': { b:tileTypes.residence, h:1, c:1, f:20, o: 0 },
+  '8:5': { b:tileTypes.residence, h:2, c:1, f:20, o: 0 },
+  '3:5': { b:tileTypes.skyscraper, h:0, c:2, f:20, o: 0 },
+  '4:5': { b:tileTypes.factory, h:0, c:2, f:20, o: 0 },
+  '25:17': { b:tileTypes.docks, h:0, c:2, f:20, o: 0 },
+  '5:3': { b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
+  '6:4': { b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
+  '5:4': { b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
+  '6:3': { b:tileTypes.airport, h:0, c:2, f:20, o: 0 },
+  '5:10': { b:tileTypes.gunsmith, h:0, c:2, f:20, o: 0 },
+  '4:6': { b:tileTypes.road, h:0, c:2, f:20, o: 0 },
+  '5:5': { b:tileTypes.road, h:0, c:2, f:20, o: 0 },
+  '6:5': { b:tileTypes.road, h:0, c:2, f:20, o: 0 },
+  '7:5': { b:tileTypes.road, h:0, c:2, f:20, o: 0 },
+  '8:8': { b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
+  '8:9': { b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
+  '9:7': { b:tileTypes.wall, h:0, c:2, f:20, o: 0 }
+};
 
-var humanityData = [];
+var humanityData = {};
 
 // Takes a tile = {q, r}, returns the humanity information for that tile.
 // (See above for humanity information.)
 function humanity(tile) {
-  if (humanityData[tile.q]) { return humanityData[tile.q][tile.r]; }
+  return humanityData[tile.q + ':' + tile.r];
 }
 
-function changeHumanity(humanity, change) {
-  for (var i = 0; i < change.length; i++) {
-    var q = change[i].q;
-    var r = change[i].r;
-    if (!humanity[q]) { humanity[q] = []; }
-    if (!humanity[q][r]) { humanity[q][r] = []; }
-    humanity[q][r] = {
-      b: change[i].b,
-      h: change[i].h,
-      c: change[i].c,
-      f: change[i].f,
-      o: change[i].o
-    };
-  }
+function changeHumanity(humanityData, change) {
+  for (var tileKey in change) { humanityData[tileKey] = change[tileKey]; }
 }
 
 // For the purpose of testing…
@@ -675,7 +663,7 @@ function paint(ctx, size, origin) {
 
 var numberOfHumanAnimations = 10;
 var humanAnimation = new Array(numberOfHumanAnimations);
-(function initHumans() {
+function initHumans() {
   for (var i = 0; i < numberOfHumanAnimations; i++) {
     // Position is in a square of width 1.
     humanAnimation[i] = {
@@ -687,8 +675,10 @@ var humanAnimation = new Array(numberOfHumanAnimations);
       tick: 0
     };
   }
-}());
+}
+initHumans();
 
+// Update animations related to humans. See humanAnimation.
 function updateHumans() {
   for (var i = 0; i < humanAnimation.length; i++) {
     var human = humanAnimation[i];
@@ -705,29 +695,30 @@ function updateHumans() {
 }
 
 // Paint the animation of people moving around.
-function paintHumans(ctx, size, origin, humanity) {
+// ctx is the canvas context, size is the hexagon's outer radius,
+// origin = {x0, y0} is the top left screen pixel position to the map's origin,
+// humanityData is a map from 'q:r' hexagonal coordinates to humanity data.
+function paintHumans(ctx, size, origin, humanityData) {
   ctx.putImageData(displayedPaint, 0, 0);
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
-  for (var q in humanity) {
-    q = +q;
-    for (var r in humanity[q]) {
-      r = +r;
-      var human = humanity[q][r];
-      var tilePos = { q:+q, r:+r };
-      var centerPixel = pixelFromTile(tilePos, origin, size);
-      var cx = centerPixel.x;
-      var cy = centerPixel.y;
-      // Paint people.
-      var number = human.h;
-      if (number > humanAnimation.length) { number = humanAnimation.length; }
-      for (var i = 0; i < number; i++) {
-        var animation = humanAnimation[(i+q+r) % humanAnimation.length];
-        ctx.fillStyle = 'black';
-        ctx.fillRect(cx - size/2 + animation.x * size,
-            cy - size/2 + animation.y * size,
-            size/20, size/10);
-      }
+  for (var tileKey in humanityData) {
+    var tileKeyCoord = tileKey.split(':');
+    var q = +tileKeyCoord[0];
+    var r = +tileKeyCoord[1];
+    var human = humanityData[tileKey];
+    var centerPixel = pixelFromTile({ q:q, r:r }, origin, size);
+    var cx = centerPixel.x;
+    var cy = centerPixel.y;
+    // Paint people.
+    var number = human.h;
+    if (number > humanAnimation.length) { number = humanAnimation.length; }
+    for (var i = 0; i < number; i++) {
+      var animation = humanAnimation[(i+q+r) % humanAnimation.length];
+      ctx.fillStyle = 'black';
+      ctx.fillRect(cx - size/2 + animation.x * size,
+          cy - size/2 + animation.y * size,
+          size/20, size/10);
     }
   }
   updateHumans();
