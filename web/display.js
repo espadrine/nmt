@@ -175,7 +175,7 @@ function pixelFromTile(p, px0, size) {
 
 // Movements.
 var distances = [];
-distances[tileTypes.water]    = 2;
+distances[tileTypes.water]    = 0xbad;
 distances[tileTypes.steppe]   = 2;
 distances[tileTypes.hills]    = 4;
 distances[tileTypes.mountain] = 16;
@@ -183,10 +183,14 @@ distances[tileTypes.swamp]    = 3;
 distances[tileTypes.meadow]   = 3;
 distances[tileTypes.forest]   = 8;
 distances[tileTypes.taiga]    = 24;
+distances[tileTypes.road]     = 1;
+distances[tileTypes.wall]     = 32;
 
 function distance(tpos) {
   var t = tile(tpos);
-  var d = distances[t.type];
+  var h = humanity(tpos);
+  var d = distances[(h && h.b)? h.b: t.type];
+  if (d === undefined) { d = distances[t.type]; }
   return d;
 }
 
@@ -246,6 +250,20 @@ function travelFrom(tpos, speed) {
   return walkedTiles;
 }
 
+function humanTravel(tpos) {
+  var h = humanity(tpos);
+  if (!h) { return {}; }
+  var normalWater = distances[tileTypes.water];
+  if ((h.o & manufacture.boat) !== 0) {
+    distances[tileTypes.water] = 1;
+  } else if ((h.o & manufacture.plane) !== 0) {
+    distances[tileTypes.water] = 2;
+  }
+  var tiles = travelFrom(tpos, speedFromHuman(h));
+  distances[tileTypes.water] = normalWater;
+  return tiles;
+}
+
 
 
 
@@ -254,10 +272,18 @@ function travelFrom(tpos, speed) {
 
 var manufacture = {
   car: 1,
-  boat: 2,
-  plane: 4,
+  plane: 2,
+  boat: 4,
   gun: 8
 };
+
+function speedFromHuman(human) {
+  if ((human.o & manufacture.plane) !== 0) {
+    return 32;
+  } else if ((human.o & manufacture.car) !== 0) {
+    return 16;
+  } else { return 8; }
+}
 
 // Data change in humanity information.
 // {q, r}: tile coordinates;
@@ -267,10 +293,11 @@ var manufacture = {
 // {f}: food (how much there is in the group);
 // {o}: manufactured goods owned;
 var humanityChange = [
-  { q:24, r:15, b:null, h:5, c:1, f:20, o: 0 },
-  { q:0, r:0, b:tileTypes.farm, h:3, c:1, f:20, o: 0 },
+  { q:24, r:15, b:null, h:5, c:1, f:20, o: 6 },
+  { q:0, r:0, b:tileTypes.farm, h:3, c:1, f:20, o: 1 },
   { q:1, r:5, b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
   { q:3, r:4, b:tileTypes.residence, h:1, c:1, f:20, o: 0 },
+  { q:8, r:5, b:tileTypes.residence, h:2, c:1, f:20, o: 0 },
   { q:3, r:5, b:tileTypes.skyscraper, h:0, c:2, f:20, o: 0 },
   { q:4, r:5, b:tileTypes.factory, h:0, c:2, f:20, o: 0 },
   { q:25, r:17, b:tileTypes.docks, h:0, c:2, f:20, o: 0 },
@@ -766,7 +793,7 @@ function mouseSelection(event) {
   var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
       origin, hexaSize);
   currentTile = startTile;
-  accessibleTiles = travelFrom(startTile, 8);
+  accessibleTiles = humanTravel(startTile);
   paint(ctx, hexaSize, origin);
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
