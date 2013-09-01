@@ -815,13 +815,14 @@ function showTileInformation(event) {
   tileInfo.value = info;
 }
 
-canvas.addEventListener('mousemove', showTileInformation);
-
 
 var accessibleTiles;
 var currentTile;
 
 function mouseSelection(event) {
+  // Tile information.
+  showTileInformation(event);
+  // Accessible tiles.
   var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
       origin, hexaSize);
   currentTile = startTile;
@@ -833,7 +834,6 @@ function mouseSelection(event) {
 
 function mouseDrag(event) {
   canvas.style.cursor = 'move';
-  canvas.removeEventListener('mousemove', showTileInformation);
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
   canvas.addEventListener('mouseup', mouseEndDrag);
@@ -846,7 +846,6 @@ function mouseEndDrag(event) {
   canvas.style.cursor = '';
   canvas.removeEventListener('mousemove', dragMap);
   canvas.removeEventListener('mouseup', mouseEndDrag);
-  canvas.addEventListener('mousemove', showTileInformation);
   humanAnimationTimeout = setInterval(animateHumans, 100);
   currentlyDragging = false;
   paint(ctx, hexaSize, origin);
