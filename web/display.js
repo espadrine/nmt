@@ -107,57 +107,6 @@ function terrain(coord) {
   return tile;
 }
 
-// Given real hexagonal coordinates p = {q, r}, round to the nearest integer
-// hexagonal coordinate.
-function intPointFromReal(p) {
-  var x = p.q;
-  var z = p.r;
-  var y = - x - z;
-  var rx = Math.round(x);
-  var ry = Math.round(y);
-  var rz = Math.round(z);
-  var x_err = Math.abs(rx - x);
-  var y_err = Math.abs(ry - y);
-  var z_err = Math.abs(rz - z);
-  if (x_err > y_err && x_err > z_err) {
-    rx = - ry - rz;
-  } else if (y_err > z_err) {
-    ry = - rx - rz;
-  } else {
-    rz = - rx - ry;
-  }
-
-  return {
-    q: rx,
-    r: rz
-  };
-}
-
-
-// Given a point px = {x, y} representing a pixel position on the screen,
-// and given a position px0 = {x0, y0} of the screen on the map,
-// return a point {q, r} of the hexagon on the map.
-// `size` is the radius of the smallest disk containing the hexagon.
-function tileFromPixel(px, px0, size) {
-  var xm = px.x + px0.x0;
-  var ym = px.y + px0.y0;
-  return intPointFromReal({
-    q: (Math.sqrt(3) * xm - ym) / 3 / size,
-    r: 2 * ym / 3 / size
-  });
-}
-
-// Given a point p = {q, r} representing a hexagonal coordinate,
-// and given a position px0 = {x0, y0} of the screen on the map,
-// return a pixel {x, y} of the hexagon's center.
-// `size` is the radius of the smallest disk containing the hexagon.
-function pixelFromTile(p, px0, size) {
-  return {
-    x: (size * Math.sqrt(3) * (p.q + p.r / 2)) - px0.x0,
-    y: (size * 3/2 * p.r) - px0.y0
-  };
-}
-
 // Movements.
 var distances = [];
 distances[tileTypes.water]    = 0xbad;
@@ -318,6 +267,57 @@ changeHumanity(humanityData, humanityChange);
 
 // Painting primitives.
 //
+
+
+// Given real hexagonal coordinates p = {q, r}, round to the nearest integer
+// hexagonal coordinate.
+function intPointFromReal(p) {
+  var x = p.q;
+  var z = p.r;
+  var y = - x - z;
+  var rx = Math.round(x);
+  var ry = Math.round(y);
+  var rz = Math.round(z);
+  var x_err = Math.abs(rx - x);
+  var y_err = Math.abs(ry - y);
+  var z_err = Math.abs(rz - z);
+  if (x_err > y_err && x_err > z_err) {
+    rx = - ry - rz;
+  } else if (y_err > z_err) {
+    ry = - rx - rz;
+  } else {
+    rz = - rx - ry;
+  }
+
+  return {
+    q: rx,
+    r: rz
+  };
+}
+
+// Given a point px = {x, y} representing a pixel position on the screen,
+// and given a position px0 = {x0, y0} of the screen on the map,
+// return a point {q, r} of the hexagon on the map.
+// `size` is the radius of the smallest disk containing the hexagon.
+function tileFromPixel(px, px0, size) {
+  var xm = px.x + px0.x0;
+  var ym = px.y + px0.y0;
+  return intPointFromReal({
+    q: (Math.sqrt(3) * xm - ym) / 3 / size,
+    r: 2 * ym / 3 / size
+  });
+}
+
+// Given a point p = {q, r} representing a hexagonal coordinate,
+// and given a position px0 = {x0, y0} of the screen on the map,
+// return a pixel {x, y} of the hexagon's center.
+// `size` is the radius of the smallest disk containing the hexagon.
+function pixelFromTile(p, px0, size) {
+  return {
+    x: (size * Math.sqrt(3) * (p.q + p.r / 2)) - px0.x0,
+    y: (size * 3/2 * p.r) - px0.y0
+  };
+}
 
 // Size of radius of the smallest disk containing the hexagon.
 var hexaSize = 20;

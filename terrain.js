@@ -12,7 +12,7 @@ var factor = 50;
 var tileTypes = {
   water:        0,
   steppe:       1,
-  hills:        2,
+  hill:        2,
   mountain:     3,
   swamp:        4,
   meadow:       5,
@@ -22,7 +22,7 @@ var tileTypes = {
   residence:    9,
   skyscraper:   10,
   factory:      11,
-  docks:        12,
+  dock:        12,
   airland:      13,
   airport:      14,
   gunsmith:     15,
@@ -30,25 +30,10 @@ var tileTypes = {
   wall:         17
 };
 
-// For each altitude level, [plain name, vegetation name].
-var nameFromTile = [];
-(function attributeNameFromTile() {
-  var i = 0;
-  for (var name in tileTypes) {
-    nameFromTile[i++] = name;
-  }
-});
-
-// Input a tile, output the tile name.
-function tileName(tile) {
-  return nameFromTile[tile.type];
-}
-
-
 var tileVegetationTypeFromSteepness = [];
 tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
 tileVegetationTypeFromSteepness[tileTypes.steppe]   = tileTypes.meadow;
-tileVegetationTypeFromSteepness[tileTypes.hills]    = tileTypes.forest;
+tileVegetationTypeFromSteepness[tileTypes.hill]    = tileTypes.forest;
 tileVegetationTypeFromSteepness[tileTypes.mountain] = tileTypes.taiga;
 
 function tileType(steepness, vegetation) {
@@ -66,7 +51,7 @@ var memoizedTiles = [];
 //  - type: tile type. See `tileTypes`.
 //  - rain: floating point number between -1 and 1, representing how heavy the
 //  rainfall is.
-function tile(coord) {
+function terrain(coord) {
   var q = coord.q;
   var r = coord.r;
   if (memoizedTiles[q] != null && memoizedTiles[q][r] != null) {
@@ -105,7 +90,7 @@ function tile(coord) {
         tileTypes.steppe:
     // Mountains are cut off (by hills) to avoid circular mountain formations.
     (heightNoise < 1 - (riverNoise * 0.42)) ?
-        tileTypes.hills:
+        tileTypes.hill:
         tileTypes.mountain);
   var vegetation = (vegetationNoise
       // Less vegetation on water.
@@ -125,7 +110,117 @@ function tile(coord) {
   return tile;
 }
 
-exports.tile = tile;
-exports.tileType = tileType;
-exports.tileName = tileName;
+// Movements.
+var distances = [];
+distances[tileTypes.water]    = 0xbad;
+distances[tileTypes.steppe]   = 2;
+distances[tileTypes.hill]    = 4;
+distances[tileTypes.mountain] = 16;
+distances[tileTypes.swamp]    = 3;
+distances[tileTypes.meadow]   = 3;
+distances[tileTypes.forest]   = 8;
+distances[tileTypes.taiga]    = 24;
+distances[tileTypes.road]     = 1;
+distances[tileTypes.wall]     = 32;
+
+function distance(tpos) {
+  var t = terrain(tpos);
+  var h = humanity(tpos);
+  var d = distances[(h && h.b)? h.b: t.type];
+  if (d === undefined) { d = distances[t.type]; }
+  return d;
+}
+
+// Find a neighboring tile.
+// `tile` is {q, r}.
+// `orientation` is 0 for right, 1 for top right, and
+// so on counter-clockwise until 5 for bottom right.
+function neighborFromTile(tile, orientation) {
+  if (orientation === 0) { return { q: tile.q + 1, r: tile.r };
+  } else if (orientation === 1) { return { q: tile.q + 1, r: tile.r - 1 };
+  } else if (orientation === 2) { return { q: tile.q, r: tile.r - 1};
+  } else if (orientation === 3) { return { q: tile.q - 1, r: tile.r };
+  } else if (orientation === 4) { return { q: tile.q - 1, r: tile.r + 1 };
+  } else if (orientation === 5) { return { q: tile.q, r: tile.r + 1 };
+  }
+}
+
+// Return a string key unique to the tile.
+function keyFromTile(tile) { return tile.q + ':' + tile.r; }
+function tileFromKey(key) {
+  var values = key.split(':');
+  return { q: +values[0], r: +values[1] };
+}
+
+// Find the set of tiles one can move to, from a starter tile.
+// `tpos` is a {q, r} tile position.
+// Returns a map from tile keys (see keyFromTile) to truthy values.
+function travelFrom(tpos, speed) {
+  var walkedTiles = {};     // Valid accessible tiles.
+  var consideredTiles = {}; // Map from tiles to distance walked.
+  consideredTiles[keyFromTile(tpos)] = 0;
+  var nConsideredTiles = 1; // Number of considered tiles.
+  // Going through each considered tile.
+  while (nConsideredTiles > 0) {
+    for (var tileKey in consideredTiles) {
+      for (var i = 0; i < 6; i++) {
+        var neighbor = neighborFromTile(tileFromKey(tileKey), i);
+        var newDistance = consideredTiles[tileKey] + distance(neighbor);
+        if (newDistance <= speed) {
+          var neighborKey = keyFromTile(neighbor);
+          if (consideredTiles[neighborKey] !== undefined) {
+            if (consideredTiles[neighborKey] > newDistance) {
+              // We have a better path to this tile.
+              consideredTiles[neighborKey] = newDistance;
+            }
+          } else if (walkedTiles[neighborKey] === undefined) {
+            consideredTiles[neighborKey] = newDistance;
+            nConsideredTiles++;
+          }
+        }
+      }
+      walkedTiles[tileKey] = true;
+      delete consideredTiles[tileKey];
+      nConsideredTiles--;
+    }
+  }
+  return walkedTiles;
+}
+
+function humanTravel(tpos) {
+  var h = humanity(tpos);
+  if (!h || h.h <= 0) { return {}; }
+  var normalWater = distances[tileTypes.water];
+  if ((h.o & manufacture.boat) !== 0) {
+    distances[tileTypes.water] = 1;
+  } else if ((h.o & manufacture.plane) !== 0) {
+    distances[tileTypes.water] = 2;
+  }
+  var tiles = travelFrom(tpos, speedFromHuman(h));
+  distances[tileTypes.water] = normalWater;
+  return tiles;
+}
+
+
+
+
+// Remote connection.
+//
+
+var manufacture = {
+  car: 1,
+  plane: 2,
+  boat: 4,
+  gun: 8
+};
+
+function speedFromHuman(human) {
+  if ((human.o & manufacture.plane) !== 0) {
+    return 32;
+  } else if ((human.o & manufacture.car) !== 0) {
+    return 16;
+  } else { return 8; }
+}
+
+exports.terrain = terrain;
 
