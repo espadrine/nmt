@@ -1,4 +1,4 @@
-body { margin: 0; }
+body { margin: 0; font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; }
 canvas#c, canvas#cbuffer {
   position: absolute;
   top: 0;
@@ -6,6 +6,17 @@ canvas#c, canvas#cbuffer {
   right: 0;
 }
 canvas#cbuffer { display: none; }
+output#info {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 4px;
+  opacity: 0.7;
+  font-size: 13px;
+  background: #123456;
+  color: #abcdef;
+  border-top-left-radius: 4px;
+}
 
 div#controller { position: absolute; z-index: 1; }
 div#controller > svg { width: 50px; height: 50px; }

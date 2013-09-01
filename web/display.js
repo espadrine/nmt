@@ -9,7 +9,7 @@ var factor = 50;
 var tileTypes = {
   water:        0,
   steppe:       1,
-  hills:        2,
+  hill:        2,
   mountain:     3,
   swamp:        4,
   meadow:       5,
@@ -19,7 +19,7 @@ var tileTypes = {
   residence:    9,
   skyscraper:   10,
   factory:      11,
-  docks:        12,
+  dock:        12,
   airland:      13,
   airport:      14,
   gunsmith:     15,
@@ -27,25 +27,10 @@ var tileTypes = {
   wall:         17
 };
 
-// For each altitude level, [plain name, vegetation name].
-var nameFromTile = [];
-(function attributeNameFromTile() {
-  var i = 0;
-  for (var name in tileTypes) {
-    nameFromTile[i++] = name;
-  }
-});
-
-// Input a tile, output the tile name.
-function tileName(tile) {
-  return nameFromTile[tile.type];
-}
-
-
 var tileVegetationTypeFromSteepness = [];
 tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
 tileVegetationTypeFromSteepness[tileTypes.steppe]   = tileTypes.meadow;
-tileVegetationTypeFromSteepness[tileTypes.hills]    = tileTypes.forest;
+tileVegetationTypeFromSteepness[tileTypes.hill]    = tileTypes.forest;
 tileVegetationTypeFromSteepness[tileTypes.mountain] = tileTypes.taiga;
 
 function tileType(steepness, vegetation) {
@@ -63,7 +48,7 @@ var memoizedTiles = [];
 //  - type: tile type. See `tileTypes`.
 //  - rain: floating point number between -1 and 1, representing how heavy the
 //  rainfall is.
-function tile(coord) {
+function terrain(coord) {
   var q = coord.q;
   var r = coord.r;
   if (memoizedTiles[q] != null && memoizedTiles[q][r] != null) {
@@ -102,7 +87,7 @@ function tile(coord) {
         tileTypes.steppe:
     // Mountains are cut off (by hills) to avoid circular mountain formations.
     (heightNoise < 1 - (riverNoise * 0.42)) ?
-        tileTypes.hills:
+        tileTypes.hill:
         tileTypes.mountain);
   var vegetation = (vegetationNoise
       // Less vegetation on water.
@@ -177,7 +162,7 @@ function pixelFromTile(p, px0, size) {
 var distances = [];
 distances[tileTypes.water]    = 0xbad;
 distances[tileTypes.steppe]   = 2;
-distances[tileTypes.hills]    = 4;
+distances[tileTypes.hill]    = 4;
 distances[tileTypes.mountain] = 16;
 distances[tileTypes.swamp]    = 3;
 distances[tileTypes.meadow]   = 3;
@@ -187,7 +172,7 @@ distances[tileTypes.road]     = 1;
 distances[tileTypes.wall]     = 32;
 
 function distance(tpos) {
-  var t = tile(tpos);
+  var t = terrain(tpos);
   var h = humanity(tpos);
   var d = distances[(h && h.b)? h.b: t.type];
   if (d === undefined) { d = distances[t.type]; }
@@ -300,7 +285,7 @@ var humanityChange = {
   '8:5': { b:tileTypes.residence, h:2, c:1, f:20, o: 0 },
   '3:5': { b:tileTypes.skyscraper, h:0, c:2, f:20, o: 0 },
   '4:5': { b:tileTypes.factory, h:0, c:2, f:20, o: 0 },
-  '25:17': { b:tileTypes.docks, h:0, c:2, f:20, o: 0 },
+  '25:17': { b:tileTypes.dock, h:0, c:2, f:20, o: 0 },
   '5:3': { b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
   '6:4': { b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
   '5:4': { b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
@@ -492,7 +477,7 @@ function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
 // cx and cy are the hexagon's center pixel coordinates on the screen.
 function paintTerrain(ctx, size, cx, cy,
     hexHorizDistance, hexVertDistance, tilePos) {
-  var t = tile(tilePos);
+  var t = terrain(tilePos);
   // Draw terrain.
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
   paintSprite(ctx, size, cx, cy, t.type, rotation);
@@ -563,13 +548,13 @@ function paintTilesRaw(ctx, size, origin) {
   for (var y = 0; y < height; y++) {
     for (var x = 0; x < width; x++) {
       var tilePos = tileFromPixel({ x:x, y:y }, origin, size);
-      var t = tile(tilePos);
+      var t = terrain(tilePos);
       var color = [180, 0, 0];
       if (t.steepness == tileTypes.water) {
         color = [50, 50, 180];
       } else if (t.steepness == tileTypes.steppe) {
         color = [0, 180, 0];
-      } else if (t.steepness == tileTypes.hills) {
+      } else if (t.steepness == tileTypes.hill) {
         color = [180, 100, 0];
       }
       // Rainfall
@@ -780,6 +765,59 @@ window.onkeydown = function keyInputManagement(event) {
   }
 };
 
+function attributeNameFromTile() {
+  var nameFromTile = [];
+  var i = 0;
+  for (var name in tileTypes) {
+    nameFromTile[i++] = name;
+  }
+  return nameFromTile;
+}
+// A map from tile type to their names.
+var tileNames = attributeNameFromTile();
+
+var tileInfo = document.getElementById('info');
+
+// For a mouse event, give the information of the tile under the cursor.
+function showTileInformation(event) {
+  var tile = tileFromPixel({ x: event.clientX, y: event.clientY },
+      origin, hexaSize);
+  var t = terrain(tile);
+  var info = 'a ' + tileNames[t.type];
+  var h = humanity(tile);
+  if (h != null) {
+    if (h.b != null) {
+      info = (tileNames[h.b][0] === 'a'? 'an ': 'a ') + tileNames[h.b]
+        + ' built in ' + info;
+    }
+    if (h.h > 0) {
+      var ownership = '';
+      if ((h.o & manufacture.gun) !== 0) {
+        ownership += 'with guns ';
+      }
+      var usedLocomotion = false;
+      if ((h.o & manufacture.plane) !== 0) {
+        ownership = 'on a plane ';
+        usedLocomotion = true;
+      }
+      if ((h.o & manufacture.boat) !== 0) {
+        ownership += ((t.type === tileTypes.water && !usedLocomotion)?
+            (usedLocomotion = true, 'in'): 'with')
+          + ' a boat ';
+      }
+      if ((h.o & manufacture.car) !== 0) {
+        ownership = (usedLocomotion? 'with': 'in') + ' a car ';
+      }
+      info = h.h + ' person' + (h.h === 1? '': 's') + ' '
+        + ownership + 'in ' + info;
+    }
+  }
+  tileInfo.value = info;
+}
+
+canvas.addEventListener('mousemove', showTileInformation);
+
+
 var accessibleTiles;
 var currentTile;
 
@@ -795,6 +833,7 @@ function mouseSelection(event) {
 
 function mouseDrag(event) {
   canvas.style.cursor = 'move';
+  canvas.removeEventListener('mousemove', showTileInformation);
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
   canvas.addEventListener('mouseup', mouseEndDrag);
@@ -807,6 +846,7 @@ function mouseEndDrag(event) {
   canvas.style.cursor = '';
   canvas.removeEventListener('mousemove', dragMap);
   canvas.removeEventListener('mouseup', mouseEndDrag);
+  canvas.addEventListener('mousemove', showTileInformation);
   humanAnimationTimeout = setInterval(animateHumans, 100);
   currentlyDragging = false;
   paint(ctx, hexaSize, origin);
