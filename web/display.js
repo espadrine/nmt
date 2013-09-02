@@ -150,11 +150,11 @@ function tileFromKey(key) {
 }
 
 // Find the set of tiles one can move to, from a starter tile.
-// `tpos` is a {q, r} tile position.
+// `tpos` is a {q, r} tile position. (It's Dijkstra.)
 // Returns a map from tile keys (see keyFromTile) to truthy values.
 function travelFrom(tpos, speed) {
   var walkedTiles = {};     // Valid accessible tiles.
-  var consideredTiles = {}; // Map from tiles to distance walked.
+  var consideredTiles = {}; // Map from tile keys to distance walked.
   consideredTiles[keyFromTile(tpos)] = 0;
   var nConsideredTiles = 1; // Number of considered tiles.
   // Going through each considered tile.
@@ -166,7 +166,7 @@ function travelFrom(tpos, speed) {
         if (newDistance <= speed) {
           var neighborKey = keyFromTile(neighbor);
           if (consideredTiles[neighborKey] !== undefined) {
-            if (consideredTiles[neighborKey] > newDistance) {
+            if (newDistance < consideredTiles[neighborKey]) {
               // We have a better path to this tile.
               consideredTiles[neighborKey] = newDistance;
             }
@@ -184,6 +184,62 @@ function travelFrom(tpos, speed) {
   return walkedTiles;
 }
 
+// Find the path from tstart = {q, r} to tend = {q, r}
+// with a minimal distance, at a certain speed. (It's A*.)
+function travelTo(tstart, tend, speed) {
+  var endKey = keyFromTile(tend);
+  var walkedTiles = {};     // Valid accessed tiles.
+  var consideredTiles = {}; // Map from tile keys to distance walked.
+  var fastest = [];         // List of tile keys from fastest to slowest.
+  var parents = {};         // Map from tile keys to parent tile keys.
+  var current = keyFromTile(tstart);
+  consideredTiles[current] = 0;
+  fastest.push(current);
+  // Going through each considered tile.
+  while (fastest.length > 0 && endKey !== current) {
+    current = fastest.shift();
+    walkedTiles[current] = true;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tileFromKey(current), i);
+      var newDistance = consideredTiles[current] + distance(neighbor);
+      if (newDistance <= speed) {
+        var neighborKey = keyFromTile(neighbor);
+        if (consideredTiles[neighborKey] !== undefined) {
+          if (newDistance < consideredTiles[neighborKey]) {
+            // We have a better path to this tile.
+            delete consideredTiles[neighborKey];
+          }
+        } else if (walkedTiles[neighborKey] === undefined) {
+          consideredTiles[neighborKey] = newDistance;
+          var insertionIndex = -1;
+          for (var k = 0; k < fastest.length; k++) {
+            if (consideredTiles[fastest[k]] === undefined) {
+              fastest.splice(k, 1);  // Has been removed before.
+              k--;
+              continue;
+            }
+            if (newDistance <= consideredTiles[fastest[k]]) {
+              insertionIndex = k;
+              break;
+            }
+          }
+          if (insertionIndex === -1) { fastest.push(neighborKey); }
+          else { fastest.splice(insertionIndex, 0, neighborKey); }
+          parents[neighborKey] = current;
+        }
+      }
+    }
+  }
+  var path = [];
+  if (endKey !== current) { return path; }  // No dice. ☹
+  while (parents[endKey] !== undefined) {
+    path.push(endKey);
+    endKey = parents[endKey];
+  }
+  path.push(keyFromTile(tstart));
+  return path.reverse();
+}
+
 function humanTravel(tpos) {
   var h = humanity(tpos);
   if (!h || h.h <= 0) { return {}; }
@@ -194,6 +250,20 @@ function humanTravel(tpos) {
     distances[tileTypes.water] = 2;
   }
   var tiles = travelFrom(tpos, speedFromHuman(h));
+  distances[tileTypes.water] = normalWater;
+  return tiles;
+}
+
+function humanTravelTo(tpos, tend) {
+  var h = humanity(tpos);
+  if (!h || h.h <= 0) { return {}; }
+  var normalWater = distances[tileTypes.water];
+  if ((h.o & manufacture.boat) !== 0) {
+    distances[tileTypes.water] = 1;
+  } else if ((h.o & manufacture.plane) !== 0) {
+    distances[tileTypes.water] = 2;
+  }
+  var tiles = travelTo(tpos, tend, speedFromHuman(h));
   distances[tileTypes.water] = normalWater;
   return tiles;
 }
@@ -341,6 +411,32 @@ function loadSprites() {
 }
 var sprites = loadSprites();
 var spritesWidth = hexaSize * 2;  // Each element of the sprite is 2x20px.
+
+// Given a list of tile key "q:r" representing hexagon coordinates,
+// construct the path along each hexagon's center.
+function pathAlongTiles(ctx, size, origin, tiles,
+                       hexHorizDistance, hexVertDistance) {
+  ctx.beginPath();
+  if (tiles.length < 1) { return; }
+  var cp = pixelFromTile(tileFromKey(tiles[0]), origin, size);
+  var cx = cp.x|0;
+  var cy = cp.y|0;
+  ctx.moveTo(cp.x|0, cp.y|0);
+  for (var i = 1; i < tiles.length; i++) {
+    cp = pixelFromTile(tileFromKey(tiles[i]), origin, size);
+    ctx.lineTo(cp.x|0, cp.y|0);
+  }
+}
+
+// Given a list of tile key "q:r" representing hexagon coordinates,
+// draw the path along each hexagon's center.
+function paintAlongTiles(ctx, size, origin, tiles) {
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+  pathAlongTiles(ctx, size, origin, tiles, hexHorizDistance, hexVertDistance);
+  ctx.strokeStyle = 'red';
+  ctx.stroke();
+}
 
 // Given a set of tiles {q, r} representing hexagon coordinates,
 // construct the path around those hexagons.
@@ -820,6 +916,8 @@ var accessibleTiles;
 var currentTile;
 
 function mouseSelection(event) {
+  canvas.removeEventListener('mousemove', mouseDrag);
+  canvas.removeEventListener('mouseup', mouseSelection);
   // Tile information.
   showTileInformation(event);
   // Accessible tiles.
@@ -828,9 +926,20 @@ function mouseSelection(event) {
   currentTile = startTile;
   accessibleTiles = humanTravel(startTile);
   paint(ctx, hexaSize, origin);
-  canvas.removeEventListener('mousemove', mouseDrag);
-  canvas.removeEventListener('mouseup', mouseSelection);
 };
+
+function showPath(event) {
+  if (currentTile) {
+    paint(ctx, hexaSize, origin);
+    var endTile = tileFromPixel({ x: event.clientX, y: event.clientY },
+        origin, hexaSize);
+    paintAlongTiles(ctx, hexaSize, origin, humanTravelTo(currentTile, endTile));
+    displayedPaint = ctx.getImageData(0, 0,
+        ctx.canvas.width, ctx.canvas.height);
+  }
+}
+
+canvas.addEventListener('mousemove', showPath);
 
 function mouseDrag(event) {
   canvas.style.cursor = 'move';
