@@ -113,7 +113,7 @@ distances[tileTypes.water]    = 0xbad;
 distances[tileTypes.steppe]   = 2;
 distances[tileTypes.hill]    = 4;
 distances[tileTypes.mountain] = 16;
-distances[tileTypes.swamp]    = 3;
+distances[tileTypes.swamp]    = 8;
 distances[tileTypes.meadow]   = 3;
 distances[tileTypes.forest]   = 8;
 distances[tileTypes.taiga]    = 24;
@@ -240,31 +240,36 @@ function travelTo(tstart, tend, speed) {
   return path.reverse();
 }
 
+var normalWater = distances[tileTypes.water];
+var normalSwamp = distances[tileTypes.swamp];
+function setDistancesForHuman(h) {
+  if ((h.o & manufacture.boat) !== 0) {
+    distances[tileTypes.water] = 1;
+    distances[tileTypes.swamp] = 1;
+  } else if ((h.o & manufacture.plane) !== 0) {
+    distances[tileTypes.water] = 2;
+    distances[tileTypes.swamp] = 2;
+  }
+}
+function unsetDistancesForHuman(h) {
+  distances[tileTypes.water] = normalWater;
+  distances[tileTypes.swamp] = normalSwamp;
+}
 function humanTravel(tpos) {
   var h = humanity(tpos);
   if (!h || h.h <= 0) { return {}; }
-  var normalWater = distances[tileTypes.water];
-  if ((h.o & manufacture.boat) !== 0) {
-    distances[tileTypes.water] = 1;
-  } else if ((h.o & manufacture.plane) !== 0) {
-    distances[tileTypes.water] = 2;
-  }
+  setDistancesForHuman(h);
   var tiles = travelFrom(tpos, speedFromHuman(h));
-  distances[tileTypes.water] = normalWater;
+  unsetDistancesForHuman(h);
   return tiles;
 }
 
 function humanTravelTo(tpos, tend) {
   var h = humanity(tpos);
   if (!h || h.h <= 0) { return {}; }
-  var normalWater = distances[tileTypes.water];
-  if ((h.o & manufacture.boat) !== 0) {
-    distances[tileTypes.water] = 1;
-  } else if ((h.o & manufacture.plane) !== 0) {
-    distances[tileTypes.water] = 2;
-  }
+  setDistancesForHuman(h);
   var tiles = travelTo(tpos, tend, speedFromHuman(h));
-  distances[tileTypes.water] = normalWater;
+  unsetDistancesForHuman(h);
   return tiles;
 }
 
@@ -298,6 +303,7 @@ function speedFromHuman(human) {
 // {o}: manufactured goods owned;
 var humanityChange = {
   '24:15': { b:null, h:5, c:1, f:20, o: 6 },
+  '-1:-1': { b:null, h:2, c:2, f:20, o: 0 },
   '0:0': { b:tileTypes.farm, h:3, c:1, f:20, o: 1 },
   '1:5': { b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
   '2:6': { b:tileTypes.residence, h:1, c:1, f:20, o: 0 },
@@ -795,7 +801,7 @@ function paintHumans(ctx, size, origin, humanityData) {
     var number = human.h;
     if (number > humanAnimation.length) { number = humanAnimation.length; }
     for (var i = 0; i < number; i++) {
-      var animation = humanAnimation[(i+q+r) % humanAnimation.length];
+      var animation = humanAnimation[Math.abs(i+q+r) % humanAnimation.length];
       ctx.fillStyle = 'black';
       ctx.fillRect(cx - size/2 + animation.x * size,
           cy - size/2 + animation.y * size,
