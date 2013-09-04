@@ -433,14 +433,27 @@ function pathAlongTiles(ctx, size, origin, tiles,
                        hexHorizDistance, hexVertDistance) {
   ctx.beginPath();
   if (tiles.length < 1) { return; }
+  var penultimate;
   var cp = pixelFromTile(tileFromKey(tiles[0]), origin, size);
   var cx = cp.x|0;
   var cy = cp.y|0;
   ctx.moveTo(cp.x|0, cp.y|0);
-  for (var i = 1; i < tiles.length; i++) {
+  for (var i = 0; i < tiles.length - 1; i++) {
     cp = pixelFromTile(tileFromKey(tiles[i]), origin, size);
     ctx.lineTo(cp.x|0, cp.y|0);
+    if (i === tiles.length - 2) { penultimate = cp; }
   }
+  // Arrow at the end.
+  cp = pixelFromTile(tileFromKey(tiles[tiles.length-1]), origin, size);
+  var arrowOffsetX = (penultimate.x - cp.x) / 10;
+  var arrowOffsetY = (penultimate.y - cp.y) / 10;
+  ctx.lineTo(cp.x + arrowOffsetX, cp.y + arrowOffsetY);
+  ctx.lineTo((cp.x + arrowOffsetX - arrowOffsetY),
+             (cp.y + arrowOffsetY + arrowOffsetX));
+  ctx.lineTo(cp.x, cp.y);
+  ctx.lineTo((cp.x + arrowOffsetX + arrowOffsetY),
+             (cp.y + arrowOffsetY - arrowOffsetX));
+  ctx.lineTo(cp.x + arrowOffsetX, cp.y + arrowOffsetY);
 }
 
 // Given a list of tile key "q:r" representing hexagon coordinates,
@@ -449,8 +462,14 @@ function paintAlongTiles(ctx, size, origin, tiles) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   pathAlongTiles(ctx, size, origin, tiles, hexHorizDistance, hexVertDistance);
-  ctx.strokeStyle = 'red';
+  ctx.strokeStyle = '#ccf';
+  ctx.lineWidth = '5';
   ctx.stroke();
+  ctx.strokeStyle = 'red';
+  ctx.lineWidth = '3';
+  ctx.stroke();
+  // Reset lineWidth.
+  ctx.lineWidth = '1';
 }
 
 // Given a set of tiles {q, r} representing hexagon coordinates,
