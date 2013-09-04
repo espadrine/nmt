@@ -186,6 +186,7 @@ function travelFrom(tpos, speed) {
 
 // Find the path from tstart = {q, r} to tend = {q, r}
 // with a minimal distance, at a certain speed. (It's A*.)
+// Returns a list of tiles = "q:r" through the trajectory.
 function travelTo(tstart, tend, speed) {
   var endKey = keyFromTile(tend);
   var walkedTiles = {};     // Valid accessed tiles.
@@ -448,11 +449,11 @@ function pathAlongTiles(ctx, size, origin, tiles,
   var arrowOffsetX = (penultimate.x - cp.x) / 10;
   var arrowOffsetY = (penultimate.y - cp.y) / 10;
   ctx.lineTo(cp.x + arrowOffsetX, cp.y + arrowOffsetY);
-  ctx.lineTo((cp.x + arrowOffsetX - arrowOffsetY),
-             (cp.y + arrowOffsetY + arrowOffsetX));
+  ctx.lineTo((cp.x + arrowOffsetX - arrowOffsetY*2/3),
+             (cp.y + arrowOffsetY + arrowOffsetX*2/3));
   ctx.lineTo(cp.x, cp.y);
-  ctx.lineTo((cp.x + arrowOffsetX + arrowOffsetY),
-             (cp.y + arrowOffsetY - arrowOffsetX));
+  ctx.lineTo((cp.x + arrowOffsetX + arrowOffsetY*2/3),
+             (cp.y + arrowOffsetY - arrowOffsetX*2/3));
   ctx.lineTo(cp.x + arrowOffsetX, cp.y + arrowOffsetY);
 }
 
