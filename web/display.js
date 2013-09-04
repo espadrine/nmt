@@ -836,11 +836,11 @@ function paintHumans(ctx, size, origin, humanityData) {
           size/20, size/10);
     }
   }
-  updateHumans();
 }
 
 function animateHumans() {
   paintHumans(ctx, hexaSize, origin, humanityData);
+  updateHumans();
 }
 var humanAnimationTimeout = setInterval(animateHumans, 100);
 
@@ -970,6 +970,7 @@ function showPath(event) {
     paintAlongTiles(ctx, hexaSize, origin, humanTravelTo(currentTile, endTile));
     displayedPaint = ctx.getImageData(0, 0,
         ctx.canvas.width, ctx.canvas.height);
+    paintHumans(ctx, hexaSize, origin, humanityData);
   }
 }
 
@@ -979,6 +980,7 @@ function mouseDrag(event) {
   canvas.style.cursor = 'move';
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
+  canvas.removeEventListener('mousemove', showPath);
   canvas.addEventListener('mouseup', mouseEndDrag);
   canvas.addEventListener('mousemove', dragMap);
   clearInterval(humanAnimationTimeout);
@@ -989,6 +991,7 @@ function mouseEndDrag(event) {
   canvas.style.cursor = '';
   canvas.removeEventListener('mousemove', dragMap);
   canvas.removeEventListener('mouseup', mouseEndDrag);
+  canvas.addEventListener('mousemove', showPath);
   humanAnimationTimeout = setInterval(animateHumans, 100);
   currentlyDragging = false;
   paint(ctx, hexaSize, origin);
