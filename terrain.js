@@ -210,20 +210,18 @@ function travelTo(tstart, tend, speed) {
       var newDistance = consideredTiles[current] + distance(neighbor);
       if (newDistance <= speed) {
         var neighborKey = keyFromTile(neighbor);
-        if (consideredTiles[neighborKey] !== undefined) {
-          if (newDistance < consideredTiles[neighborKey]) {
-            // We have a better path to this tile.
-            delete consideredTiles[neighborKey];
-            delete heuristic[neighborKey];
-          }
-        } else if (walkedTiles[neighborKey] === undefined) {
+        if (consideredTiles[neighborKey] !== undefined &&
+            newDistance < consideredTiles[neighborKey]) {
+          // We have a better path to this tile.
+          delete consideredTiles[neighborKey];
+        }
+        if (consideredTiles[neighborKey] === undefined &&
+            walkedTiles[neighborKey] === undefined) {
           consideredTiles[neighborKey] = newDistance;
-          var yEnd = - tend.q - tend.r;
-          var yNeighbor = - neighbor.q - neighbor.r;
-          heuristic[neighborKey] = newDistance + Math.sqrt(
-            (tend.q - neighbor.q) * (tend.q - neighbor.q)
-            + (tend.r - neighbor.r) * (tend.r - neighbor.r)
-            + (yEnd - yNeighbor) * (yEnd - yNeighbor));
+          heuristic[neighborKey] = newDistance + (
+              Math.abs(tend.q - neighbor.q) +
+              Math.abs(tend.r - neighbor.r) +
+              Math.abs(tend.q + tend.r - neighbor.q - neighbor.r)) / 2;
           // Where should we insert it in `fastest`?
           var insertionIndex = -1;
           for (var k = 0; k < fastest.length; k++) {
@@ -280,13 +278,10 @@ function humanTravel(tpos) {
 
 function humanTravelTo(tpos, tend) {
   var h = humanity(tpos);
-  console.log('humanTravelTo');
   if (!h || h.h <= 0) { return []; }
-  console.log('humans there:', h);
   setDistancesForHuman(h);
   var tiles = travelTo(tpos, tend, speedFromHuman(h));
   unsetDistancesForHuman(h);
-  console.log('tiles:', tiles);
   return tiles;
 }
 
