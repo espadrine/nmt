@@ -150,35 +150,49 @@ function tileFromKey(key) {
 }
 
 // Find the set of tiles one can move to, from a starter tile.
-// `tpos` is a {q, r} tile position. (It's Dijkstra.)
+// `tstart` is a {q, r} tile position. (It's Dijkstra.)
 // Returns a map from tile keys (see keyFromTile) to truthy values.
-function travelFrom(tpos, speed) {
+function travelFrom(tstart, speed) {
   var walkedTiles = {};     // Valid accessible tiles.
+  var current = keyFromTile(tstart);
   var consideredTiles = {}; // Map from tile keys to distance walked.
-  consideredTiles[keyFromTile(tpos)] = 0;
-  var nConsideredTiles = 1; // Number of considered tiles.
+  consideredTiles[current] = 0;
+  var fastest = [];         // List of tile keys from fastest to slowest.
+  fastest.push(current);
   // Going through each considered tile.
-  while (nConsideredTiles > 0) {
-    for (var tileKey in consideredTiles) {
-      for (var i = 0; i < 6; i++) {
-        var neighbor = neighborFromTile(tileFromKey(tileKey), i);
-        var newDistance = consideredTiles[tileKey] + distance(neighbor);
-        if (newDistance <= speed) {
-          var neighborKey = keyFromTile(neighbor);
-          if (consideredTiles[neighborKey] !== undefined) {
-            if (newDistance < consideredTiles[neighborKey]) {
-              // We have a better path to this tile.
-              consideredTiles[neighborKey] = newDistance;
+  while (fastest.length > 0) {
+    current = fastest.shift();
+    walkedTiles[current] = true;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tileFromKey(current), i);
+      var newDistance = consideredTiles[current] + distance(neighbor);
+      if (newDistance <= speed) {
+        var neighborKey = keyFromTile(neighbor);
+        if (consideredTiles[neighborKey] !== undefined &&
+            newDistance < consideredTiles[neighborKey]) {
+          // We have a better path to this tile.
+          delete consideredTiles[neighborKey];
+        }
+        if (consideredTiles[neighborKey] === undefined &&
+            walkedTiles[neighborKey] === undefined) {
+          consideredTiles[neighborKey] = newDistance;
+          // Where should we insert it in `fastest`?
+          var insertionIndex = -1;
+          for (var k = 0; k < fastest.length; k++) {
+            if (consideredTiles[fastest[k]] === undefined) {
+              fastest.splice(k, 1);  // Has been removed before.
+              k--;
+              continue;
             }
-          } else if (walkedTiles[neighborKey] === undefined) {
-            consideredTiles[neighborKey] = newDistance;
-            nConsideredTiles++;
+            if (consideredTiles[neighborKey] <= consideredTiles[fastest[k]]) {
+              insertionIndex = k;
+              break;
+            }
           }
+          if (insertionIndex === -1) { fastest.push(neighborKey); }
+          else { fastest.splice(insertionIndex, 0, neighborKey); }
         }
       }
-      walkedTiles[tileKey] = true;
-      delete consideredTiles[tileKey];
-      nConsideredTiles--;
     }
   }
   return walkedTiles;
