@@ -111,7 +111,7 @@ function gameTurn() {
   }
   terrain.clearPlans();
   updatedHumanity = {};
-  setTimeout(gameTurn, 1000);
+  setTimeout(gameTurn, 100);
 }
 
 setTimeout(gameTurn, 1000);

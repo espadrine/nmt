@@ -954,6 +954,7 @@ function enterTravelMode() {
 function enterNormalMode() {
   canvas.removeEventListener('mousemove', showPath);
   selectionMode = selectionModes.normal;
+  paint(ctx, hexaSize, origin);
 }
 
 // Control buttons.
