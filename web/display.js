@@ -332,6 +332,7 @@ socket.onmessage = function(e) {
     // FIXME
   } else {
     changeHumanity(humanityData, change);
+    updateCurrentTileInformation();
     paint(ctx, hexaSize, origin);
   }
 };
@@ -865,6 +866,69 @@ function animateHumans() {
 var humanAnimationTimeout = setInterval(animateHumans, 100);
 
 
+// Tile information.
+
+function attributeNameFromTile() {
+  var nameFromTile = [];
+  var i = 0;
+  for (var name in tileTypes) {
+    nameFromTile[i++] = name;
+  }
+  return nameFromTile;
+}
+// A map from tile type to their names.
+var tileNames = attributeNameFromTile();
+
+var tileInfo = document.getElementById('info');
+var accessibleTiles;
+var currentTile;
+
+// For a mouse event, give the information of the tile under the cursor.
+function showTileInformation(tile) {
+  var t = terrain(tile);
+  var info = 'a ' + tileNames[t.type];
+  var h = humanity(tile);
+  if (h != null) {
+    if (h.b != null) {
+      info = (tileNames[h.b][0] === 'a'? 'an ': 'a ') + tileNames[h.b]
+        + ' built in ' + info;
+    }
+    if (h.h > 0) {
+      var ownership = '';
+      if ((h.o & manufacture.gun) !== 0) {
+        ownership += 'with guns ';
+      }
+      var usedLocomotion = false;
+      if ((h.o & manufacture.plane) !== 0) {
+        ownership = 'on a plane ';
+        usedLocomotion = true;
+      }
+      if ((h.o & manufacture.boat) !== 0) {
+        ownership += ((t.type === tileTypes.water && !usedLocomotion)?
+            (usedLocomotion = true, 'in'): 'with')
+          + ' a boat ';
+      }
+      if ((h.o & manufacture.car) !== 0) {
+        ownership = (usedLocomotion? 'with': 'in') + ' a car ';
+      }
+      info = h.h + ' person' + (h.h === 1? '': 's') + ' '
+        + ownership + 'in ' + info;
+    }
+  }
+  tileInfo.value = info;
+}
+
+function updateCurrentTileInformation() {
+  if (currentTile !== undefined) {
+    // Tile information.
+    showTileInformation(currentTile);
+    // Accessible tiles.
+    accessibleTiles = humanTravel(currentTile);
+  }
+}
+
+
+
 
 
 // Initialization and event management.
@@ -948,71 +1012,14 @@ window.onkeydown = function keyInputManagement(event) {
 // Tile selection.
 
 
-function attributeNameFromTile() {
-  var nameFromTile = [];
-  var i = 0;
-  for (var name in tileTypes) {
-    nameFromTile[i++] = name;
-  }
-  return nameFromTile;
-}
-// A map from tile type to their names.
-var tileNames = attributeNameFromTile();
-
-var tileInfo = document.getElementById('info');
-
-// For a mouse event, give the information of the tile under the cursor.
-function showTileInformation(event) {
-  var tile = tileFromPixel({ x: event.clientX, y: event.clientY },
-      origin, hexaSize);
-  var t = terrain(tile);
-  var info = 'a ' + tileNames[t.type];
-  var h = humanity(tile);
-  if (h != null) {
-    if (h.b != null) {
-      info = (tileNames[h.b][0] === 'a'? 'an ': 'a ') + tileNames[h.b]
-        + ' built in ' + info;
-    }
-    if (h.h > 0) {
-      var ownership = '';
-      if ((h.o & manufacture.gun) !== 0) {
-        ownership += 'with guns ';
-      }
-      var usedLocomotion = false;
-      if ((h.o & manufacture.plane) !== 0) {
-        ownership = 'on a plane ';
-        usedLocomotion = true;
-      }
-      if ((h.o & manufacture.boat) !== 0) {
-        ownership += ((t.type === tileTypes.water && !usedLocomotion)?
-            (usedLocomotion = true, 'in'): 'with')
-          + ' a boat ';
-      }
-      if ((h.o & manufacture.car) !== 0) {
-        ownership = (usedLocomotion? 'with': 'in') + ' a car ';
-      }
-      info = h.h + ' person' + (h.h === 1? '': 's') + ' '
-        + ownership + 'in ' + info;
-    }
-  }
-  tileInfo.value = info;
-}
-
-var accessibleTiles;
-var currentTile;
-
 function mouseSelection(event) {
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
 
   if (selectionMode === selectionModes.normal) {
-    // Tile information.
-    showTileInformation(event);
-    // Accessible tiles.
-    var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
+    currentTile = tileFromPixel({ x: event.clientX, y: event.clientY },
         origin, hexaSize);
-    currentTile = startTile;
-    accessibleTiles = humanTravel(startTile);
+    updateCurrentTileInformation();
     paint(ctx, hexaSize, origin);
 
   } else if (selectionMode === selectionModes.travel) {
