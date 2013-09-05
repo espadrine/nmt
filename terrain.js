@@ -1,5 +1,6 @@
 var SimplexNoise = require('simplex-noise');
 var MersenneTwister = require('./mersenne-twister');
+var humanity = require('./humanity');
 
 var prng = new MersenneTwister(0);
 var simplex1 = new SimplexNoise(prng.random.bind(prng));
@@ -114,9 +115,9 @@ function terrain(coord) {
 var distances = [];
 distances[tileTypes.water]    = 0xbad;
 distances[tileTypes.steppe]   = 2;
-distances[tileTypes.hill]    = 4;
+distances[tileTypes.hill]     = 4;
 distances[tileTypes.mountain] = 16;
-distances[tileTypes.swamp]    = 3;
+distances[tileTypes.swamp]    = 8;
 distances[tileTypes.meadow]   = 3;
 distances[tileTypes.forest]   = 8;
 distances[tileTypes.taiga]    = 24;
@@ -153,11 +154,11 @@ function tileFromKey(key) {
 }
 
 // Find the set of tiles one can move to, from a starter tile.
-// `tpos` is a {q, r} tile position.
+// `tpos` is a {q, r} tile position. (It's Dijkstra.)
 // Returns a map from tile keys (see keyFromTile) to truthy values.
 function travelFrom(tpos, speed) {
   var walkedTiles = {};     // Valid accessible tiles.
-  var consideredTiles = {}; // Map from tiles to distance walked.
+  var consideredTiles = {}; // Map from tile keys to distance walked.
   consideredTiles[keyFromTile(tpos)] = 0;
   var nConsideredTiles = 1; // Number of considered tiles.
   // Going through each considered tile.
@@ -169,7 +170,7 @@ function travelFrom(tpos, speed) {
         if (newDistance <= speed) {
           var neighborKey = keyFromTile(neighbor);
           if (consideredTiles[neighborKey] !== undefined) {
-            if (consideredTiles[neighborKey] > newDistance) {
+            if (newDistance < consideredTiles[neighborKey]) {
               // We have a better path to this tile.
               consideredTiles[neighborKey] = newDistance;
             }
@@ -187,25 +188,111 @@ function travelFrom(tpos, speed) {
   return walkedTiles;
 }
 
+// Find the path from tstart = {q, r} to tend = {q, r}
+// with a minimal distance, at a certain speed. (It's A*.)
+// Returns a list of tiles = "q:r" through the trajectory.
+function travelTo(tstart, tend, speed) {
+  var endKey = keyFromTile(tend);
+  var walkedTiles = {};     // Valid accessed tiles.
+  var consideredTiles = {}; // Map from tile keys to distance walked.
+  var heuristic = {};       // Just like consideredTiles, with heuristic.
+  var fastest = [];         // List of tile keys from fastest to slowest.
+  var parents = {};         // Map from tile keys to parent tile keys.
+  var current = keyFromTile(tstart);
+  consideredTiles[current] = 0;
+  fastest.push(current);
+  // Going through each considered tile.
+  while (fastest.length > 0 && endKey !== current) {
+    current = fastest.shift();
+    walkedTiles[current] = true;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tileFromKey(current), i);
+      var newDistance = consideredTiles[current] + distance(neighbor);
+      if (newDistance <= speed) {
+        var neighborKey = keyFromTile(neighbor);
+        if (consideredTiles[neighborKey] !== undefined) {
+          if (newDistance < consideredTiles[neighborKey]) {
+            // We have a better path to this tile.
+            delete consideredTiles[neighborKey];
+            delete heuristic[neighborKey];
+          }
+        } else if (walkedTiles[neighborKey] === undefined) {
+          consideredTiles[neighborKey] = newDistance;
+          var yEnd = - tend.q - tend.r;
+          var yNeighbor = - neighbor.q - neighbor.r;
+          heuristic[neighborKey] = newDistance + Math.sqrt(
+            (tend.q - neighbor.q) * (tend.q - neighbor.q)
+            + (tend.r - neighbor.r) * (tend.r - neighbor.r)
+            + (yEnd - yNeighbor) * (yEnd - yNeighbor));
+          // Where should we insert it in `fastest`?
+          var insertionIndex = -1;
+          for (var k = 0; k < fastest.length; k++) {
+            if (heuristic[fastest[k]] === undefined) {
+              fastest.splice(k, 1);  // Has been removed before.
+              k--;
+              continue;
+            }
+            if (heuristic[neighborKey] <= heuristic[fastest[k]]) {
+              insertionIndex = k;
+              break;
+            }
+          }
+          if (insertionIndex === -1) { fastest.push(neighborKey); }
+          else { fastest.splice(insertionIndex, 0, neighborKey); }
+          parents[neighborKey] = current;
+        }
+      }
+    }
+  }
+  var path = [];
+  if (endKey !== current) { return path; }  // No dice. ☹
+  while (parents[endKey] !== undefined) {
+    path.push(endKey);
+    endKey = parents[endKey];
+  }
+  path.push(keyFromTile(tstart));
+  return path.reverse();
+}
+
+var normalWater = distances[tileTypes.water];
+var normalSwamp = distances[tileTypes.swamp];
+function setDistancesForHuman(h) {
+  if ((h.o & manufacture.boat) !== 0) {
+    distances[tileTypes.water] = 1;
+    distances[tileTypes.swamp] = 1;
+  } else if ((h.o & manufacture.plane) !== 0) {
+    distances[tileTypes.water] = 2;
+    distances[tileTypes.swamp] = 2;
+  }
+}
+function unsetDistancesForHuman(h) {
+  distances[tileTypes.water] = normalWater;
+  distances[tileTypes.swamp] = normalSwamp;
+}
 function humanTravel(tpos) {
   var h = humanity(tpos);
   if (!h || h.h <= 0) { return {}; }
-  var normalWater = distances[tileTypes.water];
-  if ((h.o & manufacture.boat) !== 0) {
-    distances[tileTypes.water] = 1;
-  } else if ((h.o & manufacture.plane) !== 0) {
-    distances[tileTypes.water] = 2;
-  }
+  setDistancesForHuman(h);
   var tiles = travelFrom(tpos, speedFromHuman(h));
-  distances[tileTypes.water] = normalWater;
+  unsetDistancesForHuman(h);
+  return tiles;
+}
+
+function humanTravelTo(tpos, tend) {
+  var h = humanity(tpos);
+  console.log('humanTravelTo');
+  if (!h || h.h <= 0) { return []; }
+  console.log('humans there:', h);
+  setDistancesForHuman(h);
+  var tiles = travelTo(tpos, tend, speedFromHuman(h));
+  unsetDistancesForHuman(h);
+  console.log('tiles:', tiles);
   return tiles;
 }
 
 
 
-
-// Remote connection.
-//
+// Humanity
 
 var manufacture = {
   car: 1,
@@ -222,5 +309,31 @@ function speedFromHuman(human) {
   } else { return 8; }
 }
 
-exports.terrain = terrain;
+// Remote connection.
+//
 
+var planTypes = {
+  move: 1,
+  build: 2,
+  destroy: 3
+};
+
+var plans = [];
+function addPlan(plan) { plans.push(plan); }
+function eachPlan(f) {
+  for (var i = 0; i < plans.length; i++) { f(plans[i]); }
+}
+function clearPlans() { plans = []; }
+
+exports.terrain = terrain;
+exports.travel = humanTravelTo;
+exports.tileTypes = tileTypes;
+exports.manufacture = manufacture;
+
+exports.tileFromKey = tileFromKey;
+exports.keyFromTile = keyFromTile;
+
+exports.planTypes = planTypes;
+exports.addPlan = addPlan;
+exports.eachPlan = eachPlan;
+exports.clearPlans = clearPlans;

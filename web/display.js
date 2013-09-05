@@ -285,9 +285,7 @@ function humanTravelTo(tpos, tend) {
 
 
 
-
-// Remote connection.
-//
+// Humanity
 
 var manufacture = {
   car: 1,
@@ -304,6 +302,52 @@ function speedFromHuman(human) {
   } else { return 8; }
 }
 
+// Remote connection.
+//
+
+var planTypes = {
+  move: 1,
+  build: 2,
+  destroy: 3
+};
+
+var plans = [];
+function addPlan(plan) { plans.push(plan); }
+function eachPlan(f) {
+  for (var i = 0; i < plans.length; i++) { f(plans[i]); }
+}
+function clearPlans() { plans = []; }
+
+// Listen to server connection.
+
+var socket = new WebSocket(
+  // Trick: use the end of either http: or https:.
+  'ws' + window.location.protocol.slice(4) + '//' +
+    window.location.hostname +
+    (window.location.port.length > 0? (':' + window.location.port): '') +
+    '/$websocket:act');
+socket.onmessage = function(e) {
+  var change = JSON.parse(e.data);
+  if (change.plans) {
+    // FIXME
+  } else {
+    changeHumanity(humanityData, change);
+    paint(ctx, hexaSize, origin);
+  }
+};
+
+function sendMove(from, to, humans) {
+  socket.send(JSON.stringify({
+    at: keyFromTile(from),
+    do: planTypes.move,
+    to: keyFromTile(to),
+    h: humans,
+    c: 1    // FIXME: put our current camp.
+  }));
+}
+
+
+
 // Data change in humanity information.
 // tileKey (string 'q:r'): tile coordinates;
 // {b}: building;
@@ -311,30 +355,6 @@ function speedFromHuman(human) {
 // {c}: camp (territory to which it belongs);
 // {f}: food (how much there is in the group);
 // {o}: manufactured goods owned;
-var humanityChange = {
-  '24:15': { b:null, h:5, c:1, f:20, o: 6 },
-  '-1:-1': { b:null, h:2, c:2, f:20, o: 0 },
-  '0:0': { b:tileTypes.farm, h:3, c:1, f:20, o: 1 },
-  '1:5': { b:tileTypes.residence, h:1, c:2, f:20, o: 0 },
-  '2:6': { b:tileTypes.residence, h:1, c:1, f:20, o: 0 },
-  '8:5': { b:tileTypes.residence, h:2, c:1, f:20, o: 0 },
-  '3:5': { b:tileTypes.skyscraper, h:0, c:2, f:20, o: 0 },
-  '4:5': { b:tileTypes.factory, h:0, c:2, f:20, o: 0 },
-  '25:17': { b:tileTypes.dock, h:0, c:2, f:20, o: 0 },
-  '5:3': { b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  '6:4': { b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  '5:4': { b:tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  '6:3': { b:tileTypes.airport, h:0, c:2, f:20, o: 0 },
-  '5:10': { b:tileTypes.gunsmith, h:0, c:2, f:20, o: 0 },
-  '4:6': { b:tileTypes.road, h:0, c:2, f:20, o: 0 },
-  '5:5': { b:tileTypes.road, h:0, c:2, f:20, o: 0 },
-  '6:5': { b:tileTypes.road, h:0, c:2, f:20, o: 0 },
-  '7:5': { b:tileTypes.road, h:0, c:2, f:20, o: 0 },
-  '8:8': { b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
-  '8:9': { b:tileTypes.wall, h:0, c:2, f:20, o: 0 },
-  '9:7': { b:tileTypes.wall, h:0, c:2, f:20, o: 0 }
-};
-
 var humanityData = {};
 
 // Takes a tile = {q, r}, returns the humanity information for that tile.
@@ -346,9 +366,6 @@ function humanity(tile) {
 function changeHumanity(humanityData, change) {
   for (var tileKey in change) { humanityData[tileKey] = change[tileKey]; }
 }
-
-// For the purpose of testing…
-changeHumanity(humanityData, humanityChange);
 
 
 // Painting primitives.
@@ -433,7 +450,7 @@ var spritesWidth = hexaSize * 2;  // Each element of the sprite is 2x20px.
 function pathAlongTiles(ctx, size, origin, tiles,
                        hexHorizDistance, hexVertDistance) {
   ctx.beginPath();
-  if (tiles.length < 1) { return; }
+  if (tiles.length < 2) { return; }
   var penultimate;
   var cp = pixelFromTile(tileFromKey(tiles[0]), origin, size);
   var cx = cp.x|0;
@@ -855,6 +872,29 @@ sprites.onload = function loadingSprites() {
   paint(ctx, hexaSize, origin);
 };
 
+var selectionModes = {
+  normal: 1,
+  travel: 2
+};
+var selectionMode = selectionModes.normal;
+
+function enterTravelMode() {
+  canvas.addEventListener('mousemove', showPath);
+  selectionMode = selectionModes.travel;
+}
+
+function enterNormalMode() {
+  canvas.removeEventListener('mousemove', showPath);
+  selectionMode = selectionModes.normal;
+}
+
+// Control buttons.
+
+document.getElementById('travelBut').addEventListener('click', enterTravelMode);
+
+
+// Keyboard events.
+
 window.onkeydown = function keyInputManagement(event) {
   var voidCache = false;
   var redraw = false;
@@ -887,6 +927,10 @@ window.onkeydown = function keyInputManagement(event) {
     origin.y0 = (origin.y0 / 2 - canvas.height / 4)|0;
     voidCache = true;
     redraw = true;
+  } else if (event.keyCode === 84) {    // T
+    enterTravelMode();
+  } else if (event.keyCode === 27) {    // ESC
+    enterNormalMode();
   }
   if (voidCache) {
     cachedPaint = {};
@@ -895,6 +939,10 @@ window.onkeydown = function keyInputManagement(event) {
     paint(ctx, hexaSize, origin);
   }
 };
+
+
+// Tile selection.
+
 
 function attributeNameFromTile() {
   var nameFromTile = [];
@@ -946,21 +994,30 @@ function showTileInformation(event) {
   tileInfo.value = info;
 }
 
-
 var accessibleTiles;
 var currentTile;
 
 function mouseSelection(event) {
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
-  // Tile information.
-  showTileInformation(event);
-  // Accessible tiles.
-  var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
-      origin, hexaSize);
-  currentTile = startTile;
-  accessibleTiles = humanTravel(startTile);
-  paint(ctx, hexaSize, origin);
+
+  if (selectionMode === selectionModes.normal) {
+    // Tile information.
+    showTileInformation(event);
+    // Accessible tiles.
+    var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
+        origin, hexaSize);
+    currentTile = startTile;
+    accessibleTiles = humanTravel(startTile);
+    paint(ctx, hexaSize, origin);
+
+  } else if (selectionMode === selectionModes.travel) {
+    // Send travel information.
+    var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
+        origin, hexaSize);
+    sendMove(currentTile, startTile, humanity(currentTile).h);
+    enterNormalMode();
+  }
 };
 
 function showPath(event) {
@@ -975,13 +1032,16 @@ function showPath(event) {
   }
 }
 
-canvas.addEventListener('mousemove', showPath);
+
+// Map dragging.
 
 function mouseDrag(event) {
   canvas.style.cursor = 'move';
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
-  canvas.removeEventListener('mousemove', showPath);
+  if (selectionMode === selectionModes.travel) {
+    canvas.removeEventListener('mousemove', showPath);
+  }
   canvas.addEventListener('mouseup', mouseEndDrag);
   canvas.addEventListener('mousemove', dragMap);
   clearInterval(humanAnimationTimeout);
@@ -992,13 +1052,15 @@ function mouseEndDrag(event) {
   canvas.style.cursor = '';
   canvas.removeEventListener('mousemove', dragMap);
   canvas.removeEventListener('mouseup', mouseEndDrag);
-  canvas.addEventListener('mousemove', showPath);
+  if (selectionMode === selectionModes.travel) {
+    canvas.addEventListener('mousemove', showPath);
+  }
   humanAnimationTimeout = setInterval(animateHumans, 100);
   currentlyDragging = false;
   paint(ctx, hexaSize, origin);
 }
 
-window.onmousedown = function mouseInputManagement(event) {
+canvas.onmousedown = function mouseInputManagement(event) {
   canvas.addEventListener('mouseup', mouseSelection);
   canvas.addEventListener('mousemove', mouseDrag);
   lastMousePosition.clientX = event.clientX;
