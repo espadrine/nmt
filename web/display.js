@@ -780,7 +780,9 @@ var displayedPaint;
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
 // compared to the pixel (0, 0) on the map.
 function paint(ctx, size, origin) {
-  paintTilesFromCache(ctx, size, origin);
+  if (spritesLoaded) { paintTilesFromCache(ctx, size, origin);
+  } else {             paintTiles(ctx, size, origin);
+  }
   if (!currentlyDragging) {
     paintAroundTiles(ctx, size, origin, accessibleTiles);
     if (currentTile !== undefined) {
@@ -868,8 +870,10 @@ var humanAnimationTimeout = setInterval(animateHumans, 100);
 // Initialization and event management.
 //
 
+var spritesLoaded = false;
 sprites.onload = function loadingSprites() {
   paint(ctx, hexaSize, origin);
+  spritesLoaded = true;
 };
 
 var selectionModes = {
