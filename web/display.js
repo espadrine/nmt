@@ -993,7 +993,9 @@ function enterMode(newMode) {
   }
   // Update shared mode variable.
   selectionMode = newMode;
-  paint(ctx, hexaSize, origin);
+  if (newMode === selectionModes.normal) {
+    paint(ctx, hexaSize, origin);
+  }
 }
 
 
@@ -1064,13 +1066,7 @@ function mouseSelection(event) {
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
 
-  if (selectionMode === selectionModes.normal) {
-    currentTile = tileFromPixel({ x: event.clientX, y: event.clientY },
-        origin, hexaSize);
-    updateCurrentTileInformation();
-    paint(ctx, hexaSize, origin);
-
-  } else if (selectionMode === selectionModes.travel) {
+  if (selectionMode === selectionModes.travel) {
     // Send travel information.
     var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
         origin, hexaSize);
@@ -1079,6 +1075,12 @@ function mouseSelection(event) {
     }
     enterMode(selectionModes.normal);
   }
+
+  // Move there.
+  currentTile = tileFromPixel({ x: event.clientX, y: event.clientY },
+      origin, hexaSize);
+  updateCurrentTileInformation();
+  paint(ctx, hexaSize, origin);
 };
 
 function showPath(event) {
