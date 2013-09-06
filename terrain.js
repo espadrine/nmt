@@ -13,7 +13,7 @@ var factor = 50;
 var tileTypes = {
   water:        0,
   steppe:       1,
-  hill:        2,
+  hill:         2,
   mountain:     3,
   swamp:        4,
   meadow:       5,
@@ -23,7 +23,7 @@ var tileTypes = {
   residence:    9,
   skyscraper:   10,
   factory:      11,
-  dock:        12,
+  dock:         12,
   airland:      13,
   airport:      14,
   gunsmith:     15,
@@ -334,15 +334,15 @@ function eachPlan(f) {
 }
 function clearPlans() { plans = []; }
 
-exports.terrain = terrain;
-exports.travel = humanTravelTo;
-exports.tileTypes = tileTypes;
-exports.manufacture = manufacture;
+module.exports = terrain;
+module.exports.travel = humanTravelTo;
+module.exports.tileTypes = tileTypes;
+module.exports.manufacture = manufacture;
 
-exports.tileFromKey = tileFromKey;
-exports.keyFromTile = keyFromTile;
+module.exports.tileFromKey = tileFromKey;
+module.exports.keyFromTile = keyFromTile;
 
-exports.planTypes = planTypes;
-exports.addPlan = addPlan;
-exports.eachPlan = eachPlan;
-exports.clearPlans = clearPlans;
+module.exports.planTypes = planTypes;
+module.exports.addPlan = addPlan;
+module.exports.eachPlan = eachPlan;
+module.exports.clearPlans = clearPlans;

@@ -44,13 +44,16 @@ function actWSRecv(data) {
   } catch(e) { return; }
   console.log('Proposed plan: ' + data);
 
-  if (plan.do === terrain.planTypes.move) {
-    // Is the move valid?
-    if (terrain.travel(terrain.tileFromKey(plan.at),
-                       terrain.tileFromKey(plan.to)).length > 0) {
-      terrain.addPlan(plan);
-      console.log('…plan accepted');
-    } else { console.log('…plan denied'); }
+  if (plan.do !== undefined && plan.at !== undefined) {
+    if (plan.to !== undefined && plan.h !== undefined &&
+        plan.do === terrain.planTypes.move) {
+      // Is the move valid?
+      if (terrain.travel(terrain.tileFromKey(plan.at),
+                         terrain.tileFromKey(plan.to)).length > 0) {
+        terrain.addPlan(plan);
+        console.log('…plan accepted');
+      } else { console.log('…plan denied'); }
+    }
   }
 }
 
@@ -69,8 +72,8 @@ function applyPlan(plan) {
     console.log('Before:');
     console.log('humanityFrom', humanityFrom);
     console.log('humanityTo', humanityTo);
-    var mergeGroups = humanityTo.h > 0;
     var byPlane = (humanityFrom.o & terrain.manufacture.plane) !== 0;
+    var emptyTarget = humanityTo.h === 0;
     // Human movement.
     humanityTo.h += humanityFrom.h;
     humanityFrom.h = 0;
@@ -81,14 +84,43 @@ function applyPlan(plan) {
     humanityTo.f += humanityFrom.f - (byPlane? 2: 1);
     humanityFrom.f = 0;
     // Ownership is the intersection of what each group owns.
-    if (mergeGroups) { humanityTo.o &= humanityFrom.o; }
+    if (!emptyTarget) { humanityTo.o &= humanityFrom.o; }
     else { humanityTo.o = humanityFrom.o; }
     humanityFrom.o = 0;
+
+    // Collecting from the land.
+    if (humanityTo.b === terrain.tileTypes.farm) {
+      humanityTo.f = 20;
+      if (emptyTarget) {
+        humanity.campFromId(humanityTo.c).populationCap +=
+          humanity.homePerHouse.farm;
+      }
+    } else if (humanityTo.b === terrain.tileTypes.residence) {
+      if (emptyTarget) {
+        humanity.campFromId(humanityTo.c).populationCap +=
+          humanity.homePerHouse.residence;
+      }
+    } else if (humanityTo.b === terrain.tileTypes.skyscraper) {
+      if (emptyTarget) {
+        humanity.campFromId(humanityTo.c).populationCap +=
+          humanity.homePerHouse.skyscraper;
+      }
+    } else if (humanityTo.b === terrain.tileTypes.factory) {
+      humanityTo.o |= terrain.manufacture.car;
+    } else if (humanityTo.b === terrain.tileTypes.dock) {
+      humanityTo.o |= terrain.manufacture.boat;
+    } else if (humanityTo.b === terrain.tileTypes.airport) {
+      humanityTo.o |= terrain.manufacture.plane;
+    } else if (humanityTo.b === terrain.tileTypes.gunsmith) {
+      humanityTo.o |= terrain.manufacture.gun;
+    }
+
     console.log('After:');
     console.log('humanityFrom', humanityFrom);
     console.log('humanityTo', humanityTo);
     updatedHumanity[plan.at] = humanityFrom;
     updatedHumanity[plan.to] = humanityTo;
+
   }
 }
 
