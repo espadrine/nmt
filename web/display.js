@@ -954,24 +954,56 @@ sprites.onload = function loadingSprites() {
 
 var selectionModes = {
   normal: 1,
-  travel: 2
+  travel: 2,
+  build: 3,
+  split: 4
 };
 var selectionMode = selectionModes.normal;
 
-function enterTravelMode() {
-  canvas.addEventListener('mousemove', showPath);
-  selectionMode = selectionModes.travel;
+function hidePanel(panel, button) {
+  panel.style.display = 'none';
+  button.style.fill = 'black';
+  button.firstElementChild.style.display = 'block';
+  button.firstElementChild.nextElementSibling.style.display = 'none';
+}
+function showPanel(panel, button) {
+  panel.style.display = 'block';
+  button.style.fill = '#800080';
+  button.firstElementChild.style.display = 'none';
+  button.firstElementChild.nextElementSibling.style.display = 'block';
 }
 
-function enterNormalMode() {
-  canvas.removeEventListener('mousemove', showPath);
-  selectionMode = selectionModes.normal;
+function enterMode(newMode) {
+  if (selectionMode === newMode) { return; }
+  // Remove things from the previous mode.
+  if (selectionMode === selectionModes.travel) {
+    hidePanel(travelPanel, travelBut);
+    canvas.removeEventListener('mousemove', showPath);
+  } else if (selectionMode === selectionModes.build) {
+    hidePanel(buildPanel, buildBut);
+  } else if (selectionMode === selectionModes.split) {
+    hidePanel(splitPanel, splitBut);
+  }
+  // Add things from the new mode.
+  if (newMode === selectionModes.travel) {
+    showPanel(travelPanel, travelBut);
+    canvas.addEventListener('mousemove', showPath);
+  } else if (newMode === selectionModes.build) {
+    showPanel(buildPanel, buildBut);
+  } else if (newMode === selectionModes.split) {
+    showPanel(splitPanel, splitBut);
+  }
+  // Update shared mode variable.
+  selectionMode = newMode;
   paint(ctx, hexaSize, origin);
 }
 
+
 // Control buttons.
 
-document.getElementById('travelBut').addEventListener('click', enterTravelMode);
+document.getElementById('travelBut').addEventListener('click', function() {
+  enterMode(selectionModes.travel);
+});
 
 
 // Keyboard events.
@@ -1009,9 +1041,14 @@ window.onkeydown = function keyInputManagement(event) {
     voidCache = true;
     redraw = true;
   } else if (event.keyCode === 84) {    // T
-    enterTravelMode();
+    enterMode(selectionModes.travel);
+  } else if (event.keyCode === 66) {    // B
+    enterMode(selectionModes.build);
+  } else if (event.keyCode === 83) {    // S
+    enterMode(selectionModes.split);
+  } else if (event.keyCode === 68) {    // D
   } else if (event.keyCode === 27) {    // ESC
-    enterNormalMode();
+    enterMode(selectionModes.normal);
   }
   if (voidCache) {
     cachedPaint = {};
@@ -1039,8 +1076,10 @@ function mouseSelection(event) {
     // Send travel information.
     var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
         origin, hexaSize);
-    sendMove(currentTile, startTile, humanity(currentTile).h);
-    enterNormalMode();
+    if (travelTo(currentTile, startTile).length > 0) {
+      sendMove(currentTile, startTile, humanity(currentTile).h);
+    }
+    enterMode(selectionModes.normal);
   }
 };
 
