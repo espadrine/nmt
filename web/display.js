@@ -907,12 +907,9 @@ function showTileInformation(tile) {
     }
     if (h.h > 0) {
       var ownership = '';
-      if ((h.o & manufacture.gun) !== 0) {
-        ownership += 'with guns ';
-      }
       var usedLocomotion = false;
       if ((h.o & manufacture.plane) !== 0) {
-        ownership = 'on a plane ';
+        ownership += 'on a plane ';
         usedLocomotion = true;
       }
       if ((h.o & manufacture.boat) !== 0) {
@@ -921,9 +918,10 @@ function showTileInformation(tile) {
           + ' a boat ';
       }
       if ((h.o & manufacture.car) !== 0) {
-        ownership = (usedLocomotion? 'with': 'in') + ' a car ';
+        ownership += (usedLocomotion? 'with': 'in') + ' a car ';
       }
-      info = h.h + ' person' + (h.h === 1? '': 's') + ' '
+      info = h.h + ((h.o & manufacture.gun) !== 0? ' armed': '') + ' person'
+        + (h.h === 1? '': 's') + ' '
         + ownership + 'in ' + info;
     }
   }
