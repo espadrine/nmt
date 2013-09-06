@@ -1001,9 +1001,9 @@ function enterMode(newMode) {
 
 // Control buttons.
 
-document.getElementById('travelBut').addEventListener('click', function() {
-  enterMode(selectionModes.travel);
-});
+travelBut.addEventListener('click', function() { enterMode(selectionModes.travel); });
+buildBut.addEventListener('click', function() { enterMode(selectionModes.build); });
+splitBut.addEventListener('click', function() { enterMode(selectionModes.split); });
 
 
 // Keyboard events.
