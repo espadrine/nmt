@@ -1,11 +1,10 @@
 body { margin: 0; font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; }
-canvas#c, canvas#cbuffer {
+canvas#canvas {
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
 }
-canvas#cbuffer { display: none; }
 output#info {
   position: absolute;
   bottom: 0;

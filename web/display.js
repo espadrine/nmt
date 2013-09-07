@@ -441,14 +441,10 @@ var hexaSize = 20;
 // compared to the origin of the map.
 var origin = { x0: 0, y0: 0 };
 // Canvas.
-var canvas = document.getElementById('c');
+var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.width = document.documentElement.clientWidth;
 canvas.height = document.documentElement.clientHeight;
-var canvasBuffer = document.getElementById('cbuffer');
-var ctxBuffer = canvasBuffer.getContext('2d');
-canvasBuffer.width = document.documentElement.clientWidth;
-canvasBuffer.height = document.documentElement.clientHeight;
 
 function loadSprites() {
   var img = new Image();
@@ -753,10 +749,12 @@ var cachedPaint = {};
 function getCachedPaint(size, origin, cacheX, cacheY) {
   var cache = cachedPaint[cacheX + ':' + cacheY];
   if (cache === undefined) {
+    var canvasBuffer = document.createElement('canvas');
+    canvasBuffer.width = canvas.width;
+    canvasBuffer.height = canvas.height;
+    var ctxBuffer = canvasBuffer.getContext('2d');
     paintTiles(ctxBuffer, size, { x0: cacheX, y0: cacheY });
-    cache = cachedPaint[cacheX + ':' + cacheY]
-          = ctxBuffer.getImageData(0, 0,
-              ctxBuffer.canvas.width, ctxBuffer.canvas.height);
+    cache = cachedPaint[cacheX + ':' + cacheY] = canvasBuffer;
   }
   return cache;
 }
@@ -768,21 +766,17 @@ function paintTilesFromCache(ctx, size, origin) {
   var height = canvas.height;
   // Coordinates of top left screen pixel in top left buffer.
   var x = (origin.x0 % width);
-  if (x < 0) { x =  width + x; }    // x must be the distance from the right.
+  if (x < 0) { x += width; }    // x must be the distance from the right.
   var y = (origin.y0 % height);
-  if (y < 0) { y =  height + y; }
+  if (y < 0) { y += height; }
   var left   = origin.x0 - x;
   var right  = origin.x0 + width - x;
   var top    = origin.y0 - y;
   var bottom = origin.y0 + height - y;
-  ctx.putImageData(getCachedPaint(size, origin, left, top), -x, -y,
-      x, y, width - x, height - y);
-  ctx.putImageData(getCachedPaint(size, origin, right, top), width - x, -y,
-      0, y, x, height - y);
-  ctx.putImageData(getCachedPaint(size, origin, left, bottom), -x, height - y,
-      x, 0, width - x, y);
-  ctx.putImageData(getCachedPaint(size, origin, right, bottom), width - x, height - y,
-      0, 0, x, y);
+  ctx.drawImage(getCachedPaint(size, origin, left, top), -x, -y);
+  ctx.drawImage(getCachedPaint(size, origin, right, top), width-x, -y);
+  ctx.drawImage(getCachedPaint(size, origin, left, bottom), -x, height-y);
+  ctx.drawImage(getCachedPaint(size, origin, right, bottom), width-x, height-y);
 }
 
 // Pixels currently on display. Useful for smooth animations.
