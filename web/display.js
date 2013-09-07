@@ -780,7 +780,10 @@ function paintTilesFromCache(ctx, size, origin) {
 }
 
 // Pixels currently on display. Useful for smooth animations.
-var displayedPaint;
+var displayedPaint = document.createElement('canvas');
+displayedPaint.width = canvas.width;
+displayedPaint.height = canvas.height;
+var displayedPaintContext = displayedPaint.getContext('2d');
 
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
@@ -795,8 +798,7 @@ function paint(ctx, size, origin) {
     if (currentTile !== undefined) {
       paintCurrentTile(ctx, size, origin, currentTile);
     }
-    displayedPaint = ctx.getImageData(0, 0,
-        ctx.canvas.width, ctx.canvas.height);
+    displayedPaintContext.drawImage(canvas, 0, 0);
   }
 }
 
@@ -841,7 +843,7 @@ function updateHumans() {
 // origin = {x0, y0} is the top left screen pixel position to the map's origin,
 // humanityData is a map from 'q:r' hexagonal coordinates to humanity data.
 function paintHumans(ctx, size, origin, humanityData) {
-  ctx.putImageData(displayedPaint, 0, 0);
+  ctx.drawImage(displayedPaint, 0, 0);
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   for (var tileKey in humanityData) {
@@ -1090,8 +1092,7 @@ function showPath(event) {
     var endTile = tileFromPixel({ x: event.clientX, y: event.clientY },
         origin, hexaSize);
     paintAlongTiles(ctx, hexaSize, origin, humanTravelTo(currentTile, endTile));
-    displayedPaint = ctx.getImageData(0, 0,
-        ctx.canvas.width, ctx.canvas.height);
+    displayedPaintContext.drawImage(canvas, 0, 0);
     paintHumans(ctx, hexaSize, origin, humanityData);
   }
 }
