@@ -615,7 +615,7 @@ function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
   var human = humanity(tilePos);
   if (human != null && human.b != null) {
     if (human.b === tileTypes.road || human.b === tileTypes.wall
-        || human.b === tileTypes.airland) {
+     || human.b === tileTypes.airland) {
       // Orient roads along other roads, walls against walls.
       var oriented = false;
       for (var i = 0; i < 6; i++) {
@@ -981,6 +981,7 @@ function enterMode(newMode) {
     hidePanel(buildPanel, buildBut);
   } else if (selectionMode === selectionModes.split) {
     hidePanel(splitPanel, splitBut);
+    canvas.removeEventListener('mousemove', showPath);
   }
   // Add things from the new mode.
   if (newMode === selectionModes.travel) {
@@ -990,6 +991,7 @@ function enterMode(newMode) {
     showPanel(buildPanel, buildBut);
   } else if (newMode === selectionModes.split) {
     showPanel(splitPanel, splitBut);
+    canvas.addEventListener('mousemove', showPath);
   }
   // Update shared mode variable.
   selectionMode = newMode;
@@ -1024,7 +1026,7 @@ window.onkeydown = function keyInputManagement(event) {
     origin.y0 += (canvas.height / 2)|0;
     redraw = true;
   } else if (((event.keyCode === 61 || event.keyCode === 187) && event.shiftKey)
-           || event.keyCode === 187 || event.keyCode === 61) {  // +=
+            || event.keyCode === 187 || event.keyCode === 61) {  // +=
     // Zoom.
     hexaSize *= 2;
     origin.x0 = origin.x0 * 2 + (canvas.width / 2)|0;
@@ -1066,12 +1068,17 @@ function mouseSelection(event) {
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
 
-  if (selectionMode === selectionModes.travel) {
+  if (selectionMode === selectionModes.travel
+   || selectionMode === selectionModes.split) {
+    var numberOfPeople = humanity(currentTile).h;
+    if (selectionMode === selectionModes.split) {
+      numberOfPeople = (numberOfPeople * splitInputWidget.value / 100)|0;
+    }
     // Send travel information.
     var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
         origin, hexaSize);
     if (humanTravelTo(currentTile, startTile).length > 0) {
-      sendMove(currentTile, startTile, humanity(currentTile).h);
+      sendMove(currentTile, startTile, numberOfPeople);
     }
     enterMode(selectionModes.normal);
   }
@@ -1102,7 +1109,8 @@ function mouseDrag(event) {
   canvas.style.cursor = 'move';
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
-  if (selectionMode === selectionModes.travel) {
+  if (selectionMode === selectionModes.travel
+   || selectionMode === selectionModes.split) {
     canvas.removeEventListener('mousemove', showPath);
   }
   canvas.addEventListener('mouseup', mouseEndDrag);
@@ -1115,7 +1123,8 @@ function mouseEndDrag(event) {
   canvas.style.cursor = '';
   canvas.removeEventListener('mousemove', dragMap);
   canvas.removeEventListener('mouseup', mouseEndDrag);
-  if (selectionMode === selectionModes.travel) {
+  if (selectionMode === selectionModes.travel
+   || selectionMode === selectionModes.split) {
     canvas.addEventListener('mousemove', showPath);
   }
   humanAnimationTimeout = setInterval(animateHumans, 100);

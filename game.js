@@ -49,7 +49,8 @@ function actWSRecv(data) {
         plan.do === terrain.planTypes.move) {
       // Is the move valid?
       if (terrain.travel(terrain.tileFromKey(plan.at),
-                         terrain.tileFromKey(plan.to)).length > 0) {
+                         terrain.tileFromKey(plan.to)).length > 0
+       && (plan.h > 0 || plan.h <= terrain.tileFromKey(plan.to).h)) {
         terrain.addPlan(plan);
         console.log('…plan accepted');
       } else { console.log('…plan denied'); }
@@ -62,7 +63,7 @@ var updatedHumanity = {};
 function applyPlan(plan) {
   if (plan.do === terrain.planTypes.move) {
     console.log('Plan: moving people from', plan.at, 'to', plan.to);
-    // FIXME: use plan.h to pick the number of persons moving over.
+    // FIXME: add war. Because hippies can't exist without war.
     var humanityFrom = humanity(terrain.tileFromKey(plan.at));
     var humanityTo = humanity(terrain.tileFromKey(plan.to));
     if (humanityTo === undefined) {
@@ -70,23 +71,24 @@ function applyPlan(plan) {
     }
 
     console.log('Before:');
-    console.log('humanityFrom', humanityFrom);
-    console.log('humanityTo', humanityTo);
+    console.log('humanityFrom =', humanityFrom);
+    console.log('humanityTo =', humanityTo);
     var byPlane = (humanityFrom.o & terrain.manufacture.plane) !== 0;
     var emptyTarget = humanityTo.h === 0;
+    var emptyingOrigin = (humanityFrom.h - plan.h) === 0;
     // Human movement.
-    humanityTo.h += humanityFrom.h;
-    humanityFrom.h = 0;
+    humanityTo.h += plan.h;
+    humanityFrom.h -= plan.h;
     // Camp
     humanityTo.c = humanityFrom.c;
-    if (humanityFrom.h <= 0) { humanityFrom.c = 0; }
+    if (emptyingOrigin) { humanityFrom.c = 0; }
     // Food.
     humanityTo.f += humanityFrom.f - (byPlane? 2: 1);
-    humanityFrom.f = 0;
+    if (emptyingOrigin) { humanityFrom.f = 0; }
     // Ownership is the intersection of what each group owns.
     if (!emptyTarget) { humanityTo.o &= humanityFrom.o; }
     else { humanityTo.o = humanityFrom.o; }
-    humanityFrom.o = 0;
+    if (emptyingOrigin) { humanityFrom.o = 0; }
 
     // Collecting from the land.
     if (humanityTo.b === terrain.tileTypes.farm) {
@@ -116,8 +118,8 @@ function applyPlan(plan) {
     }
 
     console.log('After:');
-    console.log('humanityFrom', humanityFrom);
-    console.log('humanityTo', humanityTo);
+    console.log('humanityFrom =', humanityFrom);
+    console.log('humanityTo =', humanityTo);
     updatedHumanity[plan.at] = humanityFrom;
     updatedHumanity[plan.to] = humanityTo;
 
