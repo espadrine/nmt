@@ -887,30 +887,49 @@ function getCachedPaint(size, origin, cacheX, cacheY) {
 
 // Given a tile = {q, r}, update the cache. Mainly, buildings.
 function updateCachedPaint(size, origin, tile) {
-  var centerPixel = pixelFromTile(tile, origin, size);
-  var cx = centerPixel.x + origin.x0 - size/2;
-  var cy = centerPixel.y + origin.y0 - size/2;
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
+  var centerPixel = pixelFromTile(tile, origin, size);
   // We consider the size of the tile.
   // We can have up to 4 caches to draw.
   var width = canvas.width;
   var height = canvas.height;
-  // Coordinates of top left squared hexagon pixel in top left buffer.
-  var x = (cx % width);
+  // Coordinates of corner of squared hexagon pixel in top left buffer,
+  // related to the origin pixel of the map.
+  var cx = centerPixel.x + origin.x0 - size/2;  // Top left pixel of hexagon.
+  var cy = centerPixel.y + origin.y0 - size/2;
+  var x, y;  // Coordinates related to the nearest rectangle cache.
+  // top left
+  x = (cx % width);
   if (x < 0) { x += width; }    // x must be the distance from the right.
-  var y = (cy % height);
+  y = (cy % height);
   if (y < 0) { y += height; }
-  var left   = cx - x;
-  var right  = cx + width - x;
-  var top    = cy - y;
-  var bottom = cy + height - y;
-  var cacheTopLeft     = cachedPaint[left + ':' + top];
-  var cacheTopRight    = cachedPaint[right + ':' + top];
-  var cacheBottomLeft  = cachedPaint[left + ':' + bottom];
-  var cacheBottomRight = cachedPaint[right + ':' + bottom];
-  var centerX = x + size/2;
-  var centerY = y + size/2;
+  var cacheTopLeft = cachedPaint[(cx-x) + ':' + (cy-y)];
+  // top right
+  cx += size;
+  x = (cx % width);
+  if (x < 0) { x += width; }    // x must be the distance from the right.
+  y = (cy % height);
+  if (y < 0) { y += height; }
+  var cacheTopRight = cachedPaint[(cx-x) + ':' + (cy-y)];
+  // bottom left
+  cx -= size;
+  cy += size;
+  x = (cx % width);
+  if (x < 0) { x += width; }    // x must be the distance from the right.
+  y = (cy % height);
+  if (y < 0) { y += height; }
+  var cacheBottomLeft = cachedPaint[(cx-x) + ':' + (cy-y)];
+  // bottom right
+  cx += size;
+  x = (cx % width);
+  if (x < 0) { x += width; }    // x must be the distance from the right.
+  y = (cy % height);
+  if (y < 0) { y += height; }
+  var cacheBottomRight = cachedPaint[(cx-x) + ':' + (cy-y)];
+  // Coordinates of center of squared hexagon.
+  var centerX = x - size/2;
+  var centerY = y - size/2;
   if (cacheTopLeft) {
     var ctx = cacheTopLeft.getContext('2d');
     paintTerrain(ctx, size, centerX, centerY,
