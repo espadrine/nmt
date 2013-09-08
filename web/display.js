@@ -385,18 +385,18 @@ function validConstruction(building, tile) {
     }
     if (nRoads >= 2) { return true; }
   } else if (building === tileTypes.airport) {
-    var nRoads = 0;
+    var nGunsmiths = 0;
     var nAirlands = 0;
     for (var i = 0; i < 6; i++) {
       var neighbor = neighborFromTile(tile, i);
       humanityNeighbor = humanity(neighbor);
-      if (humanityNeighbor && humanityNeighbor.b === tileTypes.road) {
-        nRoads++;
+      if (humanityNeighbor && humanityNeighbor.b === tileTypes.gunsmith) {
+        nGunsmiths++;
       } else if (humanityNeighbor && humanityNeighbor.b === tileTypes.airland) {
         nAirlands++;
       }
     }
-    if (nRoads >= 2 && nAirlands >= 3) { return true; }
+    if (nGunsmiths >= 1 && nAirlands >= 3) { return true; }
   } else if (building === tileTypes.gunsmith) {
     var nSkyscrapers = 0;
     var nFactories = 0;
