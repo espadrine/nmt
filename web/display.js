@@ -1264,7 +1264,8 @@ function mouseSelection(event) {
   canvas.removeEventListener('mouseup', mouseSelection);
 
   if ((selectionMode === selectionModes.travel
-   || selectionMode === selectionModes.split) && currentTile !== undefined) {
+    || selectionMode === selectionModes.split)
+    && currentTile !== undefined && humanity(currentTile) !== undefined) {
     var numberOfPeople = humanity(currentTile).h;
     if (selectionMode === selectionModes.split) {
       numberOfPeople = (numberOfPeople * splitInputWidget.value / 100)|0;
