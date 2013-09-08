@@ -459,6 +459,10 @@ socket.onmessage = function(e) {
   } else {
     changeHumanity(humanityData, change);
     updateCurrentTileInformation();
+    // Update paint cache for each building change.
+    for (var changedTile in change) {
+      updateCachedPaint(hexaSize, origin, tileFromKey(changedTile));
+    }
     paint(ctx, hexaSize, origin);
   }
 };
@@ -879,6 +883,54 @@ function getCachedPaint(size, origin, cacheX, cacheY) {
     cache = cachedPaint[cacheX + ':' + cacheY] = canvasBuffer;
   }
   return cache;
+}
+
+// Given a tile = {q, r}, update the cache. Mainly, buildings.
+function updateCachedPaint(size, origin, tile) {
+  var centerPixel = pixelFromTile(tile, origin, size);
+  var cx = centerPixel.x + origin.x0 - size/2;
+  var cy = centerPixel.y + origin.y0 - size/2;
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+  // We consider the size of the tile.
+  // We can have up to 4 caches to draw.
+  var width = canvas.width;
+  var height = canvas.height;
+  // Coordinates of top left squared hexagon pixel in top left buffer.
+  var x = (cx % width);
+  if (x < 0) { x += width; }    // x must be the distance from the right.
+  var y = (cy % height);
+  if (y < 0) { y += height; }
+  var left   = cx - x;
+  var right  = cx + width - x;
+  var top    = cy - y;
+  var bottom = cy + height - y;
+  var cacheTopLeft     = cachedPaint[left + ':' + top];
+  var cacheTopRight    = cachedPaint[right + ':' + top];
+  var cacheBottomLeft  = cachedPaint[left + ':' + bottom];
+  var cacheBottomRight = cachedPaint[right + ':' + bottom];
+  var centerX = x + size/2;
+  var centerY = y + size/2;
+  if (cacheTopLeft) {
+    var ctx = cacheTopLeft.getContext('2d');
+    paintTerrain(ctx, size, centerX, centerY,
+        hexHorizDistance, hexVertDistance, tile);
+  }
+  if (cacheTopRight) {
+    var ctx = cacheTopRight.getContext('2d');
+    paintTerrain(ctx, size, centerX, centerY,
+        hexHorizDistance, hexVertDistance, tile);
+  }
+  if (cacheBottomLeft) {
+    var ctx = cacheBottomLeft.getContext('2d');
+    paintTerrain(ctx, size, centerX, centerY,
+        hexHorizDistance, hexVertDistance, tile);
+  }
+  if (cacheBottomRight) {
+    var ctx = cacheBottomRight.getContext('2d');
+    paintTerrain(ctx, size, centerX, centerY,
+        hexHorizDistance, hexVertDistance, tile);
+  }
 }
 
 function paintTilesFromCache(ctx, size, origin) {
