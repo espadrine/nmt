@@ -38,13 +38,43 @@
     <path class='gum' d='M 30 16 l -1 5 l -3 -3 l -1 12 l 3 -6 l 3 3 l 4 -9' />
   </svg>
   <div class=controlPanel id=travelPanel>
-    Select the spot where you want to move.
+    <p class=help> Select the spot where you want to move.
   </div>
   <div class=controlPanel id=buildPanel>
-    What shall we build? (This panel isn't done yet.)
+    <p class=help> What shall we build?
+    <hr class=separator>
+    <p class=buildSelection> Farm
+    <br><span class=buildHelp> not on water </span>
+    <hr class=separator>
+    <p class=buildSelection> Residence
+    <br><span class=buildHelp> 2 farms, not on water </span>
+    <hr class=separator>
+    <p class=buildSelection> Skyscraper
+    <br><span class=buildHelp> 6 residences, not on water </span>
+    <hr class=separator>
+    <p class=buildSelection> Factory
+    <br><span class=buildHelp> 3 residences, 1 road, not on water </span>
+    <hr class=separator>
+    <p class=buildSelection> Dock
+    <br><span class=buildHelp> 1 residence, 1 water </span>
+    <hr class=separator>
+    <p class=buildSelection> Airland
+    <br><span class=buildHelp> 2 roads, not on water </span>
+    <hr class=separator>
+    <p class=buildSelection> Airport
+    <br><span class=buildHelp> 2 roads, 3 airlands, not on water </span>
+    <hr class=separator>
+    <p class=buildSelection> Gunsmith
+    <br><span class=buildHelp> 1 skyscraper, 1 factory, not on water </span>
+    <hr class=separator>
+    <p class=buildSelection> Road
+    <br><span class=buildHelp> anywhere </span>
+    <hr class=separator>
+    <p class=buildSelection> Wall
+    <br><span class=buildHelp> 1 residence </span>
   </div>
   <div class=controlPanel id=splitPanel>
-    How many should come with you? <br>
+    <p> How many should come with you?
     <input id=splitInputWidget type=range><br>
     Then, select the spot where you want to move.
   </div>
