@@ -44,16 +44,23 @@ function actWSRecv(data) {
   } catch(e) { return; }
   console.log('Proposed plan: ' + data);
 
-  if (plan.do !== undefined && plan.at !== undefined) {
-    if (plan.to !== undefined && plan.h !== undefined &&
-        plan.do === terrain.planTypes.move) {
+  if (plan.do !== undefined && (typeof plan.at === 'string')) {
+    if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
+     && plan.do === terrain.planTypes.move) {
       // Is the move valid?
       if (terrain.travel(terrain.tileFromKey(plan.at),
                          terrain.tileFromKey(plan.to)).length > 0
        && (plan.h > 0 || plan.h <= terrain.tileFromKey(plan.to).h)) {
         terrain.addPlan(plan);
-        console.log('…plan accepted');
-      } else { console.log('…plan denied'); }
+        console.log('… move accepted');
+      } else { console.log('… move denied'); }
+    } else if ((typeof plan.b === 'number')
+            && plan.do === terrain.planTypes.build) {
+      // Is the move valid?
+      if (terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at))) {
+        terrain.addPlan(plan);
+        console.log('… construction accepted');
+      } else { console.log('… construction denied'); }
     }
   }
 }
@@ -61,10 +68,10 @@ function actWSRecv(data) {
 var updatedHumanity = {};
 
 function applyPlan(plan) {
+  var humanityFrom = humanity(terrain.tileFromKey(plan.at));
   if (plan.do === terrain.planTypes.move) {
     console.log('Plan: moving people from', plan.at, 'to', plan.to);
     // FIXME: add war. Because hippies can't exist without war.
-    var humanityFrom = humanity(terrain.tileFromKey(plan.at));
     var humanityTo = humanity(terrain.tileFromKey(plan.to));
     if (humanityTo === undefined) {
       humanityTo = humanity.makeDefault();
@@ -91,22 +98,14 @@ function applyPlan(plan) {
     if (emptyingOrigin) { humanityFrom.o = 0; }
 
     // Collecting from the land.
+    if (emptyingOrigin) { loseBuilding(humanityFrom.c, humanityFrom.b); }
     if (humanityTo.b === terrain.tileTypes.farm) {
       humanityTo.f = 20;
-      if (emptyTarget) {
-        humanity.campFromId(humanityTo.c).populationCap +=
-          humanity.homePerHouse.farm;
-      }
+      if (emptyTarget) { winBuilding(humanityTo.c, humanityTo.b); }
     } else if (humanityTo.b === terrain.tileTypes.residence) {
-      if (emptyTarget) {
-        humanity.campFromId(humanityTo.c).populationCap +=
-          humanity.homePerHouse.residence;
-      }
+      if (emptyTarget) { winBuilding(humanityTo.c, humanityTo.b); }
     } else if (humanityTo.b === terrain.tileTypes.skyscraper) {
-      if (emptyTarget) {
-        humanity.campFromId(humanityTo.c).populationCap +=
-          humanity.homePerHouse.skyscraper;
-      }
+      if (emptyTarget) { winBuilding(humanityTo.c, humanityTo.b); }
     } else if (humanityTo.b === terrain.tileTypes.factory) {
       humanityTo.o |= terrain.manufacture.car;
     } else if (humanityTo.b === terrain.tileTypes.dock) {
@@ -123,8 +122,40 @@ function applyPlan(plan) {
     updatedHumanity[plan.at] = humanityFrom;
     updatedHumanity[plan.to] = humanityTo;
 
+  } else if (plan.do === terrain.planTypes.build) {
+    buildConstruction(humanityFrom, plan.b);
+    updatedHumanity[plan.at] = humanityFrom;
+  } else if (plan.do === terrain.planTypes.destroy) {
+    destroyConstruction(humanityFrom);
+    updatedHumanity[plan.at] = humanityFrom;
   }
 }
+
+function winBuilding(camp, b) {
+  humanity.campFromId(camp).populationCap +=
+    b === terrain.tileTypes.farm? humanity.homePerHouse.farm:
+    b === terrain.tileTypes.residence? humanity.homePerHouse.residence:
+    b === terrain.tileTypes.skyscraper? humanity.homePerHouse.skyscraper:
+    0;
+}
+function loseBuilding(camp, b) {
+  humanity.campFromId(camp).populationCap -=
+    b === terrain.tileTypes.farm? humanity.homePerHouse.farm:
+    b === terrain.tileTypes.residence? humanity.homePerHouse.residence:
+    b === terrain.tileTypes.skyscraper? humanity.homePerHouse.skyscraper:
+    0;
+}
+
+function buildConstruction(humanityTile, b) {
+  destroyConstruction(humanityTile);
+  humanityTile.b = b;
+  winBuilding(humanityTile.c, b);
+}
+
+function destroyConstruction(humanityTile) {
+  // FIXME
+}
+
 
 // Game turn.
 

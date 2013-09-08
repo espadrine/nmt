@@ -68,8 +68,16 @@ p.buildSelection {
   margin: 0;
   padding: 5px 0;
   cursor: pointer;
+  /* Invalid by default */
+  color: #500050;
+  text-shadow: 0px 1px 1px #f7f;
 }
-p.buildSelection:hover {
+p.validSelection {
+  color: #f7f;
+  background: #800080;
+  text-shadow: none;
+}
+p.validSelection:hover {
   animation: build-selection 1.2s ease-in 0s infinite alternate;
   -webkit-animation: build-selection 1.2s ease-in 0s infinite alternate;
 }

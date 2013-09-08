@@ -9,7 +9,7 @@ var factor = 50;
 var tileTypes = {
   water:        0,
   steppe:       1,
-  hill:        2,
+  hill:         2,
   mountain:     3,
   swamp:        4,
   meadow:       5,
@@ -19,7 +19,7 @@ var tileTypes = {
   residence:    9,
   skyscraper:   10,
   factory:      11,
-  dock:        12,
+  dock:         12,
   airland:      13,
   airport:      14,
   gunsmith:     15,
@@ -30,7 +30,7 @@ var tileTypes = {
 var tileVegetationTypeFromSteepness = [];
 tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
 tileVegetationTypeFromSteepness[tileTypes.steppe]   = tileTypes.meadow;
-tileVegetationTypeFromSteepness[tileTypes.hill]    = tileTypes.forest;
+tileVegetationTypeFromSteepness[tileTypes.hill]     = tileTypes.forest;
 tileVegetationTypeFromSteepness[tileTypes.mountain] = tileTypes.taiga;
 
 function tileType(steepness, vegetation) {
@@ -314,6 +314,120 @@ function speedFromHuman(human) {
   } else { return 8; }
 }
 
+// Given a building (see tileTypes) and a tile = {q, r},
+// check whether the building can be built there.
+function validConstruction(building, tile) {
+  var humanityTile = humanity(tile);
+  var tileInfo = terrain(tile);
+  if (!humanityTile || humanityTile.h <= 0) { return false; }
+  if (tileInfo.type === tileTypes.water &&
+      (building === tileTypes.farm || building === tileTypes.residence ||
+       building === tileTypes.skyscraper || building === tileTypes.factory ||
+       building === tileTypes.airland || building === tileTypes.airport ||
+       building === tileTypes.gunsmith)) { return false; }
+  var humanityNeighbor;
+  if (building === tileTypes.farm) {
+    return true;
+  } else if (building === tileTypes.residence) {
+    var nFarms = 0;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tile, i);
+      humanityNeighbor = humanity(neighbor);
+      if (humanityNeighbor && humanityNeighbor.b === tileTypes.farm) {
+        nFarms++;
+      }
+    }
+    if (nFarms >= 2) { return true; }
+  } else if (building === tileTypes.skyscraper) {
+    var nResidences = 0;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tile, i);
+      humanityNeighbor = humanity(neighbor);
+      if (humanityNeighbor && humanityNeighbor.b === tileTypes.residence) {
+        nResidences++;
+      }
+    }
+    if (nResidences >= 6) { return true; }
+  } else if (building === tileTypes.factory) {
+    var nResidences = 0;
+    var nRoads = 0;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tile, i);
+      humanityNeighbor = humanity(neighbor);
+      if (humanityNeighbor && humanityNeighbor.b === tileTypes.residence) {
+        nResidences++;
+      }
+      else if (humanityNeighbor && humanityNeighbor.b === tileTypes.road) {
+        nRoads++;
+      }
+    }
+    if (nResidences >= 3 && nRoads >= 1) { return true; }
+  } else if (building === tileTypes.dock) {
+    var nResidences = 0;
+    var nWater = 0;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tile, i);
+      humanityNeighbor = humanity(neighbor);
+      if (humanityNeighbor && humanityNeighbor.b === tileTypes.residence) {
+        nResidences++;
+      }
+      if (terrain(neighbor).type === tileTypes.water) { nWater++; }
+    }
+    if (nResidences >= 1 && nWater >= 1) { return true; }
+  } else if (building === tileTypes.airland) {
+    var nRoads = 0;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tile, i);
+      humanityNeighbor = humanity(neighbor);
+      if (humanityNeighbor && humanityNeighbor.b === tileTypes.road) {
+        nRoads++;
+      }
+    }
+    if (nRoads >= 2) { return true; }
+  } else if (building === tileTypes.airport) {
+    var nRoads = 0;
+    var nAirlands = 0;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tile, i);
+      humanityNeighbor = humanity(neighbor);
+      if (humanityNeighbor && humanityNeighbor.b === tileTypes.road) {
+        nRoads++;
+      } else if (humanityNeighbor && humanityNeighbor.b === tileTypes.airland) {
+        nAirlands++;
+      }
+    }
+    if (nRoads >= 2 && nAirlands >= 3) { return true; }
+  } else if (building === tileTypes.gunsmith) {
+    var nSkyscrapers = 0;
+    var nFactories = 0;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tile, i);
+      humanityNeighbor = humanity(neighbor);
+      if (humanityNeighbor && humanityNeighbor.b === tileTypes.skyscraper) {
+        nSkyscrapers++;
+      }
+      else if (humanityNeighbor && humanityNeighbor.b === tileTypes.factory) {
+        nFactories++;
+      }
+    }
+    if (nSkyscrapers >= 1 && nFactories >= 1) { return true; }
+  } else if (building === tileTypes.road) {
+    return true;
+  } else if (building === tileTypes.wall) {
+    var nResidences = 0;
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tile, i);
+      humanityNeighbor = humanity(neighbor);
+      if (humanityNeighbor && humanityNeighbor.b === tileTypes.residence) {
+        nResidences++;
+      }
+    }
+    if (nResidences >= 1) { return true; }
+  }
+  return false;
+}
+
+
 // Remote connection.
 //
 
@@ -341,7 +455,7 @@ var socket = new WebSocket(
 socket.onmessage = function(e) {
   var change = JSON.parse(e.data);
   if (change.plans) {
-    // FIXME
+    // FIXME: if you want to receive other players' plans.
   } else {
     changeHumanity(humanityData, change);
     updateCurrentTileInformation();
@@ -356,6 +470,14 @@ function sendMove(from, to, humans) {
     to: keyFromTile(to),
     h: humans,
     c: 1    // FIXME: put our current camp.
+  }));
+}
+
+function sendBuild(at, building) {
+  socket.send(JSON.stringify({
+    at: keyFromTile(at),
+    do: planTypes.build,
+    b: building
   }));
 }
 
@@ -916,7 +1038,7 @@ function showTileInformation(tile) {
       if ((h.o & manufacture.car) !== 0) {
         ownership += (usedLocomotion? 'with': 'in') + ' a car ';
       }
-      info = h.h + ((h.o & manufacture.gun) !== 0? ' armed': '') + ' person'
+      info = h.h + ((h.o & manufacture.gun) !== 0? ' armed': '') + ' folk'
         + (h.h === 1? '': 's') + ' '
         + ownership + 'in ' + info;
     }
@@ -924,12 +1046,37 @@ function showTileInformation(tile) {
   tileInfo.value = info;
 }
 
+var buildSelectionButtons = document.querySelectorAll('p.buildSelection');
+function indicateValidConstructions(currentTile) {
+  var valid;
+  for (var b = tileTypes.farm, i = 0; b < tileTypes.wall + 1; b++, i++) {
+    if (validConstruction(b, currentTile)) {
+      buildSelectionButtons[i].classList.add('validSelection');
+    } else {
+      buildSelectionButtons[i].classList.remove('validSelection');
+    }
+  }
+}
+function hookBuildSelectionButtons() {
+  for (var b = tileTypes.farm, i = 0; b < tileTypes.wall + 1; b++, i++) {
+    var hook = (function(b) { return function hookBuildSelectionButton() {
+        sendBuild(currentTile, b);
+        enterMode(selectionModes.normal);
+      };
+    }(b));
+    buildSelectionButtons[i].addEventListener('click', hook);
+  }
+}
+hookBuildSelectionButtons();
+
 function updateCurrentTileInformation() {
   if (currentTile !== undefined) {
     // Tile information.
     showTileInformation(currentTile);
     // Accessible tiles.
     accessibleTiles = humanTravel(currentTile);
+    // Valid constructions.
+    indicateValidConstructions(currentTile);
   }
 }
 
