@@ -698,11 +698,11 @@ function pathFromHex(ctx, size, cp,
 // hexagon, to a truthy value).
 // Requires a canvas context `ctx` and the size of a hexagon
 // (ie, the radius of the smallest disk containing the hexagon).
-function paintAroundTiles(ctx, size, origin, tiles) {
+function paintAroundTiles(ctx, size, origin, tiles, color) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   pathFromTiles(ctx, size, origin, tiles, hexHorizDistance, hexVertDistance);
-  ctx.strokeStyle = 'white';
+  ctx.strokeStyle = color || 'white';
   ctx.stroke();
 }
 
@@ -959,6 +959,7 @@ function paint(ctx, size, origin) {
   }
   if (!currentlyDragging) {
     paintAroundTiles(ctx, size, origin, accessibleTiles);
+    paintCamps(ctx, size, origin);
     if (currentTile !== undefined) {
       paintCurrentTile(ctx, size, origin, currentTile);
     }
@@ -1036,6 +1037,55 @@ function animateHumans() {
   updateHumans();
 }
 var humanAnimationTimeout = setInterval(animateHumans, 100);
+
+
+// Return a list of tileKeys for each tile with a visible human.
+function listVisibleHumans(ctx, size, origin) {
+  var maxQ, minQ, maxR, minR, tilePos;
+  // This is a jigsaw. We want the corner tiles of the screen.
+  // bottom left pixel of the screen.
+  tilePos = tileFromPixel({ x:0, y:ctx.canvas.height }, origin, size);
+  minQ = tilePos.q - 1;     // Adding 1 to include half-tiles.
+  maxR = tilePos.r + 1;
+  // top right pixel of the screen.
+  tilePos = tileFromPixel({ x:ctx.canvas.width, y:0 }, origin, size);
+  maxQ = tilePos.q + 1;
+  minR = tilePos.r - 1;
+  // Go through all of humanity. Pick the ones we can see.
+  var visibleHumans = [];
+  for (var tileKey in humanityData) {
+    tile = tileFromKey(tileKey);
+    if (tile.q >= minQ && tile.q <= maxQ && tile.r >= minR && tile.r <= maxR
+        && humanityData[tileKey].h > 0) {
+      visibleHumans.push(tileKey);
+    }
+  }
+  return visibleHumans;
+}
+
+var numberOfCamps = 3;
+function paintCamps(ctx, size, origin) {
+  var visibleHumans = listVisibleHumans(ctx, size, origin);
+  var visibleCamps = new Array(numberOfCamps);
+  for (var i = 0; i < numberOfCamps; i++) { visibleCamps[i] = {}; }
+  for (var i = 0; i < visibleHumans.length; i++) {
+    var humans = humanityData[visibleHumans[i]];
+    visibleCamps[humans.c][visibleHumans[i]] = true;
+  }
+  for (var i = 0; i < numberOfCamps; i++) {
+    paintAroundTiles(ctx, size, origin, visibleCamps[i],
+        'hsl(' + campHueCreator9000(i) + ',100%,50%)');
+  }
+}
+
+var campHue = [];
+// The name is not a joke.
+function campHueCreator9000(camp) {
+  if (campHue[camp] !== undefined) { return campColors[camp];
+  } else if (camp === 0) { return 270;
+  } else { return (campHueCreator9000(camp - 1) + 60) % 360;
+  }
+}
 
 
 // Tile information.
