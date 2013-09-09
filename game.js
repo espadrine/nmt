@@ -62,7 +62,6 @@ function applyPlan(plan) {
     humanityFrom.h -= plan.h;
     // Camp
     humanityTo.c = humanityFrom.c;
-    if (emptyingOrigin) { humanityFrom.c = 0; }
     // Food.
     humanityTo.f += humanityFrom.f - (byPlane? 2: 1);
     if (emptyingOrigin) { humanityFrom.f = 0; }
@@ -72,7 +71,10 @@ function applyPlan(plan) {
     if (emptyingOrigin) { humanityFrom.o = 0; }
 
     // Collecting from the land.
-    if (emptyingOrigin) { loseBuilding(humanityFrom.c, humanityFrom.b); }
+    if (emptyingOrigin) {
+      loseBuilding(humanityFrom.c, humanityFrom.b);
+      humanityFrom.c = null;
+    }
     collectFromTile(humanityTo, emptyTarget);
 
     console.log('After:');
