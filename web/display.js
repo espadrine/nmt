@@ -1162,21 +1162,30 @@ function enterMode(newMode) {
   if (selectionMode === selectionModes.travel) {
     hidePanel(travelPanel, travelBut);
     canvas.removeEventListener('mousemove', showPath);
+    travelBut.removeEventListener('click', enterNormalMode);
+    travelBut.addEventListener('click', enterTravelMode);
   } else if (selectionMode === selectionModes.build) {
     hidePanel(buildPanel, buildBut);
+    buildBut.removeEventListener('click', enterNormalMode);
+    buildBut.addEventListener('click', enterBuildMode);
   } else if (selectionMode === selectionModes.split) {
     hidePanel(splitPanel, splitBut);
     canvas.removeEventListener('mousemove', showPath);
+    splitBut.removeEventListener('click', enterNormalMode);
+    splitBut.addEventListener('click', enterSplitMode);
   }
   // Add things from the new mode.
   if (newMode === selectionModes.travel) {
     showPanel(travelPanel, travelBut);
     canvas.addEventListener('mousemove', showPath);
+    travelBut.addEventListener('click', enterNormalMode);
   } else if (newMode === selectionModes.build) {
     showPanel(buildPanel, buildBut);
+    buildBut.addEventListener('click', enterNormalMode);
   } else if (newMode === selectionModes.split) {
     showPanel(splitPanel, splitBut);
     canvas.addEventListener('mousemove', showPath);
+    splitBut.addEventListener('click', enterNormalMode);
   }
   // Update shared mode variable.
   selectionMode = newMode;
@@ -1188,9 +1197,13 @@ function enterMode(newMode) {
 
 // Control buttons.
 
-travelBut.addEventListener('click', function() { enterMode(selectionModes.travel); });
-buildBut.addEventListener('click', function() { enterMode(selectionModes.build); });
-splitBut.addEventListener('click', function() { enterMode(selectionModes.split); });
+function enterNormalMode() { enterMode(selectionModes.normal); }
+function enterTravelMode() { enterMode(selectionModes.travel); }
+function enterBuildMode() { enterMode(selectionModes.build); }
+function enterSplitMode() { enterMode(selectionModes.split); }
+travelBut.addEventListener('click', enterTravelMode);
+buildBut.addEventListener('click', enterBuildMode);
+splitBut.addEventListener('click', enterSplitMode);
 
 
 // Keyboard events.
