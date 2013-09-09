@@ -49,7 +49,7 @@ function actWSRecv(data) {
      && plan.do === terrain.planTypes.move) {
       // Is the move valid?
       if (terrain.travel(terrain.tileFromKey(plan.at),
-                         terrain.tileFromKey(plan.to)).length > 0
+                         terrain.tileFromKey(plan.to)).length > 1
        && (plan.h > 0 || plan.h <= terrain.tileFromKey(plan.to).h)) {
         terrain.addPlan(plan);
         console.log('… move accepted');

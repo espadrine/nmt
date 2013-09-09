@@ -1263,7 +1263,7 @@ function mouseSelection(event) {
     // Send travel information.
     var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
         origin, hexaSize);
-    if (humanTravelTo(currentTile, startTile).length > 0) {
+    if (humanTravelTo(currentTile, startTile).length > 1) {
       sendMove(currentTile, startTile, numberOfPeople);
     }
     enterMode(selectionModes.normal);
