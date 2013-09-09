@@ -99,22 +99,7 @@ function applyPlan(plan) {
 
     // Collecting from the land.
     if (emptyingOrigin) { loseBuilding(humanityFrom.c, humanityFrom.b); }
-    if (humanityTo.b === terrain.tileTypes.farm) {
-      humanityTo.f = 20;
-      if (emptyTarget) { winBuilding(humanityTo.c, humanityTo.b); }
-    } else if (humanityTo.b === terrain.tileTypes.residence) {
-      if (emptyTarget) { winBuilding(humanityTo.c, humanityTo.b); }
-    } else if (humanityTo.b === terrain.tileTypes.skyscraper) {
-      if (emptyTarget) { winBuilding(humanityTo.c, humanityTo.b); }
-    } else if (humanityTo.b === terrain.tileTypes.factory) {
-      humanityTo.o |= terrain.manufacture.car;
-    } else if (humanityTo.b === terrain.tileTypes.dock) {
-      humanityTo.o |= terrain.manufacture.boat;
-    } else if (humanityTo.b === terrain.tileTypes.airport) {
-      humanityTo.o |= terrain.manufacture.plane;
-    } else if (humanityTo.b === terrain.tileTypes.gunsmith) {
-      humanityTo.o |= terrain.manufacture.gun;
-    }
+    collectFromTile(humanityTo, emptyTarget);
 
     console.log('After:');
     console.log('humanityFrom =', humanityFrom);
@@ -125,9 +110,31 @@ function applyPlan(plan) {
   } else if (plan.do === terrain.planTypes.build) {
     buildConstruction(humanityFrom, plan.b);
     updatedHumanity[plan.at] = humanityFrom;
+    collectFromTile(humanityFrom, true);
   } else if (plan.do === terrain.planTypes.destroy) {
     destroyConstruction(humanityFrom);
     updatedHumanity[plan.at] = humanityFrom;
+  }
+}
+
+// Collect from the humanity tile. If `addBuilding` is truthy,
+// we add the building as a resource for a camp.
+function collectFromTile(humanityTile, addBuilding) {
+  if (humanityTile.b === terrain.tileTypes.farm) {
+    humanityTile.f = 20;
+    if (addBuilding) { winBuilding(humanityTile.c, humanityTile.b); }
+  } else if (humanityTile.b === terrain.tileTypes.residence) {
+    if (addBuilding) { winBuilding(humanityTile.c, humanityTile.b); }
+  } else if (humanityTile.b === terrain.tileTypes.skyscraper) {
+    if (addBuilding) { winBuilding(humanityTile.c, humanityTile.b); }
+  } else if (humanityTile.b === terrain.tileTypes.factory) {
+    humanityTile.o |= terrain.manufacture.car;
+  } else if (humanityTile.b === terrain.tileTypes.dock) {
+    humanityTile.o |= terrain.manufacture.boat;
+  } else if (humanityTile.b === terrain.tileTypes.airport) {
+    humanityTile.o |= terrain.manufacture.plane;
+  } else if (humanityTile.b === terrain.tileTypes.gunsmith) {
+    humanityTile.o |= terrain.manufacture.gun;
   }
 }
 
@@ -149,11 +156,11 @@ function loseBuilding(camp, b) {
 function buildConstruction(humanityTile, b) {
   destroyConstruction(humanityTile);
   humanityTile.b = b;
-  winBuilding(humanityTile.c, b);
 }
 
 function destroyConstruction(humanityTile) {
-  // FIXME
+  loseBuilding(humanityTile.c, humanityTile.b);
+  humanityTile.b = null;
 }
 
 
