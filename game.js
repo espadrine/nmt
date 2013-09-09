@@ -1,32 +1,10 @@
 var terrain = require('./terrain.js');
 var humanity = require('./humanity');
 var genName = require('./gen-name.js');
+var world = require('./world.json');
 
-// Example data…
-
-humanity.change({
-  '24:15': { b:null, h:5, c:1, f:20, o: 6 },
-  '-1:-1': { b:null, h:2, c:2, f:20, o: 0 },
-  '0:0':   { b:terrain.tileTypes.farm, h:3, c:1, f:20, o: 1 },
-  '1:5':   { b:terrain.tileTypes.residence, h:1, c:2, f:20, o: 0 },
-  '2:6':   { b:terrain.tileTypes.residence, h:1, c:1, f:20, o: 0 },
-  '8:5':   { b:terrain.tileTypes.residence, h:2, c:1, f:20, o: 0 },
-  '3:5':   { b:terrain.tileTypes.skyscraper, h:0, c:2, f:20, o: 0 },
-  '4:5':   { b:terrain.tileTypes.factory, h:0, c:2, f:20, o: 0 },
-  '25:17': { b:terrain.tileTypes.dock, h:0, c:2, f:20, o: 0 },
-  '5:3':   { b:terrain.tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  '6:4':   { b:terrain.tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  '5:4':   { b:terrain.tileTypes.airland, h:0, c:2, f:20, o: 0 },
-  '6:3':   { b:terrain.tileTypes.airport, h:0, c:2, f:20, o: 0 },
-  '5:10':  { b:terrain.tileTypes.gunsmith, h:0, c:2, f:20, o: 0 },
-  '4:6':   { b:terrain.tileTypes.road, h:0, c:2, f:20, o: 0 },
-  '5:5':   { b:terrain.tileTypes.road, h:0, c:2, f:20, o: 0 },
-  '6:5':   { b:terrain.tileTypes.road, h:0, c:2, f:20, o: 0 },
-  '7:5':   { b:terrain.tileTypes.road, h:0, c:2, f:20, o: 0 },
-  '8:8':   { b:terrain.tileTypes.wall, h:0, c:2, f:20, o: 0 },
-  '8:9':   { b:terrain.tileTypes.wall, h:0, c:2, f:20, o: 0 },
-  '9:7':   { b:terrain.tileTypes.wall, h:0, c:2, f:20, o: 0 }
-});
+// The following is prophetic.
+humanity.change(world);
 
 
 // Send and receive data from players.

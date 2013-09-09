@@ -23,16 +23,15 @@ function changeHumanity(change) {
 function data() { return humanityData; }
 
 
+// Camp management.
+//
+
 // Population management.
 var homePerHouse = {
   farm: 1,
   residence: 2,
   skyscraper: 6
 };
-
-
-// Camp management.
-//
 
 var campIdCount = 0;
 var camps = [];
