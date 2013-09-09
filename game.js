@@ -59,15 +59,25 @@ function applyPlan(plan) {
     // Human movement.
     if (!emptyTarget && humanityTo.c !== humanityFrom.c) {
       // They're not us. This means war. Because culture difference.
-      if (humanityTo.h >= plan.h) {
+      var ourForces = plan.h;
+      if ((humanityFrom.o & terrain.manufacture.gun) !== 0) {
+        ourForces *= 2;
+      }
+      var theirForces = humanityTo.h;
+      if ((humanityTo.o & terrain.manufacture.gun) !== 0) {
+        theirForces *= 2;
+      }
+      // Imbalance is > 1 if we win.
+      var imbalance = ourForces / theirForces;
+      if (imbalance <= 1) {
         // We lose.
-        if (humanityTo.h === plan.h) {
+        if (imbalance === 1) {
           removeHumanStuff(humanityFrom);
           removeHumanStuff(humanityTo);
         } else if (emptyingOrigin) {
           removeHumanStuff(humanityFrom);
         } else {
-          humanityTo.h -= plan.h;
+          humanityTo.h -= (humanityTo.h * imbalance)|0;
           humanityFrom.h -= plan.h;
         }
         updatedHumanity[plan.at] = humanityFrom;
@@ -76,7 +86,8 @@ function applyPlan(plan) {
       } else {
         // We win.
         loseBuilding(humanityTo.c, humanityTo.b);
-        humanityTo.h = plan.h - humanityTo.h;
+        humanityTo.h = humanityFrom.h - (humanityFrom.h * (1/imbalance))|0;
+        //humanityTo.h = plan.h - humanityTo.h;
         emptyTarget = true;
       }
     } else {
