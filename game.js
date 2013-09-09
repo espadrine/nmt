@@ -16,7 +16,6 @@ function actWSRecv(data) {
   try {
     plan = JSON.parse(data);
   } catch(e) { return; }
-  console.log('Proposed plan: ' + data);
 
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
     if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
@@ -26,15 +25,13 @@ function actWSRecv(data) {
                          terrain.tileFromKey(plan.to)).length > 1
        && (plan.h > 0 || plan.h <= terrain.tileFromKey(plan.to).h)) {
         terrain.addPlan(plan);
-        console.log('… move accepted');
-      } else { console.log('… move denied'); }
+      }
     } else if ((typeof plan.b === 'number')
             && plan.do === terrain.planTypes.build) {
       // Is the move valid?
       if (terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at))) {
         terrain.addPlan(plan);
-        console.log('… construction accepted');
-      } else { console.log('… construction denied'); }
+      }
     }
   }
 }
@@ -42,17 +39,14 @@ function actWSRecv(data) {
 var updatedHumanity = {};
 
 function applyPlan(plan) {
-  var humanityFrom = humanity(terrain.tileFromKey(plan.at));
+  var humanityFrom = humanity.copy(humanity(terrain.tileFromKey(plan.at)));
   if (plan.do === terrain.planTypes.move) {
     console.log('Plan: moving people from', plan.at, 'to', plan.to);
-    var humanityTo = humanity(terrain.tileFromKey(plan.to));
-    if (humanityTo === undefined) {
-      humanityTo = humanity.makeDefault();
-    }
+    var humanityTo = humanity.copy(humanity(terrain.tileFromKey(plan.to)));
 
-    console.log('Before:');
-    console.log('humanityFrom =', humanityFrom);
-    console.log('humanityTo =', humanityTo);
+    //console.log('Before:');
+    //console.log('humanityFrom =', humanityFrom);
+    //console.log('humanityTo =', humanityTo);
     var byPlane = (humanityFrom.o & terrain.manufacture.plane) !== 0;
     var emptyTarget = humanityTo.h === 0;
     var emptyingOrigin = (humanityFrom.h - plan.h) === 0;
@@ -72,10 +66,10 @@ function applyPlan(plan) {
       if (imbalance <= 1) {
         // We lose.
         if (imbalance === 1) {
-          removeHumanStuff(humanityFrom);
-          removeHumanStuff(humanityTo);
+          removeHumanStuff(plan.at, humanityFrom);
+          removeHumanStuff(plan.to, humanityTo);
         } else if (emptyingOrigin) {
-          removeHumanStuff(humanityFrom);
+          removeHumanStuff(plan.at, humanityFrom);
         } else {
           humanityTo.h -= (humanityTo.h * imbalance)|0;
           humanityFrom.h -= plan.h;
@@ -85,7 +79,6 @@ function applyPlan(plan) {
         return;
       } else {
         // We win.
-        loseBuilding(humanityTo.c, humanityTo.b);
         humanityTo.h = humanityFrom.h - (humanityFrom.h * (1/imbalance))|0;
         //humanityTo.h = plan.h - humanityTo.h;
         emptyTarget = true;
@@ -106,35 +99,30 @@ function applyPlan(plan) {
     if (emptyingOrigin) { humanityFrom.o = 0; }
 
     // Collecting from the land.
-    if (emptyingOrigin) { removeHumanStuff(humanityFrom); }
-    collectFromTile(humanityTo, emptyTarget);
+    if (emptyingOrigin) { removeHumanStuff(plan.at, humanityFrom); }
+    collectFromTile(plan.to, humanityTo, emptyTarget);
 
-    console.log('After:');
-    console.log('humanityFrom =', humanityFrom);
-    console.log('humanityTo =', humanityTo);
+    //console.log('After:');
+    //console.log('humanityFrom =', humanityFrom);
+    //console.log('humanityTo =', humanityTo);
     updatedHumanity[plan.at] = humanityFrom;
     updatedHumanity[plan.to] = humanityTo;
 
   } else if (plan.do === terrain.planTypes.build) {
-    buildConstruction(humanityFrom, plan.b);
+    humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;
-    collectFromTile(humanityFrom, true);
+    collectFromTile(plan.at, humanityFrom, true);
   } else if (plan.do === terrain.planTypes.destroy) {
-    destroyConstruction(humanityFrom);
+    humanityFrom.b = null;
     updatedHumanity[plan.at] = humanityFrom;
   }
 }
 
 // Collect from the humanity tile. If `addBuilding` is truthy,
 // we add the building as a resource for a camp.
-function collectFromTile(humanityTile, addBuilding) {
+function collectFromTile(tileKey, humanityTile, addBuilding) {
   if (humanityTile.b === terrain.tileTypes.farm) {
     humanityTile.f = 20;
-    if (addBuilding) { winBuilding(humanityTile.c, humanityTile.b); }
-  } else if (humanityTile.b === terrain.tileTypes.residence) {
-    if (addBuilding) { winBuilding(humanityTile.c, humanityTile.b); }
-  } else if (humanityTile.b === terrain.tileTypes.skyscraper) {
-    if (addBuilding) { winBuilding(humanityTile.c, humanityTile.b); }
   } else if (humanityTile.b === terrain.tileTypes.factory) {
     humanityTile.o |= terrain.manufacture.car;
   } else if (humanityTile.b === terrain.tileTypes.dock) {
@@ -146,39 +134,11 @@ function collectFromTile(humanityTile, addBuilding) {
   }
 }
 
-function removeHumanStuff(human) {
-  if (human.b) {
-    loseBuilding(human.c, human.b);
-  }
+function removeHumanStuff(tileKey, human) {
   human.h = 0;
-  human.c = null;
   human.f = 0;
 }
 
-function winBuilding(camp, b) {
-  humanity.campFromId(camp).populationCap +=
-    b === terrain.tileTypes.farm? humanity.homePerHouse.farm:
-    b === terrain.tileTypes.residence? humanity.homePerHouse.residence:
-    b === terrain.tileTypes.skyscraper? humanity.homePerHouse.skyscraper:
-    0;
-}
-function loseBuilding(camp, b) {
-  humanity.campFromId(camp).populationCap -=
-    b === terrain.tileTypes.farm? humanity.homePerHouse.farm:
-    b === terrain.tileTypes.residence? humanity.homePerHouse.residence:
-    b === terrain.tileTypes.skyscraper? humanity.homePerHouse.skyscraper:
-    0;
-}
-
-function buildConstruction(humanityTile, b) {
-  destroyConstruction(humanityTile);
-  humanityTile.b = b;
-}
-
-function destroyConstruction(humanityTile) {
-  loseBuilding(humanityTile.c, humanityTile.b);
-  humanityTile.b = null;
-}
 
 
 // Game turn.
