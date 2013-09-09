@@ -441,12 +441,12 @@ var planTypes = {
   destroy: 3
 };
 
-var plans = [];
-function addPlan(plan) { plans.push(plan); }
+var plans = {};
+function addPlan(plan) { plans[plan.at] = plan; }
 function eachPlan(f) {
-  for (var i = 0; i < plans.length; i++) { f(plans[i]); }
+  for (var tileKey in plans) { f(plans[tileKey]); }
 }
-function clearPlans() { plans = []; }
+function clearPlans() { plans = {}; }
 
 module.exports = terrain;
 module.exports.travel = humanTravelTo;
