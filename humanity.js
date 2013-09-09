@@ -1,3 +1,22 @@
+var fs = require('fs');
+var genName = require('./gen-name.js');
+var worldFile = './world.json';
+
+function saveWorld() {
+  fs.writeFile(worldFile, JSON.stringify(humanityData));
+}
+
+var terrain;
+function start(t) {
+  terrain = t;
+  var world = require(worldFile);
+  // The following is prophetic.
+  humanityChange(world);
+  // Update periodically.
+  var periodicity = 10000;  // Every 10s.
+  setInterval(saveWorld, periodicity);
+}
+
 // {b}: building;
 // {h}: number of humans;
 // {c}: camp (territory to which it belongs);
@@ -15,9 +34,16 @@ function humanity(tile) {
   return humanityData[tile.q + ':' + tile.r];
 }
 
-function changeHumanity(change) {
-  // FIXME: delete empty tiles.
-  for (var tileKey in change) { humanityData[tileKey] = change[tileKey]; }
+function humanityChange(change) {
+  for (var tileKey in change) {
+    var tileChanged = change[tileKey];
+    if (tileChanged.b == null && tileChanged.h <= 0) {
+      // There is nothing to remember here.
+      delete humanityData[tileKey];
+    } else {
+      humanityData[tileKey] = change[tileKey];
+    }
+  }
 }
 
 function data() { return humanityData; }
@@ -52,7 +78,8 @@ makeCamps();
 
 
 module.exports = humanity;
-module.exports.change = changeHumanity;
+module.exports.start = start;
+module.exports.change = humanityChange;
 module.exports.data = data;
 module.exports.makeDefault = makeDefault;
 

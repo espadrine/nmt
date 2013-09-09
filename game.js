@@ -1,11 +1,7 @@
 var terrain = require('./terrain.js');
 var humanity = require('./humanity');
-var genName = require('./gen-name.js');
-var world = require('./world.json');
 
-// The following is prophetic.
-humanity.change(world);
-
+humanity.start(terrain);
 
 // Send and receive data from players.
 
