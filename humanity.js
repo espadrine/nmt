@@ -2,8 +2,13 @@ var fs = require('fs');
 var genName = require('./gen-name.js');
 var worldFile = './world.json';
 
+var dirtyWorld = false;
 function saveWorld() {
-  fs.writeFile(worldFile, JSON.stringify(humanityData));
+  // Like a hero.
+  if (dirtyWorld) {
+    fs.writeFile(worldFile, JSON.stringify(humanityData));
+    dirtyWorld = false;
+  }
 }
 
 var terrain;
@@ -43,6 +48,7 @@ function humanityChange(change) {
     } else {
       humanityData[tileKey] = change[tileKey];
     }
+    dirtyWorld = true;
   }
 }
 
