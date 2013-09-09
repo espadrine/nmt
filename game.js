@@ -45,7 +45,6 @@ function applyPlan(plan) {
   var humanityFrom = humanity(terrain.tileFromKey(plan.at));
   if (plan.do === terrain.planTypes.move) {
     console.log('Plan: moving people from', plan.at, 'to', plan.to);
-    // FIXME: add war. Because hippies can't exist without war.
     var humanityTo = humanity(terrain.tileFromKey(plan.to));
     if (humanityTo === undefined) {
       humanityTo = humanity.makeDefault();
@@ -58,8 +57,33 @@ function applyPlan(plan) {
     var emptyTarget = humanityTo.h === 0;
     var emptyingOrigin = (humanityFrom.h - plan.h) === 0;
     // Human movement.
-    humanityTo.h += plan.h;
-    humanityFrom.h -= plan.h;
+    if (!emptyTarget && humanityTo.c !== humanityFrom.c) {
+      // They're not us. This means war. Because culture difference.
+      if (humanityTo.h >= plan.h) {
+        // We lose.
+        if (humanityTo.h === plan.h) {
+          removeHumanStuff(humanityFrom);
+          removeHumanStuff(humanityTo);
+        } else if (emptyingOrigin) {
+          removeHumanStuff(humanityFrom);
+        } else {
+          humanityTo.h -= plan.h;
+          humanityFrom.h -= plan.h;
+        }
+        updatedHumanity[plan.at] = humanityFrom;
+        updatedHumanity[plan.to] = humanityTo;
+        return;
+      } else {
+        // We win.
+        loseBuilding(humanityTo.c, humanityTo.b);
+        humanityTo.h = plan.h - humanityTo.h;
+        emptyTarget = true;
+      }
+    } else {
+      // Joining forces.
+      humanityTo.h += plan.h;
+      humanityFrom.h -= plan.h;
+    }
     // Camp
     humanityTo.c = humanityFrom.c;
     // Food.
@@ -71,10 +95,7 @@ function applyPlan(plan) {
     if (emptyingOrigin) { humanityFrom.o = 0; }
 
     // Collecting from the land.
-    if (emptyingOrigin) {
-      loseBuilding(humanityFrom.c, humanityFrom.b);
-      humanityFrom.c = null;
-    }
+    if (emptyingOrigin) { removeHumanStuff(humanityFrom); }
     collectFromTile(humanityTo, emptyTarget);
 
     console.log('After:');
@@ -112,6 +133,15 @@ function collectFromTile(humanityTile, addBuilding) {
   } else if (humanityTile.b === terrain.tileTypes.gunsmith) {
     humanityTile.o |= terrain.manufacture.gun;
   }
+}
+
+function removeHumanStuff(human) {
+  if (human.b) {
+    loseBuilding(human.c, human.b);
+  }
+  human.h = 0;
+  human.c = null;
+  human.f = 0;
 }
 
 function winBuilding(camp, b) {

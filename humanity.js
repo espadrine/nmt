@@ -46,7 +46,7 @@ function humanityChange(change) {
       // There is nothing to remember here.
       delete humanityData[tileKey];
     } else {
-      humanityData[tileKey] = change[tileKey];
+      humanityData[tileKey] = tileChanged;
     }
     dirtyWorld = true;
   }
