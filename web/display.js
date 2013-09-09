@@ -460,9 +460,7 @@ socket.onmessage = function(e) {
     changeHumanity(humanityData, change);
     updateCurrentTileInformation();
     // Update paint cache for each building change.
-    for (var changedTile in change) {
-      updateCachedPaint(hexaSize, origin, tileFromKey(changedTile));
-    }
+    updateCachedPaint(hexaSize, origin, change);
     paint(ctx, hexaSize, origin);
   }
 };
@@ -885,70 +883,43 @@ function getCachedPaint(size, origin, cacheX, cacheY) {
   return cache;
 }
 
-// Given a tile = {q, r}, update the cache. Mainly, buildings.
-function updateCachedPaint(size, origin, tile) {
+// Given a pixel relative to the center of the map, find the cache.
+// Requires the cache's width and height.
+// Note: this relies on you calling getCachedPaint().
+function updateCachedRegion(width, height, cx, cy) {
+  var x, y;  // Coordinates related to the nearest rectangle cache.
+  var x = (cx % width);
+  if (x < 0) { x += width; }    // x must be the distance from the right.
+  var y = (cy % height);
+  if (y < 0) { y += height; }
+  var cacheX = cx - x;
+  var cacheY = cy - y;
+  delete cachedPaint[cacheX + ':' + cacheY];
+}
+
+// Given tiles = {tileKey:something}, update the cache. Mainly, buildings.
+function updateCachedPaint(size, origin, tiles) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
-  var centerPixel = pixelFromTile(tile, origin, size);
-  // We consider the size of the tile.
-  // We can have up to 4 caches to draw.
-  var width = canvas.width;
-  var height = canvas.height;
-  // Coordinates of corner of squared hexagon pixel in top left buffer,
-  // related to the origin pixel of the map.
-  var cx = centerPixel.x + origin.x0 - size/2;  // Top left pixel of hexagon.
-  var cy = centerPixel.y + origin.y0 - size/2;
-  var x, y;  // Coordinates related to the nearest rectangle cache.
-  // top left
-  x = (cx % width);
-  if (x < 0) { x += width; }    // x must be the distance from the right.
-  y = (cy % height);
-  if (y < 0) { y += height; }
-  var cacheTopLeft = cachedPaint[(cx-x) + ':' + (cy-y)];
-  // top right
-  cx += size;
-  x = (cx % width);
-  if (x < 0) { x += width; }    // x must be the distance from the right.
-  y = (cy % height);
-  if (y < 0) { y += height; }
-  var cacheTopRight = cachedPaint[(cx-x) + ':' + (cy-y)];
-  // bottom left
-  cx -= size;
-  cy += size;
-  x = (cx % width);
-  if (x < 0) { x += width; }    // x must be the distance from the right.
-  y = (cy % height);
-  if (y < 0) { y += height; }
-  var cacheBottomLeft = cachedPaint[(cx-x) + ':' + (cy-y)];
-  // bottom right
-  cx += size;
-  x = (cx % width);
-  if (x < 0) { x += width; }    // x must be the distance from the right.
-  y = (cy % height);
-  if (y < 0) { y += height; }
-  var cacheBottomRight = cachedPaint[(cx-x) + ':' + (cy-y)];
-  // Coordinates of center of squared hexagon.
-  var centerX = x - size/2;
-  var centerY = y - size/2;
-  if (cacheTopLeft) {
-    var ctx = cacheTopLeft.getContext('2d');
-    paintTerrain(ctx, size, centerX, centerY,
-        hexHorizDistance, hexVertDistance, tile);
-  }
-  if (cacheTopRight) {
-    var ctx = cacheTopRight.getContext('2d');
-    paintTerrain(ctx, size, centerX, centerY,
-        hexHorizDistance, hexVertDistance, tile);
-  }
-  if (cacheBottomLeft) {
-    var ctx = cacheBottomLeft.getContext('2d');
-    paintTerrain(ctx, size, centerX, centerY,
-        hexHorizDistance, hexVertDistance, tile);
-  }
-  if (cacheBottomRight) {
-    var ctx = cacheBottomRight.getContext('2d');
-    paintTerrain(ctx, size, centerX, centerY,
-        hexHorizDistance, hexVertDistance, tile);
+  for (var changedTile in tiles) {
+    var tile = tileFromKey(changedTile);
+    var centerPixel = pixelFromTile(tile, origin, size);
+    // We consider the size of the tile.
+    // We can have up to 4 caches to draw.
+    var width = canvas.width;
+    var height = canvas.height;
+    // Coordinates of corner of squared hexagon pixel in top left buffer,
+    // related to the origin pixel of the map.
+    var cx = centerPixel.x + origin.x0 - size/2;  // Top left pixel of hexagon.
+    var cy = centerPixel.y + origin.y0 - size/2;
+    // top left
+    updateCachedRegion(width, height, cx, cy);
+    // top right
+    updateCachedRegion(width, height, cx + size, cy);
+    // bottom left
+    updateCachedRegion(width, height, cx, cy + size);
+    // bottom right
+    updateCachedRegion(width, height, cx + size, cy + size);
   }
 }
 
