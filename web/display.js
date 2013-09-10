@@ -987,7 +987,7 @@ function paint(ctx, size, origin) {
 
 // Animations.
 
-var numberOfHumanAnimations = 10;
+var numberOfHumanAnimations = 20;
 var humanAnimation = new Array(numberOfHumanAnimations);
 function initHumans() {
   for (var i = 0; i < numberOfHumanAnimations; i++) {
@@ -997,7 +997,7 @@ function initHumans() {
       y: Math.random(),
       targetx: Math.random(),
       targety: Math.random(),
-      period: (Math.random() * 10 + 3)|0,
+      period: (Math.random() * 20 + 3)|0,
       tick: 0
     };
   }
@@ -1040,7 +1040,7 @@ function paintHumans(ctx, size, origin, humanityData) {
     var number = human.h;
     if (number > humanAnimation.length) { number = humanAnimation.length; }
     for (var i = 0; i < number; i++) {
-      var animation = humanAnimation[Math.abs(i+q+r) % humanAnimation.length];
+      var animation = humanAnimation[Math.abs(i+q^r^human.f) % humanAnimation.length];
       ctx.fillStyle = 'black';
       ctx.fillRect(cx - size/2 + animation.x * size,
           cy - size/2 + animation.y * size,
