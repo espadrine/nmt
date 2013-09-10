@@ -144,3 +144,4 @@ module.exports.copy = copy;
 module.exports.homePerHouse = homePerHouse;
 
 module.exports.campFromId = campFromId;
+module.exports.numberOfCamps = numberOfCamps;

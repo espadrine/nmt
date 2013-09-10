@@ -151,6 +151,7 @@ function gameTurn() {
   // Send new humanity to all.
   if (Object.keys(updatedHumanity).length > 0) {
     humanity.change(updatedHumanity);
+    addPopulation(updatedHumanity);
     actChannel.clients.forEach(function (client) {
       client.send(JSON.stringify(updatedHumanity));
     });
@@ -158,6 +159,25 @@ function gameTurn() {
   terrain.clearPlans();
   updatedHumanity = {};
   setTimeout(gameTurn, gameTurnTime);
+}
+
+function addPopulation(updatedHumanity) {
+  var camp;
+  for (var i = 0; i < humanity.numberOfCamps; i++) {
+    camp = humanity.campFromId(i);
+    var newPopulation = camp.populationCap - camp.population;
+    if (newPopulation > 0) {
+      var homes = Object.keys(camp.homes);
+      for (var j = 0; j < newPopulation; j++) {
+        var randomHomeIndex = (homes.length * Math.random())|0;
+        var randomHome = homes[randomHomeIndex];
+        var randomHomeTile = humanity(terrain.tileFromKey(randomHome));
+        randomHomeTile.h++;
+        updatedHumanity[randomHome] = randomHomeTile;
+      }
+      camp.population = camp.populationCap;
+    }
+  }
 }
 
 
