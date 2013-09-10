@@ -38,6 +38,7 @@ function actWSRecv(data) {
 }
 
 var updatedHumanity = {};
+var warTiles = [];
 
 function applyPlan(plan) {
   var humanityFrom = humanity.copy(humanity(terrain.tileFromKey(plan.at)));
@@ -54,6 +55,7 @@ function applyPlan(plan) {
     // Human movement.
     if (!emptyTarget && humanityTo.c !== humanityFrom.c) {
       // They're not us. This means war. Because culture difference.
+      warTiles.push(plan.to);
       var ourForces = plan.h;
       if ((humanityFrom.o & terrain.manufacture.gun) !== 0) {
         ourForces *= 2;
@@ -154,12 +156,14 @@ function gameTurn() {
     humanity.change(updatedHumanity);
     addPopulation(updatedHumanity);
     updatedHumanity.population = humanity.population();
+    updatedHumanity.war = warTiles;
     actChannel.clients.forEach(function (client) {
       client.send(JSON.stringify(updatedHumanity));
     });
   }
   terrain.clearPlans();
   updatedHumanity = {};
+  warTiles = [];
   setTimeout(gameTurn, gameTurnTime);
 }
 

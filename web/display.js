@@ -476,6 +476,9 @@ socket.onmessage = function(e) {
   } else {
     changeHumanity(humanityData, change);
     updateCurrentTileInformation();
+    if (change.war) {
+      addHumanMessages(warTiles, change.war, warMessages);
+    }
     // Update paint cache for each building change.
     updateCachedPaint(hexaSize, origin, change);
     paint(ctx, hexaSize, origin);
@@ -982,10 +985,11 @@ function paint(ctx, size, origin) {
   if (!currentlyDragging) {
     paintCamps(ctx, size, origin);
     paintAroundTiles(ctx, size, origin, accessibleTiles);
-    paintPopulation(ctx);
     if (currentTile !== undefined) {
       paintCurrentTile(ctx, size, origin, currentTile);
     }
+    paintTileMessages(ctx, size, origin);
+    paintPopulation(ctx);
     displayedPaintContext.drawImage(canvas, 0, 0);
   }
 }
@@ -1118,17 +1122,14 @@ function paintPopulation(ctx) {
   var width = 185;
   var height = 10;
   // Paint the border.
-  ctx.closePath();
+  ctx.beginPath();
   ctx.strokeStyle = '#aaa';
   ctx.moveTo(left, top - 0.5);
   ctx.lineTo(width + left, top - 0.5);
-  ctx.stroke();
   ctx.moveTo(width + left + 0.5, top);
   ctx.lineTo(width + left + 0.5, top + height);
-  ctx.stroke();
   ctx.moveTo(width + left, top + height + 0.5);
   ctx.lineTo(left, top + height + 0.5);
-  ctx.stroke();
   ctx.moveTo(left - 0.5, top + height);
   ctx.lineTo(left - 0.5, top);
   ctx.stroke();
@@ -1148,6 +1149,104 @@ function paintPopulation(ctx) {
   popWidth = width * humanityData.population[i] / totalPopulation;
   ctx.fillStyle = 'hsl(' + campHueCreator9000(i) + ',80%,50%)';
   ctx.fillRect(start|0, top, (popWidth|0)+1, height);
+}
+
+// Tile Messages.
+var hungerMessages = [
+  "Hungry!",
+  "Is dinner ready?",
+  "I can't feel my stomach.",
+  "You're starving us!",
+  "Your face looks like a sandwich to me."
+];
+var warMessages = [
+  "You've got red on you.",
+  "Silence will fall!",
+  "Silence! I kill you!",
+  "Boy, that escalated quickly.",
+  "Sorry Mommy!",
+  "New legs, please!",
+  "Have you seen my head?",
+  "That wine tastes good.",
+  "Tell my wife I loved her… meals…",
+  "I do!",
+  "Resistance is futile.",
+  "I, for one, welcome our new overlords.",
+  "Whoop-de-doo!",
+  "You'll never take me alive!",
+  "Told you he wasn't immortal!",
+  "Tu quoque, fili mi!",
+  "Do not disturb my circles!",
+  "This is no time to be making enemies.",
+  "I owe a cock to Asclepius.",
+  "More light!",
+  "Life's too short!",
+  "They couldn't hit an elephant at this dist…",
+  "Drink to me!",
+  "Why wait, Kodak?"
+];
+
+// Map from tile = "q:r" to {message, timeout} (including timeout IDs).
+var warTiles = {};
+var starvedTiles = {};
+
+// Add textual bubble set in tileMessages
+// (a map from tile = "q:r" to {message, timeout})
+// to tiles in tileKeys = ["q:r"]
+// from messages = [message]
+function addHumanMessages(tileMessages, tileKeys, messages) {
+  var timeout;
+  for (var i = 0; i < tileKeys.length; i++) {
+    var tileKey = tileKeys[i];
+    if (tileMessages[tileKey]) {
+      clearTimeout(tileMessages[tileKey].timeout);
+    }
+    // Pick message.
+    var msg = messages[(messages.length * Math.random())|0];
+    // Set timeout.
+    tileMessages[tileKey] = {
+      message: msg,
+      timeout: setTimeout((function (tileKey) {
+        return function removeTimeout() {
+          delete tileMessages[tileKey];
+          paint(ctx, hexaSize, origin);
+        };
+      }(tileKey)), 2000)
+    };
+  }
+}
+
+// Given a tileKey = "q:r" and a message, show a textual bubble.
+function paintMessage(ctx, size, origin, tileKey, msg) {
+  ctx.font = '14px "Linux Biolinum O"';
+  var msgSize = ctx.measureText(msg).width;
+  // Find the pixel to start from.
+  var center = pixelFromTile(tileFromKey(tileKey), origin, size);
+  var x = center.x + size/4;
+  var y = center.y - size/4;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + 2, y - 10);
+  ctx.lineTo(x - 12, y - 10);
+  ctx.lineTo(x - 10, y - 40);
+  ctx.lineTo(x + msgSize + 10, y - 35);
+  ctx.lineTo(x + msgSize, y - 10);
+  ctx.lineTo(x + 12, y - 10);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,0,0,0.8)';
+  ctx.fill();
+  ctx.strokeStyle = 'white';
+  ctx.strokeText(msg, x - 4, y - 20);
+}
+
+// Paints messages from warTiles and starvedTiles.
+function paintTileMessages(ctx, size, origin) {
+  for (var tileKey in warTiles) {
+    paintMessage(ctx, size, origin, tileKey, warTiles[tileKey].message);
+  }
+  for (var tileKey in starvedTiles) {
+    paintMessage(ctx, size, origin, tileKey, starvedTiles[tileKey].message);
+  }
 }
 
 
