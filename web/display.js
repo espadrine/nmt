@@ -1123,7 +1123,6 @@ function paintPopulation(ctx) {
   var height = 10;
   // Paint the border.
   ctx.beginPath();
-  ctx.strokeStyle = '#aaa';
   ctx.moveTo(left, top - 0.5);
   ctx.lineTo(width + left, top - 0.5);
   ctx.moveTo(width + left + 0.5, top);
@@ -1132,7 +1131,10 @@ function paintPopulation(ctx) {
   ctx.lineTo(left, top + height + 0.5);
   ctx.moveTo(left - 0.5, top + height);
   ctx.lineTo(left - 0.5, top);
+  ctx.strokeStyle = '#345';
+  ctx.lineWidth = 1.5;
   ctx.stroke();
+  ctx.lineWidth = 1;
   // Paint the population.
   var totalPopulation = 0;
   for (var i = 0; i < humanityData.population.length; i++) {
