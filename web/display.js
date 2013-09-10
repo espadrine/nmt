@@ -505,13 +505,15 @@ function sendBuild(at, building) {
 
 
 
-// Data change in humanity information.
-// tileKey (string 'q:r'): tile coordinates;
-// {b}: building;
-// {h}: number of humans;
-// {c}: camp (territory to which it belongs);
-// {f}: food (how much there is in the group);
-// {o}: manufactured goods owned;
+// Data change in humanity information: {tileKey: humanTile}.
+// tileKey = 'q:r'
+// humanTile = {b, h, c, f, o}.
+// b: building;
+// h: number of humans;
+// c: camp (territory to which it belongs);
+// f: food (how much there is in the group);
+// o: manufactured goods owned;
+// Also a special key, population = [population of camp 0, etc.].
 var humanityData = {};
 
 // Takes a tile = {q, r}, returns the humanity information for that tile.
@@ -980,6 +982,7 @@ function paint(ctx, size, origin) {
   if (!currentlyDragging) {
     paintCamps(ctx, size, origin);
     paintAroundTiles(ctx, size, origin, accessibleTiles);
+    paintPopulation(ctx);
     if (currentTile !== undefined) {
       paintCurrentTile(ctx, size, origin, currentTile);
     }
@@ -1105,6 +1108,46 @@ function campHueCreator9000(camp) {
   } else if (camp === 0) { return 270;
   } else { return (campHueCreator9000(camp - 1) + 60) % 360;
   }
+}
+
+// Paint the relative population of each camp.
+function paintPopulation(ctx) {
+  if (!humanityData.population) { return; }
+  var top = 55;
+  var left = 8;
+  var width = 185;
+  var height = 10;
+  // Paint the border.
+  ctx.closePath();
+  ctx.strokeStyle = '#aaa';
+  ctx.moveTo(left, top - 0.5);
+  ctx.lineTo(width + left, top - 0.5);
+  ctx.stroke();
+  ctx.moveTo(width + left + 0.5, top);
+  ctx.lineTo(width + left + 0.5, top + height);
+  ctx.stroke();
+  ctx.moveTo(width + left, top + height + 0.5);
+  ctx.lineTo(left, top + height + 0.5);
+  ctx.stroke();
+  ctx.moveTo(left - 0.5, top + height);
+  ctx.lineTo(left - 0.5, top);
+  ctx.stroke();
+  // Paint the population.
+  var totalPopulation = 0;
+  for (var i = 0; i < humanityData.population.length; i++) {
+    totalPopulation += humanityData.population[i];
+  }
+  var start = left;
+  var popWidth;
+  for (var i = 0; i < humanityData.population.length - 1; i++) {
+    popWidth = width * humanityData.population[i] / totalPopulation;
+    ctx.fillStyle = 'hsl(' + campHueCreator9000(i) + ',80%,50%)';
+    ctx.fillRect(start|0, top, popWidth|0, height);
+    start += popWidth;
+  }
+  popWidth = width * humanityData.population[i] / totalPopulation;
+  ctx.fillStyle = 'hsl(' + campHueCreator9000(i) + ',80%,50%)';
+  ctx.fillRect(start|0, top, (popWidth|0)+1, height);
 }
 
 

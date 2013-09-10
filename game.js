@@ -9,6 +9,7 @@ function actWSStart(socket) {
   console.log('A player entered the game.');
   socket.on('message', actWSRecv);
   socket.send(JSON.stringify(humanity.data()));
+  socket.send(JSON.stringify({ population: humanity.population() }));
 }
 
 function actWSRecv(data) {
@@ -152,6 +153,7 @@ function gameTurn() {
   if (Object.keys(updatedHumanity).length > 0) {
     humanity.change(updatedHumanity);
     addPopulation(updatedHumanity);
+    updatedHumanity.population = humanity.population();
     actChannel.clients.forEach(function (client) {
       client.send(JSON.stringify(updatedHumanity));
     });

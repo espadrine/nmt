@@ -133,6 +133,15 @@ function makeCamps() {
 }
 makeCamps();
 
+// Return a list of population information for each camp.
+function population() {
+  var list = new Array(camps.length);
+  for (var i = 0; i < camps.length; i++) {
+    list[i] = camps[i].population;
+  }
+  return list;
+}
+
 
 module.exports = humanity;
 module.exports.start = start;
@@ -145,3 +154,4 @@ module.exports.homePerHouse = homePerHouse;
 
 module.exports.campFromId = campFromId;
 module.exports.numberOfCamps = numberOfCamps;
+module.exports.population = population;
