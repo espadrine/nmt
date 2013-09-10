@@ -46,6 +46,12 @@ function applyPlan(plan) {
     console.log('Plan: moving people from', plan.at, 'to', plan.to);
     var humanityTo = humanity.copy(humanity(terrain.tileFromKey(plan.to)));
 
+    // Do we have enough food?
+    if (humanityFrom.f <= 0) {
+      updatedHumanity[plan.at] = humanityFrom;
+      return;
+    }
+
     //console.log('Before:');
     //console.log('humanityFrom =', humanityFrom);
     //console.log('humanityTo =', humanityTo);

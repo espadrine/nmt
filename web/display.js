@@ -479,6 +479,7 @@ socket.onmessage = function(e) {
     if (change.war) {
       addHumanMessages(warTiles, change.war, warMessages);
     }
+    addStarveMessages(change);
     // Update paint cache for each building change.
     updateCachedPaint(hexaSize, origin, change);
     paint(ctx, hexaSize, origin);
@@ -1159,7 +1160,8 @@ var hungerMessages = [
   "Is dinner ready?",
   "I can't feel my stomach.",
   "You're starving us!",
-  "Your face looks like a sandwich to me."
+  "I could eat anything now. Rats. Babies.",
+  "You look like a sandwich to me."
 ];
 var warMessages = [
   "You've got red on you.",
@@ -1216,6 +1218,18 @@ function addHumanMessages(tileMessages, tileKeys, messages) {
       }(tileKey)), 2000)
     };
   }
+}
+
+// change = map from tileKey to humanity information.
+function addStarveMessages(change) {
+  var starved = [];
+  for (var tileKey in change) {
+    if (change[tileKey].h > 0 && change[tileKey].f < 4) {
+      // They're starving.
+      starved.push(tileKey);
+    }
+  }
+  addHumanMessages(starvedTiles, starved, hungerMessages);
 }
 
 // Given a tileKey = "q:r" and a message, show a textual bubble.

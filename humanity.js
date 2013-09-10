@@ -61,8 +61,8 @@ function humanityChange(change) {
 function campChange(tileKey, oldTile, newTile) {
   if (oldTile == null) { oldTile = makeDefault(); }
   // Nullify camps when necessary.
-  if (oldTile.h <= 0) { oldTile.c = null; }
-  if (newTile.h <= 0) { newTile.c = null; }
+  if (oldTile.h <= 0) { oldTile.c = null; oldTile.f = 0; }
+  if (newTile.h <= 0) { newTile.c = null; newTile.f = 0; }
   var oldCamp = campFromId(oldTile.c);
   var newCamp = campFromId(newTile.c);
   if (oldTile.c !== newTile.c) {
