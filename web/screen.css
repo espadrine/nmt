@@ -1,4 +1,8 @@
-body { margin: 0; font-family: "Linux Biolinum O", Helvetica, Arial, "Lucida Grande", sans-serif; }
+@font-face {
+  font-family: "Linux Biolinum";
+  src: local("Linux Biolinum O"), url(./LinBiolinum_R.woff);
+}
+body { margin: 0; font-family: "Linux Biolinum", Helvetica, Arial, "Lucida Grande", sans-serif; }
 canvas#canvas {
   position: absolute;
   top: 0;

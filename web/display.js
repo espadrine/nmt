@@ -1158,7 +1158,7 @@ function paintPopulation(ctx) {
 var hungerMessages = [
   "Hungry!",
   "Is dinner ready?",
-  "I can't feel my stomach.",
+  "I can't feel my stomach!",
   "You're starving us!",
   "I could eat anything now. Rats. Babies.",
   "You look like a sandwich to me."
@@ -1171,7 +1171,7 @@ var warMessages = [
   "Sorry Mommy!",
   "New legs, please!",
   "Have you seen my head?",
-  "That wine tastes good.",
+  "That wine tastes good. Wait—",
   "Tell my wife I loved her… meals…",
   "I do!",
   "Resistance is futile.",
@@ -1234,7 +1234,7 @@ function addStarveMessages(change) {
 
 // Given a tileKey = "q:r" and a message, show a textual bubble.
 function paintMessage(ctx, size, origin, tileKey, msg) {
-  ctx.font = '14px "Linux Biolinum O"';
+  ctx.font = '14px "Linux Biolinum", sans-serif';
   var msgSize = ctx.measureText(msg).width;
   // Find the pixel to start from.
   var center = pixelFromTile(tileFromKey(tileKey), origin, size);
