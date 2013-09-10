@@ -481,6 +481,9 @@ socket.onmessage = function(e) {
     paint(ctx, hexaSize, origin);
   }
 };
+socket.onclose = function(e) {
+  alert('You are disconnected.\nPlease reload the page.');
+};
 
 function sendMove(from, to, humans) {
   socket.send(JSON.stringify({
