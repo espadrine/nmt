@@ -975,8 +975,8 @@ function paint(ctx, size, origin) {
   } else {             paintTiles(ctx, size, origin);
   }
   if (!currentlyDragging) {
-    paintAroundTiles(ctx, size, origin, accessibleTiles);
     paintCamps(ctx, size, origin);
+    paintAroundTiles(ctx, size, origin, accessibleTiles);
     if (currentTile !== undefined) {
       paintCurrentTile(ctx, size, origin, currentTile);
     }
