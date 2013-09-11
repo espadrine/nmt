@@ -986,8 +986,12 @@ function paint(ctx, size, origin) {
   if (!currentlyDragging) {
     paintCamps(ctx, size, origin);
     paintAroundTiles(ctx, size, origin, accessibleTiles);
-    if (currentTile !== undefined) {
+    if (currentTile != null) {
       paintCurrentTile(ctx, size, origin, currentTile);
+      if (targetTile != null) {
+        paintAlongTiles(ctx, size, origin,
+            humanTravelTo(currentTile, targetTile));
+      }
     }
     paintTileMessages(ctx, size, origin);
     paintPopulation(ctx);
@@ -1389,7 +1393,7 @@ function enterMode(newMode) {
   // Remove things from the previous mode.
   if (selectionMode === selectionModes.travel) {
     hidePanel(travelPanel, travelBut);
-    canvas.removeEventListener('mousemove', showPath);
+    targetTile = null;
     travelBut.removeEventListener('click', enterNormalMode);
     travelBut.addEventListener('click', enterTravelMode);
   } else if (selectionMode === selectionModes.build) {
@@ -1398,25 +1402,23 @@ function enterMode(newMode) {
     buildBut.addEventListener('click', enterBuildMode);
   } else if (selectionMode === selectionModes.split) {
     hidePanel(splitPanel, splitBut);
-    canvas.removeEventListener('mousemove', showPath);
     splitBut.removeEventListener('click', enterNormalMode);
     splitBut.addEventListener('click', enterSplitMode);
   }
   // Add things from the new mode.
   if (newMode === selectionModes.travel) {
     showPanel(travelPanel, travelBut);
-    canvas.addEventListener('mousemove', showPath);
     travelBut.addEventListener('click', enterNormalMode);
   } else if (newMode === selectionModes.build) {
     showPanel(buildPanel, buildBut);
     buildBut.addEventListener('click', enterNormalMode);
   } else if (newMode === selectionModes.split) {
     showPanel(splitPanel, splitBut);
-    canvas.addEventListener('mousemove', showPath);
     splitBut.addEventListener('click', enterNormalMode);
   }
   // Update shared mode variable.
   selectionMode = newMode;
+  showPath({ clientX: mousePosition.x, clientY: mousePosition.y });
   if (newMode === selectionModes.normal) {
     paint(ctx, hexaSize, origin);
   }
@@ -1532,16 +1534,19 @@ function mouseSelection(event) {
   paint(ctx, hexaSize, origin);
 };
 
+var mousePosition;
+var targetTile;
 function showPath(event) {
-  if (currentTile) {
+  mousePosition = { x: event.clientX, y: event.clientY };
+  if (currentTile &&
+      (selectionMode === selectionModes.travel ||
+       selectionMode === selectionModes.split)) {
+    targetTile = tileFromPixel(mousePosition, origin, hexaSize);
     paint(ctx, hexaSize, origin);
-    var endTile = tileFromPixel({ x: event.clientX, y: event.clientY },
-        origin, hexaSize);
-    paintAlongTiles(ctx, hexaSize, origin, humanTravelTo(currentTile, endTile));
-    displayedPaintContext.drawImage(canvas, 0, 0);
     paintHumans(ctx, hexaSize, origin, humanityData);
   }
 }
+canvas.addEventListener('mousemove', showPath);
 
 
 // Map dragging.
@@ -1550,10 +1555,6 @@ function mouseDrag(event) {
   canvas.style.cursor = 'move';
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
-  if (selectionMode === selectionModes.travel
-   || selectionMode === selectionModes.split) {
-    canvas.removeEventListener('mousemove', showPath);
-  }
   canvas.addEventListener('mouseup', mouseEndDrag);
   canvas.addEventListener('mousemove', dragMap);
   clearInterval(humanAnimationTimeout);
@@ -1564,10 +1565,6 @@ function mouseEndDrag(event) {
   canvas.style.cursor = '';
   canvas.removeEventListener('mousemove', dragMap);
   canvas.removeEventListener('mouseup', mouseEndDrag);
-  if (selectionMode === selectionModes.travel
-   || selectionMode === selectionModes.split) {
-    canvas.addEventListener('mousemove', showPath);
-  }
   humanAnimationTimeout = setInterval(animateHumans, 100);
   currentlyDragging = false;
   paint(ctx, hexaSize, origin);
