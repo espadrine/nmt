@@ -166,7 +166,7 @@ function travelFrom(tstart, speed) {
     current = fastest.shift();
     walkedTiles[current] = true;
     // Check the camp. Is there a potential battle?
-    var humanityNeighbor = humanityData[current];
+    var humanityNeighbor = humanity(current);
     if (humanityNeighbor && humanityNeighbor.c != null
         && humanityNeighbor.c !== camp) {
       continue;
@@ -227,7 +227,7 @@ function travelTo(tstart, tend, speed) {
     current = fastest.shift();
     walkedTiles[current] = true;
     // Check the camp. Is there a potential battle?
-    var humanityNeighbor = humanityData[current];
+    var humanityNeighbor = humanity(current);
     if (humanityNeighbor && humanityNeighbor.c != null
         && humanityNeighbor.c !== camp) {
       continue;
@@ -334,6 +334,7 @@ function speedFromHuman(human) {
 // Given a building (see tileTypes) and a tile = {q, r},
 // check whether the building can be built there.
 function validConstruction(building, tile) {
+  if (building === null) { return true; }   // Destruction is always valid.
   var humanityTile = humanity(tile);
   var tileInfo = terrain(tile);
   if (!humanityTile || humanityTile.h <= 0) { return false; }
@@ -450,8 +451,7 @@ function validConstruction(building, tile) {
 
 var planTypes = {
   move: 1,
-  build: 2,
-  destroy: 3
+  build: 2
 };
 
 var plans = {};
@@ -1436,23 +1436,35 @@ splitBut.addEventListener('click', enterSplitMode);
 
 // Keyboard events.
 
+var buildHotKeys = {
+  48: tileTypes.airport,    // "0"
+  49: tileTypes.wall,       // "1"
+  50: tileTypes.road,       // "2"
+  51: tileTypes.farm,       // "3"
+  52: tileTypes.residence,  // "4"
+  53: tileTypes.skyscraper, // "5"
+  54: tileTypes.factory,    // "6"
+  55: tileTypes.dock,       // "7"
+  56: tileTypes.gunsmith,   // "8"
+  57: tileTypes.airland,    // "9"
+};
+
 window.onkeydown = function keyInputManagement(event) {
   var voidCache = false;
   var redraw = false;
-  if (event.keyCode === 39) {           // →
+  if (event.keyCode === 39 || event.keyCode === 68) {           // → D
     origin.x0 += (canvas.width / 2)|0;
     redraw = true;
-  } else if (event.keyCode === 38) {    // ↑
+  } else if (event.keyCode === 38 || event.keyCode === 87) {    // ↑ W
     origin.y0 -= (canvas.height / 2)|0;
     redraw = true;
-  } else if (event.keyCode === 37) {    // ←
+  } else if (event.keyCode === 37 || event.keyCode === 65) {    // ← A
     origin.x0 -= (canvas.width / 2)|0;
     redraw = true;
-  } else if (event.keyCode === 40) {    // ↓
+  } else if (event.keyCode === 40 || event.keyCode === 83) {    // ↓ S
     origin.y0 += (canvas.height / 2)|0;
     redraw = true;
-  } else if (((event.keyCode === 61 || event.keyCode === 187) && event.shiftKey)
-            || event.keyCode === 187 || event.keyCode === 61) {  // +=
+  } else if (event.keyCode === 187 || event.keyCode === 61) {  // +=
     // Zoom.
     hexaSize *= 2;
     origin.x0 = origin.x0 * 2 + (canvas.width / 2)|0;
@@ -1470,13 +1482,16 @@ window.onkeydown = function keyInputManagement(event) {
     redraw = true;
   } else if (event.keyCode === 84) {    // T
     enterMode(selectionModes.travel);
-  } else if (event.keyCode === 66) {    // B
+  } else if (event.keyCode === 67) {    // C
     enterMode(selectionModes.build);
-  } else if (event.keyCode === 83) {    // S
+  } else if (event.keyCode === 70) {    // F
     enterMode(selectionModes.split);
-  } else if (event.keyCode === 68) {    // D
+  } else if (event.keyCode === 192) {   // `
+    sendBuild(currentTile, null);   // Destroy building.
   } else if (event.keyCode === 27) {    // ESC
     enterMode(selectionModes.normal);
+  } else if (48 <= event.keyCode && event.keyCode <= 57) {
+    sendBuild(currentTile, buildHotKeys[event.keyCode]);
   }
   if (voidCache) {
     cachedPaint = {};

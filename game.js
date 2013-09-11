@@ -17,24 +17,23 @@ function actWSRecv(data) {
   try {
     plan = JSON.parse(data);
   } catch(e) { return; }
+  console.log('Suggested plan:', plan);
 
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
     if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
-     && plan.do === terrain.planTypes.move) {
+     && plan.do === terrain.planTypes.move
+     && terrain.travel(terrain.tileFromKey(plan.at),
+                       terrain.tileFromKey(plan.to)).length > 1
+     && (plan.h > 0 || plan.h <= terrain.tileFromKey(plan.to).h)) {
       // Is the move valid?
-      if (terrain.travel(terrain.tileFromKey(plan.at),
-                         terrain.tileFromKey(plan.to)).length > 1
-       && (plan.h > 0 || plan.h <= terrain.tileFromKey(plan.to).h)) {
-        terrain.addPlan(plan);
-      }
-    } else if ((typeof plan.b === 'number')
-            && plan.do === terrain.planTypes.build) {
+      terrain.addPlan(plan);
+    } else if ((typeof plan.b === 'number' || plan.b === null)
+           && plan.do === terrain.planTypes.build
+           && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at))) {
       // Is the move valid?
-      if (terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at))) {
-        terrain.addPlan(plan);
-      }
-    }
-  }
+      terrain.addPlan(plan);
+    } else console.log('Plan denied.');
+  } else console.log('Plan invalid.');
 }
 
 var updatedHumanity = {};
@@ -118,12 +117,10 @@ function applyPlan(plan) {
     updatedHumanity[plan.to] = humanityTo;
 
   } else if (plan.do === terrain.planTypes.build) {
+    console.log('Plan: building', plan.b, 'at', plan.at);
     humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;
     collectFromTile(plan.at, humanityFrom, true);
-  } else if (plan.do === terrain.planTypes.destroy) {
-    humanityFrom.b = null;
-    updatedHumanity[plan.at] = humanityFrom;
   }
 }
 

@@ -154,9 +154,11 @@ function tileFromKey(key) {
 }
 
 // Find the set of tiles one can move to, from a starter tile.
+// Requires humans to be on that tile.
 // `tstart` is a {q, r} tile position. (It's Dijkstra.)
 // Returns a map from tile keys (see keyFromTile) to truthy values.
 function travelFrom(tstart, speed) {
+  var camp = humanity(tstart).c;    // Camp which wants to travel.
   var walkedTiles = {};     // Valid accessible tiles.
   var current = keyFromTile(tstart);
   var consideredTiles = {}; // Map from tile keys to distance walked.
@@ -167,10 +169,17 @@ function travelFrom(tstart, speed) {
   while (fastest.length > 0) {
     current = fastest.shift();
     walkedTiles[current] = true;
+    // Check the camp. Is there a potential battle?
+    var humanityNeighbor = humanity(current);
+    if (humanityNeighbor && humanityNeighbor.c != null
+        && humanityNeighbor.c !== camp) {
+      continue;
+    }
     for (var i = 0; i < 6; i++) {
       var neighbor = neighborFromTile(tileFromKey(current), i);
       var newDistance = consideredTiles[current] + distance(neighbor);
       if (newDistance <= speed) {
+        // Update data.
         var neighborKey = keyFromTile(neighbor);
         if (consideredTiles[neighborKey] !== undefined &&
             newDistance < consideredTiles[neighborKey]) {
@@ -204,8 +213,10 @@ function travelFrom(tstart, speed) {
 
 // Find the path from tstart = {q, r} to tend = {q, r}
 // with a minimal distance, at a certain speed. (It's A*.)
+// Requires humans to be on that tile.
 // Returns a list of tiles = "q:r" through the trajectory.
 function travelTo(tstart, tend, speed) {
+  var camp = humanity(tstart).c;    // Camp which wants to travel.
   var endKey = keyFromTile(tend);
   var walkedTiles = {};     // Valid accessed tiles.
   var consideredTiles = {}; // Map from tile keys to distance walked.
@@ -219,6 +230,12 @@ function travelTo(tstart, tend, speed) {
   while (fastest.length > 0 && endKey !== current) {
     current = fastest.shift();
     walkedTiles[current] = true;
+    // Check the camp. Is there a potential battle?
+    var humanityNeighbor = humanity(current);
+    if (humanityNeighbor && humanityNeighbor.c != null
+        && humanityNeighbor.c !== camp) {
+      continue;
+    }
     for (var i = 0; i < 6; i++) {
       var neighbor = neighborFromTile(tileFromKey(current), i);
       var newDistance = consideredTiles[current] + distance(neighbor);
@@ -321,6 +338,7 @@ function speedFromHuman(human) {
 // Given a building (see tileTypes) and a tile = {q, r},
 // check whether the building can be built there.
 function validConstruction(building, tile) {
+  if (building === null) { return true; }   // Destruction is always valid.
   var humanityTile = humanity(tile);
   var tileInfo = terrain(tile);
   if (!humanityTile || humanityTile.h <= 0) { return false; }
@@ -437,8 +455,7 @@ function validConstruction(building, tile) {
 
 var planTypes = {
   move: 1,
-  build: 2,
-  destroy: 3
+  build: 2
 };
 
 var plans = {};
