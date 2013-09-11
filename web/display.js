@@ -1571,11 +1571,18 @@ function mouseEndDrag(event) {
 }
 
 canvas.onmousedown = function mouseInputManagement(event) {
-  canvas.addEventListener('mouseup', mouseSelection);
-  canvas.addEventListener('mousemove', mouseDrag);
-  lastMousePosition.clientX = event.clientX;
-  lastMousePosition.clientY = event.clientY;
+  if (event.button === 0) {
+    canvas.addEventListener('mouseup', mouseSelection);
+    canvas.addEventListener('mousemove', mouseDrag);
+    lastMousePosition.clientX = event.clientX;
+    lastMousePosition.clientY = event.clientY;
+  } else if (event.button === 2) {
+    enterTravelMode();
+    mouseSelection(event);
+    enterNormalMode();
+  }
 };
+canvas.oncontextmenu = function(e) { e.preventDefault(); };
 
 (function() {
   var requestAnimationFrame = window.requestAnimationFrame ||
