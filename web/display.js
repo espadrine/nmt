@@ -474,12 +474,21 @@ socket.onmessage = function(e) {
   if (change.plans) {
     // FIXME: if you want to receive other players' plans.
   } else {
-    changeHumanity(humanityData, change);
-    updateCurrentTileInformation();
-    if (change.war) {
+    if (change.camp !== undefined) {
+      playerCamp = change.camp;
+      delete change.camp;
+    }
+    if (change.population !== undefined) {
+      humanityPopulation = change.population;
+      delete change.population;
+    }
+    if (change.war !== undefined) {
       addHumanMessages(warTiles, change.war, warMessages);
+      delete change.war;
     }
     addStarveMessages(change);
+    changeHumanity(humanityData, change);
+    updateCurrentTileInformation();
     // Update paint cache for each building change.
     updateCachedPaint(hexaSize, origin, change);
     paint(ctx, hexaSize, origin);
@@ -495,7 +504,7 @@ function sendMove(from, to, humans) {
     do: planTypes.move,
     to: keyFromTile(to),
     h: humans,
-    c: 1    // FIXME: put our current camp.
+    c: playerCamp
   }));
 }
 
@@ -519,6 +528,8 @@ function sendBuild(at, building) {
 // o: manufactured goods owned;
 // Also a special key, population = [population of camp 0, etc.].
 var humanityData = {};
+var humanityPopulation;
+var playerCamp;
 
 // Takes a tile = {q, r}, returns the humanity information for that tile.
 // (See above for humanity information.)
@@ -732,12 +743,12 @@ function paintAroundTiles(ctx, size, origin, tiles, color) {
   ctx.stroke();
 }
 
-function paintCurrentTile(ctx, size, origin, tile) {
+function paintTileHexagon(ctx, size, origin, tile, color) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   var cp = pixelFromTile(tile, origin, size);
   pathFromHex(ctx, size, cp, hexHorizDistance, hexVertDistance);
-  ctx.strokeStyle = '#99f';
+  ctx.strokeStyle = color;
   ctx.stroke();
 }
 
@@ -990,16 +1001,17 @@ function paint(ctx, size, origin) {
   } else {             paintTiles(ctx, size, origin);
   }
   if (!currentlyDragging) {
+    if (currentTile != null && playerCamp != null) {
+      ctx.lineWidth = 4;
+      paintTileHexagon(ctx, size, origin, currentTile, campHsl(playerCamp));
+      ctx.lineWidth = 1;
+    }
     paintCamps(ctx, size, origin);
     paintAroundTiles(ctx, size, origin, accessibleTiles);
-    if (currentTile != null) {
-      paintCurrentTile(ctx, size, origin, currentTile);
-      if (targetTile != null &&
-          (selectionMode === selectionModes.travel ||
-           selectionMode === selectionModes.split)) {
-        paintAlongTiles(ctx, size, origin,
-            humanTravelTo(currentTile, targetTile));
-      }
+    if (currentTile != null && targetTile != null &&
+        (selectionMode === selectionModes.travel ||
+         selectionMode === selectionModes.split)) {
+      paintAlongTiles(ctx, size, origin, humanTravelTo(currentTile,targetTile));
     }
     paintTileMessages(ctx, size, origin);
     paintPopulation(ctx);
@@ -1113,9 +1125,15 @@ function paintCamps(ctx, size, origin) {
     visibleCamps[humans.c][visibleHumans[i]] = true;
   }
   for (var i = 0; i < numberOfCamps; i++) {
-    paintAroundTiles(ctx, size, origin, visibleCamps[i],
-        'hsl(' + campHueCreator9000(i) + ',100%,50%)');
+    ctx.lineWidth = 1.5;
+    paintAroundTiles(ctx, size, origin, visibleCamps[i], campHsl(i));
+    ctx.lineWidth = 1;
   }
+}
+
+// Return CSS hsl string.
+function campHsl(camp) {
+  return 'hsl(' + campHueCreator9000(camp) + ',100%,50%)';
 }
 
 var campHue = [];
@@ -1129,7 +1147,7 @@ function campHueCreator9000(camp) {
 
 // Paint the relative population of each camp.
 function paintPopulation(ctx) {
-  if (!humanityData.population) { return; }
+  if (!humanityPopulation) { return; }
   var top = 55;
   var left = 8;
   var width = 185;
@@ -1150,18 +1168,18 @@ function paintPopulation(ctx) {
   ctx.lineWidth = 1;
   // Paint the population.
   var totalPopulation = 0;
-  for (var i = 0; i < humanityData.population.length; i++) {
-    totalPopulation += humanityData.population[i];
+  for (var i = 0; i < humanityPopulation.length; i++) {
+    totalPopulation += humanityPopulation[i];
   }
   var start = left;
   var popWidth;
-  for (var i = 0; i < humanityData.population.length - 1; i++) {
-    popWidth = width * humanityData.population[i] / totalPopulation;
+  for (var i = 0; i < humanityPopulation.length - 1; i++) {
+    popWidth = width * humanityPopulation[i] / totalPopulation;
     ctx.fillStyle = 'hsl(' + campHueCreator9000(i) + ',80%,50%)';
     ctx.fillRect(start|0, top, popWidth|0, height);
     start += popWidth;
   }
-  popWidth = width * humanityData.population[i] / totalPopulation;
+  popWidth = width * humanityPopulation[i] / totalPopulation;
   ctx.fillStyle = 'hsl(' + campHueCreator9000(i) + ',80%,50%)';
   ctx.fillRect(start|0, top, (popWidth|0)+1, height);
 }
