@@ -1,6 +1,6 @@
 @font-face {
   font-family: "Linux Biolinum";
-  src: local("Linux Biolinum O"), url(./LinBiolinum_R.woff);
+  src: local("Linux Biolinum O"), url(../LinBiolinum_R.woff);
 }
 * {
   font-family: "Linux Biolinum", sans-serif;
@@ -30,7 +30,6 @@ html {
 }
 
 h1 {
-  font-family: monospace;
   font-variant: small-caps;
   letter-spacing: 0.5em;
   text-align: center;
