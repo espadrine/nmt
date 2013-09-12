@@ -57,7 +57,7 @@ hr.separator {
   margin: auto;
 }
 p { margin-top: 0; }
-p.help { cursor: help; }
+p.help > a { cursor: help; color: inherit; text-decoration: inherit; }
 span.buildHelp {
   font-size: 0.7em;
   font-style: italic;
