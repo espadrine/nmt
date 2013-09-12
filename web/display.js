@@ -486,6 +486,13 @@ socket.onmessage = function(e) {
       addHumanMessages(warTiles, change.war, warMessages);
       delete change.war;
     }
+    if (change.goto !== undefined) {
+      // goto is the spawn tile.
+      var spawnPixel = pixelFromTile(change.goto, { x0:0, y0:0 }, hexaSize);
+      origin.x0 = spawnPixel.x - ((canvas.width / 2)|0);
+      origin.y0 = spawnPixel.y - ((canvas.height / 2)|0);
+      delete change.goto;
+    }
     addStarveMessages(change);
     changeHumanity(humanityData, change);
     updateCurrentTileInformation();
@@ -997,7 +1004,9 @@ var displayedPaintContext = displayedPaint.getContext('2d');
 // compared to the pixel (0, 0) on the map.
 function paint(ctx, size, origin) {
   if (spritesLoaded) { paintTilesFromCache(ctx, size, origin);
-  } else {             paintTiles(ctx, size, origin);
+  } else {
+    paintTiles(ctx, size, origin);
+    drawTitle(ctx, canvas.width, canvas.height);
   }
   if (currentTile != null && playerCamp != null) {
     ctx.lineWidth = 4;
@@ -1014,6 +1023,25 @@ function paint(ctx, size, origin) {
   paintTileMessages(ctx, size, origin);
   paintPopulation(ctx);
   displayedPaintContext.drawImage(canvas, 0, 0);
+}
+
+function drawTitle(ctx, width, height) {
+  var line1 = "Welcome to Thaddée Tyl's…";
+  var line2 = "NOT MY TERRITORY";
+  var line3 = "(YET)";
+  var measure;
+  ctx.fillStyle = 'black';
+  ctx.textAlign = 'center';
+  ctx.font = (height / 16) + 'px "Linux Biolinum", sans-serif';
+  measure = ctx.measureText(line1).width;
+  ctx.fillText(line1, width / 2, height * 1/3);
+  ctx.font = (height / 8) + 'px "Linux Biolinum", sans-serif';
+  measure = ctx.measureText(line2).width;
+  ctx.fillText(line2, width / 2, height * 13/24);
+  ctx.font = (height / 16) + 'px "Linux Biolinum", sans-serif';
+  measure = ctx.measureText(line3).width;
+  ctx.fillText(line3, width / 2, height * 2/3);
+  ctx.textAlign = 'start';
 }
 
 
@@ -1499,12 +1527,13 @@ window.onkeydown = function keyInputManagement(event) {
   } else if (event.keyCode === 173 || event.keyCode === 189
           || event.keyCode === 109) {   // -
     // Unzoom.
-    hexaSize = (hexaSize / 2)|0;
-    if (hexaSize === 0) { hexaSize++; }
-    origin.x0 = (origin.x0 / 2 - canvas.width / 4)|0;
-    origin.y0 = (origin.y0 / 2 - canvas.height / 4)|0;
-    voidCache = true;
-    redraw = true;
+    if (hexaSize > 2) {
+      hexaSize = hexaSize / 2;
+      origin.x0 = (origin.x0 / 2 - canvas.width / 4)|0;
+      origin.y0 = (origin.y0 / 2 - canvas.height / 4)|0;
+      voidCache = true;
+      redraw = true;
+    }
   } else if (event.keyCode === 84) {    // T
     enterMode(selectionModes.travel);
   } else if (event.keyCode === 67) {    // C

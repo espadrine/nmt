@@ -11,9 +11,12 @@ function actWSStart(socket) {
   console.log('Player', ip, 'entered the game.');
   socket.on('message', makeActWSRecv(ip));
   socket.send(JSON.stringify(humanity.data()));
+  var camp = campFromIP(ip);
+  var playerCamp = humanity.campFromId(camp);
   socket.send(JSON.stringify({
     population: humanity.population(),
-    camp: campFromIP(ip),
+    camp: camp,
+    goto: playerCamp.spawn,
   }));
 }
 
@@ -197,6 +200,7 @@ function gameTurn() {
     humanity.change(updatedHumanity);
     addPopulation(updatedHumanity);
     updatedHumanity.population = humanity.population();
+    // FIXME: finish the game here if needed.
     updatedHumanity.war = warTiles;
     actChannel.clients.forEach(function (client) {
       client.send(JSON.stringify(updatedHumanity));
@@ -227,11 +231,58 @@ function addPopulation(updatedHumanity) {
   }
 }
 
+// Returns a list of spawn = {q,r}.
+function findSpawn() {
+  var spawns = new Array(humanity.numberOfCamps);
+  var distanceBetweenPlayers = ((Math.random() * 200)|0) + 100;
+  var oneSpot = {
+    q:(Math.random() * 10000)|0,
+    r:(Math.random() * 10000)|0,
+  };
+  spawns[0] = findNearestSteppe(oneSpot);
+  var angle, q, r;
+  for (var i = 1; i < humanity.numberOfCamps; i++) {
+    angle = Math.random() * 2 * Math.PI;
+    oneSpot = {
+      q: (oneSpot.q + distanceBetweenPlayers * Math.cos(angle))|0,
+      r: (oneSpot.r + distanceBetweenPlayers * Math.sin(angle))|0,
+    };
+    spawns[i] = findNearestSteppe(oneSpot);
+  }
+  return spawns;
+}
+
+// tile = {q,r}
+function findNearestSteppe(tile) {
+  var k = 1;
+  while (terrain(tile).type !== terrain.tileTypes.steppe) {
+    // Take the bottom left tile.
+    for (var i = 0; i < k; i++) {
+      tile = terrain.neighborFromTile(tile, 4);
+    }
+    // Go round.
+    for (var i = 0; i < 6; i++) {
+      for (var j = 0; j < k; j++) {
+        tile = terrain.neighborFromTile(tile, i);
+        if (terrain(tile).type === terrain.tileTypes.steppe) {
+          return tile;
+        }
+      }
+    }
+  }
+  return tile;
+}
+
 
 // Starting the game.
 
+function startGame() {
+  humanity.setSpawn(findSpawn());
+}
+
 var actChannel;
 function start(camp) {
+  startGame();
   actChannel = camp.ws('act', actWSStart);
   setTimeout(gameTurn, gameTurnTime);
 }

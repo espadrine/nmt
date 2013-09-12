@@ -14,7 +14,10 @@ function saveWorld() {
 var terrain;
 function start(t) {
   terrain = t;
-  var world = require(worldFile);
+  var world;
+  try {
+    world = require(worldFile);
+  } catch(e) { world = {}; }
   // The following is prophetic.
   humanityChange(world);
   // Update periodically.
@@ -44,6 +47,7 @@ function humanity(tile) {
   return humanityData[tile.q + ':' + tile.r];
 }
 
+// change = {tileKey: humanityTile}.
 function humanityChange(change) {
   for (var tileKey in change) {
     var tileChanged = change[tileKey];
@@ -96,13 +100,12 @@ var homePerHouse = {
 };
 
 var campIdCount = 0;
-var camps = [];
 function Camp() {
   this.id = campIdCount++;
-  this.populationCap = 0;   // Number of people, based on number of houses.
-  this.population = 0;
-  this.homes = {};     // Map from tileKey to number of homes.
-  camps.push(this);
+  this.populationCap = 0;   // Max. number of people, based on number of houses.
+  this.population = 0;      // Number of people.
+  this.homes = {};          // Map from tileKey to number of homes.
+  this.spawn = { q:0, r:0 };// Starting spot.
 }
 Camp.prototype = {
   loseHomes: function(tileKey, b) {
@@ -124,14 +127,35 @@ Camp.prototype = {
   }
 };
 
+var camps = [];
 function campFromId(id) { if (id != null) { return camps[id]; } }
 
 var numberOfCamps = 3;
 // Make all the camps.
 function makeCamps() {
-  for (var i = 0; i < numberOfCamps; i++) { new Camp(); }
+  var camps = new Array(numberOfCamps);
+  for (var i = 0; i < numberOfCamps; i++) {
+    camps[i] = new Camp();
+  }
+  return camps;
 }
-makeCamps();
+
+// Given a list of {q,r} spawns, set the map.
+// Modifies `camps`.
+function setSpawn(spawns) {
+  camps = makeCamps();
+  humanityData = {};
+  var settlements = {};
+  for (var i = 0; i < numberOfCamps; i++) {
+    camps[i].spawn = spawns[i];
+    console.log('camp', i + ':', camps[i].spawn);
+    var humanityTile = makeDefault();
+    humanityTile.h = 3;
+    humanityTile.c = i;
+    settlements[spawns[i].q + ':' + spawns[i].r] = humanityTile;
+  }
+  humanityChange(settlements);
+}
 
 // Return a list of population information for each camp.
 function population() {
@@ -155,3 +179,4 @@ module.exports.homePerHouse = homePerHouse;
 module.exports.campFromId = campFromId;
 module.exports.numberOfCamps = numberOfCamps;
 module.exports.population = population;
+module.exports.setSpawn = setSpawn;
