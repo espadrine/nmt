@@ -2,6 +2,7 @@ var terrain = require('./terrain.js');
 var humanity = require('./humanity');
 
 humanity.start(terrain);
+var cheatMode = false;
 
 // Send and receive data from players.
 
@@ -44,8 +45,9 @@ function judgePlan(ip, plan) {
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
     // Check camp.
     var humanityTile = humanity(terrain.tileFromKey(plan.at));
-//    if (humanityTile !== undefined && humanityTile.c === campFromIP(ip)
-//        && humanityTile.h > 0) {
+    if (cheatMode ||
+        (humanityTile !== undefined && humanityTile.c === campFromIP(ip)
+         && humanityTile.h > 0)) {
       // Check plan.
       if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
        && plan.do === terrain.planTypes.move
@@ -60,7 +62,7 @@ function judgePlan(ip, plan) {
         // Is the move valid?
         terrain.addPlan(plan);
       } else console.log('Plan denied.');
-//    } else console.log('Camp denied or no camp detected.');
+    } else console.log('Camp denied or no camp detected.');
   } else console.log('Plan invalid.');
 }
 
