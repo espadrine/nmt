@@ -1000,23 +1000,21 @@ function paint(ctx, size, origin) {
   if (spritesLoaded) { paintTilesFromCache(ctx, size, origin);
   } else {             paintTiles(ctx, size, origin);
   }
-  if (!currentlyDragging) {
-    if (currentTile != null && playerCamp != null) {
-      ctx.lineWidth = 4;
-      paintTileHexagon(ctx, size, origin, currentTile, campHsl(playerCamp));
-      ctx.lineWidth = 1;
-    }
-    paintCamps(ctx, size, origin);
-    paintAroundTiles(ctx, size, origin, accessibleTiles);
-    if (currentTile != null && targetTile != null &&
-        (selectionMode === selectionModes.travel ||
-         selectionMode === selectionModes.split)) {
-      paintAlongTiles(ctx, size, origin, humanTravelTo(currentTile,targetTile));
-    }
-    paintTileMessages(ctx, size, origin);
-    paintPopulation(ctx);
-    displayedPaintContext.drawImage(canvas, 0, 0);
+  if (currentTile != null && playerCamp != null) {
+    ctx.lineWidth = 4;
+    paintTileHexagon(ctx, size, origin, currentTile, campHsl(playerCamp));
+    ctx.lineWidth = 1;
   }
+  paintCamps(ctx, size, origin);
+  paintAroundTiles(ctx, size, origin, accessibleTiles);
+  if (currentTile != null && targetTile != null &&
+      (selectionMode === selectionModes.travel ||
+       selectionMode === selectionModes.split)) {
+    paintAlongTiles(ctx, size, origin, humanTravelTo(currentTile,targetTile));
+  }
+  paintTileMessages(ctx, size, origin);
+  paintPopulation(ctx);
+  displayedPaintContext.drawImage(canvas, 0, 0);
 }
 
 
