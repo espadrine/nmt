@@ -166,7 +166,7 @@ function travelFrom(tstart, speed) {
     current = fastest.shift();
     walkedTiles[current] = true;
     // Check the camp. Is there a potential battle?
-    var humanityNeighbor = humanity(current);
+    var humanityNeighbor = humanity(tileFromKey(current));
     if (humanityNeighbor && humanityNeighbor.c != null
         && humanityNeighbor.c !== camp) {
       continue;
@@ -227,7 +227,7 @@ function travelTo(tstart, tend, speed) {
     current = fastest.shift();
     walkedTiles[current] = true;
     // Check the camp. Is there a potential battle?
-    var humanityNeighbor = humanity(current);
+    var humanityNeighbor = humanity(tileFromKey(current));
     if (humanityNeighbor && humanityNeighbor.c != null
         && humanityNeighbor.c !== camp) {
       continue;
@@ -988,7 +988,9 @@ function paint(ctx, size, origin) {
     paintAroundTiles(ctx, size, origin, accessibleTiles);
     if (currentTile != null) {
       paintCurrentTile(ctx, size, origin, currentTile);
-      if (targetTile != null) {
+      if (targetTile != null &&
+          (selectionMode === selectionModes.travel ||
+           selectionMode === selectionModes.split)) {
         paintAlongTiles(ctx, size, origin,
             humanTravelTo(currentTile, targetTile));
       }

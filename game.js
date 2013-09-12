@@ -71,24 +71,18 @@ function applyPlan(plan) {
       }
       // Imbalance is > 1 if we win.
       var imbalance = ourForces / theirForces;
+      console.log('imbalance:', imbalance);
       if (imbalance <= 1) {
         // We lose.
-        if (imbalance === 1) {
-          removeHumanStuff(plan.at, humanityFrom);
-          removeHumanStuff(plan.to, humanityTo);
-        } else if (emptyingOrigin) {
-          removeHumanStuff(plan.at, humanityFrom);
-        } else {
-          humanityTo.h -= (humanityTo.h * imbalance)|0;
-          humanityFrom.h -= plan.h;
-        }
+        humanityTo.h -= (humanityTo.h * imbalance)|0;
+        humanityFrom.h -= plan.h;
         updatedHumanity[plan.at] = humanityFrom;
         updatedHumanity[plan.to] = humanityTo;
         return;
       } else {
         // We win.
-        humanityTo.h = humanityFrom.h - (humanityFrom.h * (1/imbalance))|0;
-        //humanityTo.h = plan.h - humanityTo.h;
+        humanityTo.h = plan.h - (plan.h * (1/imbalance))|0;
+        humanityFrom.h -= plan.h;
         emptyTarget = true;
       }
     } else {
@@ -107,7 +101,6 @@ function applyPlan(plan) {
     if (emptyingOrigin) { humanityFrom.o = 0; }
 
     // Collecting from the land.
-    if (emptyingOrigin) { removeHumanStuff(plan.at, humanityFrom); }
     collectFromTile(plan.to, humanityTo, emptyTarget);
 
     //console.log('After:');
@@ -138,11 +131,6 @@ function collectFromTile(tileKey, humanityTile, addBuilding) {
   } else if (humanityTile.b === terrain.tileTypes.gunsmith) {
     humanityTile.o |= terrain.manufacture.gun;
   }
-}
-
-function removeHumanStuff(tileKey, human) {
-  human.h = 0;
-  human.f = 0;
 }
 
 
