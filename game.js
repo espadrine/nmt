@@ -6,33 +6,61 @@ humanity.start(terrain);
 // Send and receive data from players.
 
 function actWSStart(socket) {
-  console.log('A player entered the game.');
-  socket.on('message', actWSRecv);
+  var ip = socket._socket.remoteAddress;
+  console.log('Player', ip, 'entered the game.');
+  socket.on('message', makeActWSRecv(ip));
   socket.send(JSON.stringify(humanity.data()));
-  socket.send(JSON.stringify({ population: humanity.population() }));
+  socket.send(JSON.stringify({
+    population: humanity.population(),
+    camp: campFromIP(ip),
+  }));
 }
 
-function actWSRecv(data) {
-  var plan;
-  try {
-    plan = JSON.parse(data);
-  } catch(e) { return; }
+function makeActWSRecv(ip) {
+  return function actWSRecv(data) {
+    var plan;
+    try {
+      plan = JSON.parse(data);
+    } catch(e) { return; }
+    judgePlan(ip, plan);
+  };
+}
+
+var switchCamp = 0;
+var campFromIPs = {};
+function campFromIP(ip) {
+  if (campFromIPs[ip] === undefined) {
+    campFromIPs[ip] = switchCamp;
+    switchCamp++;
+    switchCamp %= humanity.numberOfCamps;
+  }
+  return campFromIPs[ip];
+}
+
+// Accept or reject a plan.
+function judgePlan(ip, plan) {
   console.log('Suggested plan:', plan);
 
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
-    if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
-     && plan.do === terrain.planTypes.move
-     && terrain.travel(terrain.tileFromKey(plan.at),
-                       terrain.tileFromKey(plan.to)).length > 1
-     && (plan.h > 0 || plan.h <= terrain.tileFromKey(plan.to).h)) {
-      // Is the move valid?
-      terrain.addPlan(plan);
-    } else if ((typeof plan.b === 'number' || plan.b === null)
-           && plan.do === terrain.planTypes.build
-           && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at))) {
-      // Is the move valid?
-      terrain.addPlan(plan);
-    } else console.log('Plan denied.');
+    // Check camp.
+    var humanityTile = humanity(terrain.tileFromKey(plan.at));
+    if (humanityTile !== undefined && humanityTile.c === campFromIP(ip)
+        && humanityTile.h > 0) {
+      // Check plan.
+      if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
+       && plan.do === terrain.planTypes.move
+       && terrain.travel(terrain.tileFromKey(plan.at),
+                         terrain.tileFromKey(plan.to)).length > 1
+       && (plan.h > 0 || plan.h <= humanityTile.h)) {
+        // Is the move valid?
+        terrain.addPlan(plan);
+      } else if ((typeof plan.b === 'number' || plan.b === null)
+             && plan.do === terrain.planTypes.build
+             && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at))) {
+        // Is the move valid?
+        terrain.addPlan(plan);
+      } else console.log('Plan denied.');
+    } else console.log('Camp denied or no camp detected.');
   } else console.log('Plan invalid.');
 }
 

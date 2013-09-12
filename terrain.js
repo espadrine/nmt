@@ -2,6 +2,8 @@ var SimplexNoise = require('simplex-noise');
 var MersenneTwister = require('./mersenne-twister');
 var humanity = require('./humanity');
 
+// Shared code with web/display.js.
+
 var prng = new MersenneTwister(0);
 var simplex1 = new SimplexNoise(prng.random.bind(prng));
 var simplex2 = new SimplexNoise(prng.random.bind(prng));
