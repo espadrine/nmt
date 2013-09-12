@@ -44,8 +44,8 @@ function judgePlan(ip, plan) {
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
     // Check camp.
     var humanityTile = humanity(terrain.tileFromKey(plan.at));
-    if (humanityTile !== undefined && humanityTile.c === campFromIP(ip)
-        && humanityTile.h > 0) {
+//    if (humanityTile !== undefined && humanityTile.c === campFromIP(ip)
+//        && humanityTile.h > 0) {
       // Check plan.
       if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
        && plan.do === terrain.planTypes.move
@@ -60,7 +60,7 @@ function judgePlan(ip, plan) {
         // Is the move valid?
         terrain.addPlan(plan);
       } else console.log('Plan denied.');
-    } else console.log('Camp denied or no camp detected.');
+//    } else console.log('Camp denied or no camp detected.');
   } else console.log('Plan invalid.');
 }
 
@@ -109,7 +109,11 @@ function applyPlan(plan) {
         return;
       } else {
         // We win.
-        humanityTo.h = plan.h - (plan.h * (1/imbalance))|0;
+        if (surrender(plan.to, humanityFrom.c)) {
+          humanityTo.h += plan.h;
+        } else {
+          humanityTo.h = plan.h - (plan.h * (1/imbalance))|0;
+        }
         humanityFrom.h -= plan.h;
         emptyTarget = true;
       }
@@ -159,6 +163,22 @@ function collectFromTile(tileKey, humanityTile, addBuilding) {
   } else if (humanityTile.b === terrain.tileTypes.gunsmith) {
     humanityTile.o |= terrain.manufacture.gun;
   }
+}
+
+// Are the people in tileKey = "q:r" surrounded by camp?
+function surrender(tileKey, camp) {
+  // How many people around.
+  var surrounded = 0;
+  console.log('surrender? attacker =',camp);
+  for (var i = 0; i < 6; i++) {
+    var neighbor =
+      humanity(terrain.neighborFromTile(terrain.tileFromKey(tileKey), i));
+    if (neighbor && neighbor.c === camp) {
+      surrounded++;
+    }
+  }
+  console.log('surrender? surrounder =',surrounded);
+  return surrounded >= 2;
 }
 
 

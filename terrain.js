@@ -472,6 +472,7 @@ module.exports.travel = humanTravelTo;
 module.exports.tileTypes = tileTypes;
 module.exports.manufacture = manufacture;
 module.exports.validConstruction = validConstruction;
+module.exports.neighborFromTile = neighborFromTile;
 
 module.exports.tileFromKey = tileFromKey;
 module.exports.keyFromTile = keyFromTile;

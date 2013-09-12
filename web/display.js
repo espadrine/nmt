@@ -503,8 +503,7 @@ function sendMove(from, to, humans) {
     at: keyFromTile(from),
     do: planTypes.move,
     to: keyFromTile(to),
-    h: humans,
-    c: playerCamp
+    h: humans
   }));
 }
 
