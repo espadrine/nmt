@@ -762,11 +762,17 @@ function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
   if (human != null && human.b != null) {
     if (human.b === tileTypes.road || human.b === tileTypes.wall
      || human.b === tileTypes.airland) {
-      // Orient roads along other roads, walls against walls.
+      // Orient roads, walls and airlands.
       var oriented = false;
       for (var i = 0; i < 6; i++) {
         var neighbor = humanity(neighborFromTile(tilePos, i));
-        if (neighbor && neighbor.b === human.b) {
+        if (neighbor &&
+            // Orient roads along other roads, walls against walls.
+            (((human.b === tileTypes.road || human.b === tileTypes.wall)
+              && neighbor.b === human.b)
+            // Orient airlands towards airports.
+          || (human.b === tileTypes.airland
+              && neighbor.b === tileTypes.airport))) {
           paintSprite(ctx, size, cx, cy, human.b, i);
           oriented = true;
         }
