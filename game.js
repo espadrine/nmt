@@ -227,6 +227,7 @@ function gameTurn() {
   }
 }
 
+// Birth. Add folks on home tiles.
 function addPopulation(updatedHumanity) {
   var camp;
   for (var i = 0; i < humanity.numberOfCamps; i++) {
@@ -239,6 +240,7 @@ function addPopulation(updatedHumanity) {
         var randomHome = homes[randomHomeIndex];
         var randomHomeTile = humanity(terrain.tileFromKey(randomHome));
         randomHomeTile.h++;
+        randomHomeTile.o = 0;
         updatedHumanity[randomHome] = randomHomeTile;
       }
       camp.population = camp.populationCap;
