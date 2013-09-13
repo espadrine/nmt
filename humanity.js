@@ -140,6 +140,16 @@ function makeCamps() {
   return camps;
 }
 
+// List of camp IDs from most population to least.
+function winners() {
+  var winners = new Array(numberOfCamps);
+  for (var i = 0; i < numberOfCamps; i++) { winners[i] = i; }
+  winners.sort(function(a, b) {
+    return camps[b].population - camps[a].population;
+  });
+  return winners;
+}
+
 // Given a list of {q,r} spawns, set the map.
 // Modifies `camps`.
 function setSpawn(spawns) {
@@ -180,3 +190,4 @@ module.exports.campFromId = campFromId;
 module.exports.numberOfCamps = numberOfCamps;
 module.exports.population = population;
 module.exports.setSpawn = setSpawn;
+module.exports.winners = winners;

@@ -200,7 +200,6 @@ function gameTurn() {
     humanity.change(updatedHumanity);
     addPopulation(updatedHumanity);
     updatedHumanity.population = humanity.population();
-    // FIXME: finish the game here if needed.
     updatedHumanity.war = warTiles;
     actChannel.clients.forEach(function (client) {
       client.send(JSON.stringify(updatedHumanity));
@@ -209,7 +208,22 @@ function gameTurn() {
   terrain.clearPlans();
   updatedHumanity = {};
   warTiles = [];
-  setTimeout(gameTurn, gameTurnTime);
+  // FIXME: finish the game here if needed.
+  // The game ends if one of the camps is empty.
+  var gameOver = false;
+  for (var i = 0; i < humanity.numberOfCamps; i++) {
+    if (humanity.campFromId(i).population <= 0) {
+      gameOver = true;
+    }
+  }
+  if (gameOver) {
+    actChannel.clients.forEach(function (client) {
+      client.send(JSON.stringify({ winners: humanity.winners() }));
+    });
+    startGame();
+  } else {
+    setTimeout(gameTurn, gameTurnTime);
+  }
 }
 
 function addPopulation(updatedHumanity) {
@@ -234,7 +248,8 @@ function addPopulation(updatedHumanity) {
 // Returns a list of spawn = {q,r}.
 function findSpawn() {
   var spawns = new Array(humanity.numberOfCamps);
-  var distanceBetweenPlayers = ((Math.random() * 200)|0) + 100;
+  // Increase the values to ((Math.random() * 500)|0) + 100 once we have cities
+  var distanceBetweenPlayers = ((Math.random() * 100)|0) + 50;
   var oneSpot = {
     q:(Math.random() * 10000)|0,
     r:(Math.random() * 10000)|0,
@@ -278,13 +293,13 @@ function findNearestSteppe(tile) {
 
 function startGame() {
   humanity.setSpawn(findSpawn());
+  setTimeout(gameTurn, gameTurnTime);
 }
 
 var actChannel;
 function start(camp) {
   startGame();
   actChannel = camp.ws('act', actWSStart);
-  setTimeout(gameTurn, gameTurnTime);
 }
 
 

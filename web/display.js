@@ -463,6 +463,7 @@ function clearPlans() { plans = {}; }
 
 // Listen to server connection.
 
+var gameOver;
 var socket = new WebSocket(
   // Trick: use the end of either http: or https:.
   'ws' + window.location.protocol.slice(4) + '//' +
@@ -473,6 +474,9 @@ socket.onmessage = function(e) {
   var change = JSON.parse(e.data);
   if (change.plans) {
     // FIXME: if you want to receive other players' plans.
+  } else if (change.winners) {
+    // The game is over.
+    gameOver = change.winners[0];
   } else {
     if (change.camp !== undefined) {
       playerCamp = change.camp;
@@ -506,6 +510,7 @@ socket.onclose = function(e) {
 };
 
 function sendMove(from, to, humans) {
+  if (!from || !to) { return; }
   socket.send(JSON.stringify({
     at: keyFromTile(from),
     do: planTypes.move,
@@ -515,6 +520,7 @@ function sendMove(from, to, humans) {
 }
 
 function sendBuild(at, building) {
+  if (!at) { return; }
   socket.send(JSON.stringify({
     at: keyFromTile(at),
     do: planTypes.build,
@@ -1006,7 +1012,8 @@ function paint(ctx, size, origin) {
   if (spritesLoaded) { paintTilesFromCache(ctx, size, origin);
   } else {
     paintTiles(ctx, size, origin);
-    drawTitle(ctx, canvas.width, canvas.height);
+    drawTitle(ctx, [
+        "Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
   }
   if (currentTile != null && playerCamp != null) {
     ctx.lineWidth = 4;
@@ -1022,25 +1029,39 @@ function paint(ctx, size, origin) {
   }
   paintTileMessages(ctx, size, origin);
   paintPopulation(ctx);
+  if (gameOver !== undefined) {
+    drawTitle(ctx, [
+        "The winner is #" + gameOver + ".",
+        (gameOver === playerCamp? "YOU WON!": "YOU NEARLY WON!"),
+        "You can reload to engage in the next game!"],
+        campHsl(gameOver));
+  }
   displayedPaintContext.drawImage(canvas, 0, 0);
 }
 
-function drawTitle(ctx, width, height) {
-  var line1 = "Welcome to Thaddée Tyl's…";
-  var line2 = "NOT MY TERRITORY";
-  var line3 = "(YET)";
+// Draw three lines of text from a list of strings on the screen.
+function drawTitle(ctx, lines, color) {
+  var width = canvas.width;
+  var height = canvas.height;
+  var line1 = lines[0];
+  var line2 = lines[1];
+  var line3 = lines[2];
   var measure;
-  ctx.fillStyle = 'black';
+  ctx.fillStyle = color || 'black';
+  ctx.strokeStyle = 'black';
   ctx.textAlign = 'center';
   ctx.font = (height / 16) + 'px "Linux Biolinum", sans-serif';
   measure = ctx.measureText(line1).width;
   ctx.fillText(line1, width / 2, height * 1/3);
+  ctx.strokeText(line1, width / 2, height * 1/3);
   ctx.font = (height / 8) + 'px "Linux Biolinum", sans-serif';
   measure = ctx.measureText(line2).width;
   ctx.fillText(line2, width / 2, height * 13/24);
+  ctx.strokeText(line2, width / 2, height * 13/24);
   ctx.font = (height / 16) + 'px "Linux Biolinum", sans-serif';
   measure = ctx.measureText(line3).width;
   ctx.fillText(line3, width / 2, height * 2/3);
+  ctx.strokeText(line3, width / 2, height * 2/3);
   ctx.textAlign = 'start';
 }
 
