@@ -618,6 +618,11 @@ var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.width = document.documentElement.clientWidth;
 canvas.height = document.documentElement.clientHeight;
+// Blink and Webkit get the following wrong.
+// Remove without worry
+// when https://code.google.com/p/chromium/issues/detail?id=168840 is fixed.
+document.styleSheets[0].insertRule('div.controlPanel { max-height:' +
+  (canvas.height - 16 - 58) + 'px; }', 0);
 
 function loadSprites() {
   var img = new Image();
@@ -1490,7 +1495,9 @@ function enterMode(newMode) {
   }
   // Update shared mode variable.
   selectionMode = newMode;
-  showPath({ clientX: mousePosition.x, clientY: mousePosition.y });
+  if (mousePosition) {
+    showPath({ clientX: mousePosition.x, clientY: mousePosition.y });
+  }
   if (newMode === selectionModes.normal) {
     paint(ctx, hexaSize, origin);
   }

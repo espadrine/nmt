@@ -26,7 +26,7 @@ div#controller > svg { width: 50px; height: 50px; float: left; }
 div#controller > svg > path { cursor: pointer; }
 path.hex { stroke: white; stroke-width: 1.8px; }
 path.gum { stroke: white; stroke-width: 1.5px; }
-path.dust { stroke: #aaa }
+path.dust { stroke: #aaa; }
 div.controlPanel {
   display: none;
   border: 2px solid white;
@@ -34,6 +34,8 @@ div.controlPanel {
   background: #800080;
   position: relative;
   clear: left;
+  max-height: calc(100vh - 16px - 58px);
+  overflow: auto;
   top: -16px;
   z-index: -1;
   width: 196px;
@@ -71,13 +73,14 @@ p.buildSelection {
   -webkit-transition: box-shadow 0.6s;
   margin: 0;
   padding: 5px 0;
-  cursor: pointer;
+  cursor: default;
   /* Invalid by default */
   color: #500050;
   text-shadow: 0px 1px 1px #f7f;
 }
 p.validSelection {
   color: #f7f;
+  cursor: pointer;
   background: #800080;
   text-shadow: none;
 }
