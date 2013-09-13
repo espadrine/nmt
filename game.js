@@ -131,6 +131,7 @@ function applyPlan(plan) {
     humanityTo.c = humanityFrom.c;
     // Food.
     humanityTo.f += humanityFrom.f - (byPlane? 2: 1);
+    if (humanityTo.f > 20) { humanityTo.f = 20; }
     if (emptyingOrigin) { humanityFrom.f = 0; }
     // Ownership is the intersection of what each group owns.
     if (!emptyTarget) { humanityTo.o &= humanityFrom.o; }
