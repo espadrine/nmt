@@ -209,11 +209,11 @@ function gameTurn() {
   terrain.clearPlans();
   updatedHumanity = {};
   warTiles = [];
-  // FIXME: finish the game here if needed.
-  // The game ends if one of the camps is empty.
+  // The game ends if one of the camps is empty, or is too high.
   var gameOver = false;
   for (var i = 0; i < humanity.numberOfCamps; i++) {
-    if (humanity.campFromId(i).population <= 0) {
+    var campPopulation = humanity.campFromId(i).population;
+    if (campPopulation <= 0 || campPopulation > maxPopulation) {
       gameOver = true;
     }
   }
@@ -248,11 +248,15 @@ function addPopulation(updatedHumanity) {
   }
 }
 
+// Possible win: the maximum population authorized in a game.
+var maxPopulation;
+
 // Returns a list of spawn = {q,r}.
 function findSpawn() {
   var spawns = new Array(humanity.numberOfCamps);
   // Increase the values to ((Math.random() * 500)|0) + 100 once we have cities
   var distanceBetweenPlayers = ((Math.random() * 100)|0) + 50;
+  maxPopulation = distanceBetweenPlayers * distanceBetweenPlayers;
   var oneSpot = {
     q:(Math.random() * 10000)|0,
     r:(Math.random() * 10000)|0,

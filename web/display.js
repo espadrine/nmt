@@ -477,6 +477,7 @@ socket.onmessage = function(e) {
   } else if (change.winners) {
     // The game is over.
     gameOver = change.winners[0];
+    paint(ctx, hexaSize, origin);
   } else {
     if (change.camp !== undefined) {
       playerCamp = change.camp;
