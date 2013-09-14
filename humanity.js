@@ -123,7 +123,9 @@ Camp.prototype = {
       b === terrain.tileTypes.skyscraper? homePerHouse.skyscraper:
       0;
     this.populationCap += homes;
-    this.homes[tileKey] = homes;
+    if (homes > 0) {
+      this.homes[tileKey] = homes;
+    }
   }
 };
 
