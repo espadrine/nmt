@@ -105,6 +105,9 @@ function Camp() {
   this.populationCap = 0;   // Max. number of people, based on number of houses.
   this.population = 0;      // Number of people.
   this.homes = {};          // Map from tileKey to number of homes.
+  this.farm = {};
+  this.residence = {};
+  this.skyscraper = {};
   this.spawn = { q:0, r:0 };// Starting spot.
 }
 Camp.prototype = {
@@ -114,7 +117,13 @@ Camp.prototype = {
       b === terrain.tileTypes.residence? homePerHouse.residence:
       b === terrain.tileTypes.skyscraper? homePerHouse.skyscraper:
       0;
-    delete this.homes[tileKey];
+    if (b === terrain.tileTypes.farm) {
+      delete this.farm[tileKey];
+    } else if (b === terrain.tileTypes.residence) {
+      delete this.residence[tileKey];
+    } else if (b === terrain.tileTypes.skyscraper) {
+      delete this.skyscraper[tileKey];
+    }
   },
   winHomes: function(tileKey, b) {
     var homes =
@@ -123,8 +132,12 @@ Camp.prototype = {
       b === terrain.tileTypes.skyscraper? homePerHouse.skyscraper:
       0;
     this.populationCap += homes;
-    if (homes > 0) {
-      this.homes[tileKey] = homes;
+    if (b === terrain.tileTypes.farm) {
+      this.farm[tileKey] = homes;
+    } else if (b === terrain.tileTypes.residence) {
+      this.residence[tileKey] = homes;
+    } else if (b === terrain.tileTypes.skyscraper) {
+      this.skyscraper[tileKey] = homes;
     }
   }
 };

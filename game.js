@@ -234,18 +234,42 @@ function addPopulation(updatedHumanity) {
     camp = humanity.campFromId(i);
     var newPopulation = camp.populationCap - camp.population;
     if (newPopulation > 0) {
-      var homes = Object.keys(camp.homes);
+      var farmHomes = Object.keys(camp.farm);
+      var nFarmHomes = farmHomes.length > 0? humanity.homePerHouse.farm: 0;
+      var residenceHomes = Object.keys(camp.residence);
+      var nResidenceHomes = residenceHomes.length > 0?
+        humanity.homePerHouse.residence: 0;
+      var skyscraperHomes = Object.keys(camp.skyscraper);
+      var nSkyscraperHomes = skyscraperHomes.length > 0?
+        humanity.homePerHouse.skyscraper: 0;
+      var total = nFarmHomes + nResidenceHomes + nSkyscraperHomes;
+      var farmProb = nFarmHomes / total;
+      var residenceProb = nResidenceHomes / total;
+      var skyscraperProb = nSkyscraperHomes / total;
       for (var j = 0; j < newPopulation; j++) {
-        var randomHomeIndex = (homes.length * Math.random())|0;
-        var randomHome = homes[randomHomeIndex];
-        var randomHomeTile = humanity(terrain.tileFromKey(randomHome));
-        randomHomeTile.h++;
-        randomHomeTile.o = 0;
-        updatedHumanity[randomHome] = randomHomeTile;
+        var pickedHome = Math.random();
+        var pickedIndex = Math.random();
+        // More recent buildings should be more probable.
+        pickedIndex = 1 - (pickedIndex * pickedIndex);
+        if (pickedHome < farmProb) {
+          addFolk(farmHomes, (farmHomes.length * pickedIndex)|0);
+        } else if (pickedHome < farmProb + residenceProb) {
+          addFolk(residenceHomes, (residenceHomes.length * pickedIndex)|0);
+        } else {
+          addFolk(skyscraperHomes, (skyscraperHomes.length * pickedIndex)|0);
+        }
       }
       camp.population = camp.populationCap;
     }
   }
+}
+
+function addFolk(homes, index) {
+  var randomHome = homes[index];
+  var randomHomeTile = humanity(terrain.tileFromKey(randomHome));
+  randomHomeTile.h++;
+  randomHomeTile.o = 0;
+  updatedHumanity[randomHome] = randomHomeTile;
 }
 
 // Possible win: the maximum population authorized in a game.
