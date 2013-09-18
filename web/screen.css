@@ -102,3 +102,15 @@ p.validSelection:hover {
     background-color: #800080;
   }
 }
+
+iframe#introduction {
+  display: none;
+  position: absolute;
+  top: 10px;
+  width: 50%;
+  margin: 0 25vw;
+  border: 2px solid white;
+  border-radius: 2px;
+  opacity: 0.8;
+  z-index: 1;
+}
