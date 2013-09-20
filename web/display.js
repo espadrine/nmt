@@ -1266,6 +1266,7 @@ var warMessages = [
   "I do!",
   "Resistance is futile.",
   "I, for one, welcome our new overlords.",
+  "I didn't expect the Spanish Inquisition!",
   "Whoop-de-doo!",
   "You'll never take me alive!",
   "Told you he wasn't immortal!",
@@ -1276,8 +1277,7 @@ var warMessages = [
   "More light!",
   "Life's too short!",
   "They couldn't hit an elephant at this dist…",
-  "Drink to me!",
-  "Why wait, Kodak?"
+  "Drink to me!"
 ];
 
 // Map from tile = "q:r" to {message, timeout} (including timeout IDs).
