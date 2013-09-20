@@ -625,6 +625,14 @@ canvas.height = document.documentElement.clientHeight;
 document.styleSheets[0].insertRule('div.controlPanel { max-height:' +
   (canvas.height - 16 - 58) + 'px; }', 0);
 
+addEventListener('load', function showIntro() {
+  if (!localStorage.getItem('firstRun')) {
+    localStorage.setItem('firstRun', 'no');
+  } else if (Math.random() < 0.5) {
+    document.getElementById('introduction').style.display = 'block';
+  }
+});
+
 function loadSprites() {
   var img = new Image();
   img.src = 'sprites.png';
