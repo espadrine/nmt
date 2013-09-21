@@ -630,6 +630,10 @@ addEventListener('load', function showIntro() {
     localStorage.setItem('firstRun', 'no');
   } else if (Math.random() < 0.5) {
     document.getElementById('introduction').style.display = 'block';
+    // Remove the payment pane after 30s.
+    setTimeout(function () {
+      document.getElementById('introduction').style.display = 'none';
+    }, 30000);
   }
 });
 
