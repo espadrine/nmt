@@ -625,17 +625,35 @@ canvas.height = document.documentElement.clientHeight;
 document.styleSheets[0].insertRule('div.controlPanel { max-height:' +
   (canvas.height - 16 - 58) + 'px; }', 0);
 
+var helpPane = document.getElementById('helpPane');
 addEventListener('load', function showIntro() {
   if (!localStorage.getItem('firstRun')) {
     localStorage.setItem('firstRun', 'no');
   } else if (Math.random() < 0.5) {
-    document.getElementById('introduction').style.display = 'block';
-    // Remove the payment pane after 30s.
-    setTimeout(function () {
-      document.getElementById('introduction').style.display = 'none';
-    }, 30000);
+    showHelp('intro');
   }
 });
+
+// theme is a String.
+function showHelp(theme) {
+  helpPane.src = 'help/' + theme + '.html';
+  helpPane.onload = function() {
+    helpPane.style.display = 'block';
+    helpPane.style.height =
+      (helpPane.contentWindow.document.body.clientHeight + 40) + 'px';
+    addEventListener('click', hideHelp);
+  };
+}
+
+function hideHelp() {
+  helpPane.style.display = 'none';
+  removeEventListener('click', hideHelp);
+}
+
+// Some links to help.
+travelPanel.onclick = function() { showHelp('index'); };
+buildPanel.firstElementChild.onclick = function() { showHelp('build'); };
+
 
 function loadSprites() {
   var img = new Image();
