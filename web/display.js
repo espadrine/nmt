@@ -651,7 +651,7 @@ function hideHelp() {
 }
 
 // Some links to help.
-travelPanel.onclick = function() { showHelp('index'); };
+travelPanel.onclick = function() { showHelp('welcome'); };
 buildPanel.firstElementChild.onclick = function() { showHelp('build'); };
 
 
