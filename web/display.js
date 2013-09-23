@@ -1478,8 +1478,9 @@ sprites.onload = function loadingSprites() {
 var selectionModes = {
   normal: 1,
   travel: 2,
-  build: 3,
-  split: 4
+  build:  3,
+  split:  4,
+  places: 5
 };
 var selectionMode = selectionModes.normal;
 
@@ -1512,6 +1513,10 @@ function enterMode(newMode) {
     hidePanel(splitPanel, splitBut);
     splitBut.removeEventListener('click', enterNormalMode);
     splitBut.addEventListener('click', enterSplitMode);
+  } else if (selectionMode === selectionModes.places) {
+    hidePanel(placesPanel, placesBut);
+    placesBut.removeEventListener('click', enterNormalMode);
+    placesBut.addEventListener('click', enterPlacesMode);
   }
   // Add things from the new mode.
   if (newMode === selectionModes.travel) {
@@ -1523,6 +1528,9 @@ function enterMode(newMode) {
   } else if (newMode === selectionModes.split) {
     showPanel(splitPanel, splitBut);
     splitBut.addEventListener('click', enterNormalMode);
+  } else if (newMode === selectionModes.places) {
+    showPanel(placesPanel, placesBut);
+    placesBut.addEventListener('click', enterNormalMode);
   }
   // Update shared mode variable.
   selectionMode = newMode;
@@ -1541,9 +1549,11 @@ function enterNormalMode() { enterMode(selectionModes.normal); }
 function enterTravelMode() { enterMode(selectionModes.travel); }
 function enterBuildMode() { enterMode(selectionModes.build); }
 function enterSplitMode() { enterMode(selectionModes.split); }
+function enterPlacesMode() { enterMode(selectionModes.places); }
 travelBut.addEventListener('click', enterTravelMode);
 buildBut.addEventListener('click', enterBuildMode);
 splitBut.addEventListener('click', enterSplitMode);
+placesBut.addEventListener('click', enterPlacesMode);
 
 
 // Keyboard events.
