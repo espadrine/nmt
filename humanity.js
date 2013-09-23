@@ -6,7 +6,12 @@ var dirtyWorld = false;
 function saveWorld() {
   // Like a hero.
   if (dirtyWorld) {
-    fs.writeFile(worldFile, JSON.stringify(humanityData));
+    var world = {};
+    for (var tileKey in humanityData) {
+      world[tileKey] = humanityData[tileKey];
+    }
+    world.places = places;
+    fs.writeFile(worldFile, JSON.stringify(world));
     dirtyWorld = false;
   }
 }
@@ -21,6 +26,7 @@ function start(t, findSpawn) {
       spawns.push(terrain.tileFromKey(world.places['Spawn #' + i]));
     }
     setSpawn(spawns);
+    delete world.places;
     humanityData = world;
     for (var tileKey in world) {
       var humanityTile = world[tileKey];
@@ -42,9 +48,8 @@ function start(t, findSpawn) {
 // c: camp (territory to which it belongs);
 // f: food (how much there is in the group);
 // o: manufactured goods owned;
-// Also, a special key that isn't a tileKey, "places",
-// which holds a map from places to tileKeys.
 var humanityData = {};
+var places = {};
 function data() { return humanityData; }
 
 function makeDefault() {
@@ -184,9 +189,9 @@ function winners() {
 function setSpawn(spawns) {
   camps = makeCamps();
   humanityData = {};    // reset humanity.
-  humanityData.places = {};
+  places = {};
   for (var i = 0; i < numberOfCamps; i++) {
-    humanityData.places['Spawn #' + i] = terrain.keyFromTile(spawns[i]);
+    places['Spawn #' + i] = terrain.keyFromTile(spawns[i]);
   }
   var settlements = {};
   for (var i = 0; i < numberOfCamps; i++) {
