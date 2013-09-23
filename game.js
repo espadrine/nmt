@@ -1,7 +1,6 @@
 var terrain = require('./terrain.js');
 var humanity = require('./humanity');
 
-humanity.start(terrain);
 var cheatMode = false;
 
 // Send and receive data from players.
@@ -329,7 +328,8 @@ function startGame() {
 
 var actChannel;
 function start(camp) {
-  startGame();
+  humanity.start(terrain, findSpawn);
+  setTimeout(gameTurn, gameTurnTime);
   actChannel = camp.ws('act', actWSStart);
 }
 

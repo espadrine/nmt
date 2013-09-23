@@ -12,24 +12,38 @@ function saveWorld() {
 }
 
 var terrain;
-function start(t) {
+function start(t, findSpawn) {
   terrain = t;
-  var world;
   try {
-    world = require(worldFile);
-  } catch(e) { world = {}; }
-  // The following is prophetic.
-  humanityChange(world);
+    var world = require(worldFile);
+    var spawns = [];
+    for (var i = 0; i < numberOfCamps; i++) {
+      spawns.push(terrain.tileFromKey(world.places['Spawn #' + i]));
+    }
+    setSpawn(spawns);
+    humanityData = world;
+    for (var tileKey in world) {
+      var humanityTile = world[tileKey];
+      if (humanityTile.c !== undefined) {
+        campFromId(humanityTile.c).winHomes(tileKey, humanityTile.b);
+      }
+    }
+  } catch(e) {
+    setSpawn(findSpawn());
+  }
   // Update periodically.
   var periodicity = 10000;  // Every 10s.
   setInterval(saveWorld, periodicity);
 }
 
-// {b}: building;
-// {h}: number of humans;
-// {c}: camp (territory to which it belongs);
-// {f}: food (how much there is in the group);
-// {o}: manufactured goods owned;
+// Map from tileKeys to objects with the following keys:
+// b: building;
+// h: number of humans;
+// c: camp (territory to which it belongs);
+// f: food (how much there is in the group);
+// o: manufactured goods owned;
+// Also, a special key that isn't a tileKey, "places",
+// which holds a map from places to tileKeys.
 var humanityData = {};
 function data() { return humanityData; }
 
@@ -169,7 +183,11 @@ function winners() {
 // Modifies `camps`.
 function setSpawn(spawns) {
   camps = makeCamps();
-  humanityData = {};
+  humanityData = {};    // reset humanity.
+  humanityData.places = {};
+  for (var i = 0; i < numberOfCamps; i++) {
+    humanityData.places['Spawn #' + i] = terrain.keyFromTile(spawns[i]);
+  }
   var settlements = {};
   for (var i = 0; i < numberOfCamps; i++) {
     camps[i].spawn = spawns[i];
