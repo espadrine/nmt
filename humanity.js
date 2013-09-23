@@ -21,21 +21,25 @@ function start(t, findSpawn) {
   terrain = t;
   try {
     var world = require(worldFile);
-    var spawns = [];
+    camps = makeCamps();
+    places = world.places;
     for (var i = 0; i < numberOfCamps; i++) {
-      spawns.push(terrain.tileFromKey(world.places['Spawn #' + i]));
+      camps[i].spawn = terrain.tileFromKey(places['Spawn #' + i]);
     }
-    setSpawn(spawns);
     delete world.places;
     humanityData = world;
     for (var tileKey in world) {
       var humanityTile = world[tileKey];
-      if (humanityTile.c !== undefined) {
+      if (humanityTile.c != null) {
         campFromId(humanityTile.c).winHomes(tileKey, humanityTile.b);
+        campFromId(humanityTile.c).population += humanityTile.h;
       }
     }
   } catch(e) {
     setSpawn(findSpawn());
+  }
+  for (var i = 0; i < numberOfCamps; i++) {
+    console.log('camp', i + ':', camps[i].spawn);
   }
   // Update periodically.
   var periodicity = 10000;  // Every 10s.
@@ -196,7 +200,6 @@ function setSpawn(spawns) {
   var settlements = {};
   for (var i = 0; i < numberOfCamps; i++) {
     camps[i].spawn = spawns[i];
-    console.log('camp', i + ':', camps[i].spawn);
     var humanityTile = makeDefault();
     humanityTile.h = 3;
     humanityTile.c = i;
