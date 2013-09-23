@@ -629,7 +629,7 @@ var helpPane = document.getElementById('helpPane');
 addEventListener('load', function showIntro() {
   if (!localStorage.getItem('firstRun')) {
     localStorage.setItem('firstRun', 'no');
-  } else if (Math.random() < 0.5) {
+  } else if (Math.random() < 0.5 && !localStorage.getItem('paid')) {
     showHelp('intro');
   }
 });
