@@ -1612,7 +1612,9 @@ window.onkeydown = function keyInputManagement(event) {
   } else if (event.keyCode === 192) {   // `
     sendBuild(currentTile, null);   // Destroy building.
   } else if (event.keyCode === 27) {    // ESC
+    // Close all UI panes.
     enterMode(selectionModes.normal);
+    helpPane.style.display = 'none';
   } else if (48 <= event.keyCode && event.keyCode <= 57) {
     sendBuild(currentTile, buildHotKeys[event.keyCode]);
   }
