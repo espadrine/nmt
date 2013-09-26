@@ -1,5 +1,6 @@
 var terrain = require('./terrain.js');
 var humanity = require('./humanity');
+var ai = require('./ai');
 
 var cheatMode = false;
 
@@ -25,7 +26,7 @@ function makeActWSRecv(ip) {
     try {
       plan = JSON.parse(data);
     } catch(e) { return; }
-    judgePlan(ip, plan);
+    judgePlan(ip, plan, cheatMode);
   };
 }
 
@@ -41,7 +42,11 @@ function campFromIP(ip) {
 }
 
 // Accept or reject a plan.
-function judgePlan(ip, plan) {
+// A plan is {do, at, to, b}.
+// do: see terrain.planTypes.
+// at, to: tileKeys (see terrain.tileFromKey).
+// b: building number. See terrain.tileTypes.
+function judgePlan(ip, plan, cheatMode) {
   console.log('Suggested plan:', plan);
 
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
@@ -73,6 +78,7 @@ var warTiles = [];
 
 function applyPlan(plan) {
   var humanityFrom = humanity.copy(humanity(terrain.tileFromKey(plan.at)));
+  humanity.campFromId(humanityFrom.c).nActions++;
   if (plan.do === terrain.planTypes.move) {
     console.log('Plan: moving people from', plan.at, 'to', plan.to);
     var humanityTo = humanity.copy(humanity(terrain.tileFromKey(plan.to)));
@@ -152,7 +158,19 @@ function applyPlan(plan) {
     updatedHumanity[plan.at] = humanityFrom;
     collectFromTile(plan.at, humanityFrom, true);
   }
+  // Run ai.
+  if (Math.random() < 0.8) {
+    setTimeout(function runAI() {
+      var aiPlan = ai(terrain, humanity);
+      if (aiPlan != null) { judgePlan(0, aiPlan, true); }
+    }, gameTurnTime / 2);
+  }
 }
+// Uncomment the following to make the AI play constantly.
+//setInterval(function () {
+//  var aiPlan = ai(terrain, humanity);
+//  if (aiPlan != null) { judgePlan(0, aiPlan, true); }
+//}, 200);
 
 // Collect from the humanity tile. If `addBuilding` is truthy,
 // we add the building as a resource for a camp.
@@ -174,7 +192,6 @@ function collectFromTile(tileKey, humanityTile, addBuilding) {
 function surrender(tileKey, camp) {
   // How many people around.
   var surrounded = 0;
-  console.log('surrender? attacker =',camp);
   for (var i = 0; i < 6; i++) {
     var neighbor =
       humanity(terrain.neighborFromTile(terrain.tileFromKey(tileKey), i));
@@ -182,7 +199,6 @@ function surrender(tileKey, camp) {
       surrounded++;
     }
   }
-  console.log('surrender? surrounder =',surrounded);
   return surrounded >= 2;
 }
 
@@ -323,12 +339,14 @@ function findNearestSteppe(tile) {
 
 function startGame() {
   humanity.setSpawn(findSpawn());
+  ai.clear(terrain, humanity);
   setTimeout(gameTurn, gameTurnTime);
 }
 
 var actChannel;
 function start(camp) {
   humanity.start(terrain, findSpawn);
+  ai.clear(terrain, humanity);
   setTimeout(gameTurn, gameTurnTime);
   actChannel = camp.ws('act', actWSStart);
 }
