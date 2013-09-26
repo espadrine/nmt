@@ -3,6 +3,7 @@
 // List from campId to map from building to tileKeys where we perform the
 // project.
 var constructionProjects;
+var stallingProjects;   // maps from building to # of attempts.
 // List from campId to list of tileKeys.
 var destinationProjects;
 
@@ -12,9 +13,11 @@ var totalValue = 1;
 
 function clear(terrain, humanity) {
   constructionProjects = new Array(humanity.numberOfCamps);
+  stallingProjects = new Array(humanity.numberOfCamps);
   destinationProjects = new Array(humanity.numberOfCamps);
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     constructionProjects[i] = {};
+    stallingProjects[i] = {};
     destinationProjects[i] = [];
   }
   // Building value.
@@ -25,7 +28,7 @@ function clear(terrain, humanity) {
   buildingValue[terrain.tileTypes.dock] = 7;
   buildingValue[terrain.tileTypes.gunsmith] = 35;
   buildingValue[terrain.tileTypes.airland] = 4;
-  buildingValue[terrain.tileTypes.airport] = 20;
+  buildingValue[terrain.tileTypes.airport] = 35;
   buildingValue[terrain.tileTypes.road] = 1;
   buildingValue[terrain.tileTypes.wall] = 0;
   totalValue = 0;
@@ -44,6 +47,7 @@ function findBuildingPlan(terrain, humanity, humanityData,
     if (terrain.validConstruction(building, tile)) {
       if (constructionProjects[campId][building] === ourTiles[i]) {
         constructionProjects[campId][building] = null;
+        stallingProjects[campId][building] = 0;
       }
       if (humanityTile.b != null?
           buildingValue[building] > buildingValue[humanityTile.b]: true) {
@@ -56,16 +60,25 @@ function findBuildingPlan(terrain, humanity, humanityData,
       || ((humanityTile = humanityData[constructionProjects[campId][building]])
           && humanityTile.c !== campId)
       || (!humanityTile) || (humanityTile.h <= 0)
+      || stallingProjects[campId][building] > 50
       // Randomly remove projects (because they are sometimes impossible).
       || Math.random() < 0.05) {
     // Let's make a project!
+    var validTiles = [];
     for (var i = 0; i < ourTiles.length; i++) {
       if (humanityData[ourTiles[i]].b == null &&
-          terrain(ourTiles[i]).type !== terrain.tileTypes.water) {
-        constructionProjects[campId][building] = ourTiles[i];
+          terrain(ourTiles[i]).type !== terrain.tileTypes.water &&
+          terrain(ourTiles[i]).type !== terrain.tileTypes.mountain) {
+        validTiles.push(ourTiles[i]);
       }
     }
+    if (validTiles.length > 0) {
+      constructionProjects[campId][building] =
+        validTiles[(Math.random() * validTiles.length)|0];
+      stallingProjects[campId][building] = 0;
+    }
   }
+  stallingProjects[campId][building]++;
   if (constructionProjects[campId][building] == null) { return; }
   // Find what we require to finish the project.
   var requiredDependencies = terrain.buildingDependencies[building];
@@ -110,6 +123,7 @@ function findBuildingPlan(terrain, humanity, humanityData,
         return;
       } else {
         constructionProjects[campId][building] = null;
+        stallingProjects[campId][building] = 0;
       }
     }
   }
