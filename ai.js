@@ -6,6 +6,8 @@ var constructionProjects;
 var stallingProjects;   // maps from building to # of attempts.
 // List from campId to list of tileKeys.
 var destinationProjects;
+// List from campId to booleans.
+var war;
 
 var buildingValue = {};
 var totalValue = 1;
@@ -15,20 +17,22 @@ function clear(terrain, humanity) {
   constructionProjects = new Array(humanity.numberOfCamps);
   stallingProjects = new Array(humanity.numberOfCamps);
   destinationProjects = new Array(humanity.numberOfCamps);
+  war = new Array(humanity.numberOfCamps);
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     constructionProjects[i] = {};
     stallingProjects[i] = {};
     destinationProjects[i] = [];
+    war[i] = false;
   }
   // Building value.
-  buildingValue[terrain.tileTypes.farm] = 2;
+  buildingValue[terrain.tileTypes.farm] = 4;
   buildingValue[terrain.tileTypes.residence] = 30;
   buildingValue[terrain.tileTypes.skyscraper] = 13;
   buildingValue[terrain.tileTypes.factory] = 7;
   buildingValue[terrain.tileTypes.dock] = 7;
   buildingValue[terrain.tileTypes.gunsmith] = 35;
   buildingValue[terrain.tileTypes.airland] = 4;
-  buildingValue[terrain.tileTypes.airport] = 35;
+  buildingValue[terrain.tileTypes.airport] = 15;
   buildingValue[terrain.tileTypes.road] = 1;
   buildingValue[terrain.tileTypes.wall] = 0;
   totalValue = 0;
@@ -49,8 +53,10 @@ function findBuildingPlan(terrain, humanity, humanityData,
         constructionProjects[campId][building] = null;
         stallingProjects[campId][building] = 0;
       }
-      if (humanityTile.b != null?
-          buildingValue[building] > buildingValue[humanityTile.b]: true) {
+      // Usually, we strive for valuable buildings.
+      // But old rocks that stand in the way are rubbish.
+      if ((humanityTile.b != null)?
+          (buildingValue[building] > buildingValue[humanityTile.b]): true) {
         return { at: ourTiles[i], do: terrain.planTypes.build, b: building };
       }
     }
@@ -60,15 +66,13 @@ function findBuildingPlan(terrain, humanity, humanityData,
       || ((humanityTile = humanityData[constructionProjects[campId][building]])
           && humanityTile.c !== campId)
       || (!humanityTile) || (humanityTile.h <= 0)
-      || stallingProjects[campId][building] > 50
-      // Randomly remove projects (because they are sometimes impossible).
-      || Math.random() < 0.05) {
+      || stallingProjects[campId][building] > 10) {
     // Let's make a project!
     var validTiles = [];
     for (var i = 0; i < ourTiles.length; i++) {
-      if (humanityData[ourTiles[i]].b == null &&
-          terrain(ourTiles[i]).type !== terrain.tileTypes.water &&
-          terrain(ourTiles[i]).type !== terrain.tileTypes.mountain) {
+      var tile = terrain.tileFromKey(ourTiles[i]);
+      if (tile.type !== terrain.tileTypes.water &&
+          tile.type !== terrain.tileTypes.mountain) {
         validTiles.push(ourTiles[i]);
       }
     }
@@ -80,6 +84,12 @@ function findBuildingPlan(terrain, humanity, humanityData,
   }
   stallingProjects[campId][building]++;
   if (constructionProjects[campId][building] == null) { return; }
+  return projectPlan(terrain, humanity, humanityData, ourTiles, campId,
+      building, constructionProjects[campId][building]);
+}
+
+function projectPlan(terrain, humanity, humanityData, ourTiles, campId,
+    building, location) {
   // Find what we require to finish the project.
   var requiredDependencies = terrain.buildingDependencies[building];
   if (!requiredDependencies) { return; }
@@ -87,7 +97,7 @@ function findBuildingPlan(terrain, humanity, humanityData,
   var unoccupied = [];  // neighbors with no people on it.
   var unbuilt = [];  // neighbors with no buildings on it.
   for (var i = 0; i < dependencies.length; i++) { dependencies[i] = 0; }
-  var tile = terrain.tileFromKey(constructionProjects[campId][building]);
+  var tile = terrain.tileFromKey(location);
   for (var i = 0; i < 6; i++) {
     var neighbor = terrain.neighborFromTile(tile, i);
     var humanityNeighbor = humanity(neighbor);
@@ -112,6 +122,10 @@ function findBuildingPlan(terrain, humanity, humanityData,
       // We know what to build.
       if (unbuilt.length > 0) {
         // Someone can do it.
+        //return projectPlan(terrain, humanity, humanityData,
+        //  ourTiles, campId, requiredDependencies[j][1],
+        //  terrain.keyFromTile(unbuilt[0]));
+        constructionProjects[campId][requiredDependencies[j][1]] = unbuilt[0];
         return {
           at: terrain.keyFromTile(unbuilt[0]),
           do: terrain.planTypes.build,
@@ -121,9 +135,6 @@ function findBuildingPlan(terrain, humanity, humanityData,
         // We can put someone there.
         destinationProjects[campId].push(terrain.keyFromTile(unoccupied[0]));
         return;
-      } else {
-        constructionProjects[campId][building] = null;
-        stallingProjects[campId][building] = 0;
       }
     }
   }
@@ -160,7 +171,8 @@ function closestTowards(terrain, humanity, atTileKey, toTileKey) {
 function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
   // Find someone to go somewhere.
   var fromTile, fromHumanityTile;
-  if (destinationProjects[campId].length > 0) {
+  var travelToBuild = destinationProjects[campId].length > 0;
+  if (travelToBuild) {
     var closest = Infinity;   // Will seek the closest humans.
     for (var i = 0; i < ourTiles.length; i++) {
       var humanityTile = humanityData[ourTiles[i]];
@@ -176,11 +188,19 @@ function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
     var nHumans = 0;   // Will seek the highest number of humans on a tile.
     for (var i = 0; i < ourTiles.length; i++) {
       var humanityTile = humanityData[ourTiles[i]];
-      if (humanityTile.h > nHumans) {
+      if (humanityTile.h > nHumans &&
+          // We leave people on buildings.
+          ((humanityTile.b === terrain.tileTypes.residence ||
+             humanityTile.b === terrain.tileTypes.skyscraper)?
+            humanityTile.h > 1: true)) {
         nHumans = humanityTile.h;
         fromTile = ourTiles[i];
         fromHumanityTile = humanityTile;
       }
+    }
+    if (fromHumanityTile === undefined) {
+      fromTile = ourTiles[0];
+      fromHumanityTile = humanityData[fromTile];
     }
   }
   // Are we hungry there?
@@ -193,14 +213,10 @@ function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
   }
   // Go somewhere.
   var directionTile;
-  if (destinationProjects[campId].length > 0) {
+  if (travelToBuild) {
     directionTile = destinationProjects[campId][0];
   } else {
     // Go towards the enemy!
-    if ((fromHumanityTile.b === terrain.tileTypes.residence ||
-         fromHumanityTile.b === terrain.tileTypes.farm ||
-         fromHumanityTile.b === terrain.tileTypes.skyscraper) &&
-        fromHumanityTile.h < 2) { return ; }
     var enemyPicked = ((Math.random() * humanity.numberOfCamps)|0);
     for (var tileKey in humanityData) {
       if (humanityData[tileKey].h > 0 && humanityData[tileKey].c === enemyPicked) {
@@ -213,12 +229,23 @@ function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
   if (toTile === directionTile || Math.random() < 0.2) {
     destinationProjects[campId].shift();
   }
-  return {
-    at: fromTile,
-    do: terrain.planTypes.move,
-    to: toTile,
-    h: ((fromHumanityTile.h > 1)? (fromHumanityTile.h - 1): fromHumanityTile.h)
-  };
+  if (travelToBuild) {
+    return {
+      at: fromTile,
+      do: terrain.planTypes.move,
+      to: toTile,
+      h: ((fromHumanityTile.h > 1)?
+          (fromHumanityTile.h - 1): fromHumanityTile.h)
+    };
+  } else {
+    return {
+      at: fromTile,
+      do: terrain.planTypes.move,
+      to: toTile,
+      h: ((fromHumanityTile.b != null && fromHumanityTile.h > 1)?
+          (fromHumanityTile.h - 1): fromHumanityTile.h)
+    };
+  }
 }
 
 // Select the building we want to construct.
@@ -252,7 +279,7 @@ function run(terrain, humanity) {
   }
   if (ourTiles.length <= 0) { return; }
   // Now, pick what we do.
-  if (Math.random() < 0.6) {
+  if (!war[leastCamp.id] && Math.random() < 0.7) {
     // What building do we want to create?
     var building = selectBuilding();
     // Let's pick a location to build that.
@@ -262,6 +289,10 @@ function run(terrain, humanity) {
       return buildingPlan;
     }
   }
+  if (Math.random() < 0.01 && leastCamp.population > 10) {
+    war[leastCamp.id] = !war[leastCamp.id];
+  }
+  if (war[leastCamp.id]) { console.log('at war!'); }
   // We're going to travel.
   return findTravelPlan(terrain, humanity, humanityData, ourTiles, leastCamp.id);
 }
