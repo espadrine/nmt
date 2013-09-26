@@ -167,11 +167,11 @@ function applyPlan(plan) {
   }
 }
 // Uncomment the following to make the AI play constantly.
-setInterval(function () {
-  var aiPlan = ai(terrain, humanity);
-  console.log('ai plan:', aiPlan);
-  if (aiPlan != null) { judgePlan(0, aiPlan, true); }
-}, 200);
+//setInterval(function () {
+//  var aiPlan = ai(terrain, humanity);
+//  console.log('ai plan:', aiPlan);
+//  if (aiPlan != null) { judgePlan(0, aiPlan, true); }
+//}, 200);
 
 // Collect from the humanity tile. If `addBuilding` is truthy,
 // we add the building as a resource for a camp.
@@ -284,7 +284,6 @@ function addFolk(homes, index) {
   var randomHome = homes[index];
   var randomHomeTile = humanity(terrain.tileFromKey(randomHome));
   randomHomeTile.h++;
-  randomHomeTile.o = 0;
   updatedHumanity[randomHome] = randomHomeTile;
 }
 
