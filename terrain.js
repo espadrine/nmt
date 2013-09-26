@@ -32,6 +32,7 @@ var tileTypes = {
   road:         16,
   wall:         17
 };
+var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ];
 
 var tileVegetationTypeFromSteepness = [];
 tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
@@ -337,6 +338,21 @@ function speedFromHuman(human) {
   } else { return 8; }
 }
 
+// The index is the tileTypes id.
+// It is a list of [number, tileType] requirements to build something.
+var buildingDependencies = [,,,,,,,,
+    ,
+    [[2, tileTypes.farm]],
+    [[6, tileTypes.residence]],
+    [[3, tileTypes.residence], [1, tileTypes.road]],
+    [[1, tileTypes.residence], [1, tileTypes.water]],
+    [[2, tileTypes.road]],
+    [[1, tileTypes.gunsmith], [3, tileTypes.airland]],
+    [[1, tileTypes.skyscraper], [1, tileTypes.factory]],
+    ,
+    [[1, tileTypes.residence]]
+];
+
 // Given a building (see tileTypes) and a tile = {q, r},
 // check whether the building can be built there.
 function validConstruction(building, tile) {
@@ -349,105 +365,32 @@ function validConstruction(building, tile) {
        building === tileTypes.skyscraper || building === tileTypes.factory ||
        building === tileTypes.airland || building === tileTypes.airport ||
        building === tileTypes.gunsmith)) { return false; }
-  var humanityNeighbor;
-  if (building === tileTypes.farm) {
+  if (buildingDependencies[building] !== undefined) {
+    // There are dependency requirements.
+    var requiredDependencies = buildingDependencies[building];
+    var dependencies = new Array(requiredDependencies.length);
+    for (var i = 0; i < dependencies.length; i++) { dependencies[i] = 0; }
+    for (var i = 0; i < 6; i++) {
+      // Check all neighbors for dependencies.
+      var neighbor = neighborFromTile(tile, i);
+      var humanityNeighbor = humanity(neighbor);
+      var terrainNeighbor = terrain(neighbor);
+      for (var j = 0; j < requiredDependencies.length; j++) {
+        if ((humanityNeighbor
+             && humanityNeighbor.b === requiredDependencies[j][1]) ||
+            terrainNeighbor.type === requiredDependencies[j][1]) {
+          dependencies[j]++;
+        }
+      }
+    }
+    // Check that we have the correct number of buildings around.
+    for (var j = 0; j < dependencies.length; j++) {
+      if (dependencies[j] < requiredDependencies[j][0]) {
+        return false;
+      }
+    }
     return true;
-  } else if (building === tileTypes.residence) {
-    var nFarms = 0;
-    for (var i = 0; i < 6; i++) {
-      var neighbor = neighborFromTile(tile, i);
-      humanityNeighbor = humanity(neighbor);
-      if (humanityNeighbor && humanityNeighbor.b === tileTypes.farm) {
-        nFarms++;
-      }
-    }
-    if (nFarms >= 2) { return true; }
-  } else if (building === tileTypes.skyscraper) {
-    var nResidences = 0;
-    for (var i = 0; i < 6; i++) {
-      var neighbor = neighborFromTile(tile, i);
-      humanityNeighbor = humanity(neighbor);
-      if (humanityNeighbor && humanityNeighbor.b === tileTypes.residence) {
-        nResidences++;
-      }
-    }
-    if (nResidences >= 6) { return true; }
-  } else if (building === tileTypes.factory) {
-    var nResidences = 0;
-    var nRoads = 0;
-    for (var i = 0; i < 6; i++) {
-      var neighbor = neighborFromTile(tile, i);
-      humanityNeighbor = humanity(neighbor);
-      if (humanityNeighbor && humanityNeighbor.b === tileTypes.residence) {
-        nResidences++;
-      }
-      else if (humanityNeighbor && humanityNeighbor.b === tileTypes.road) {
-        nRoads++;
-      }
-    }
-    if (nResidences >= 3 && nRoads >= 1) { return true; }
-  } else if (building === tileTypes.dock) {
-    var nResidences = 0;
-    var nWater = 0;
-    for (var i = 0; i < 6; i++) {
-      var neighbor = neighborFromTile(tile, i);
-      humanityNeighbor = humanity(neighbor);
-      if (humanityNeighbor && humanityNeighbor.b === tileTypes.residence) {
-        nResidences++;
-      }
-      if (terrain(neighbor).type === tileTypes.water) { nWater++; }
-    }
-    if (nResidences >= 1 && nWater >= 1) { return true; }
-  } else if (building === tileTypes.airland) {
-    var nRoads = 0;
-    for (var i = 0; i < 6; i++) {
-      var neighbor = neighborFromTile(tile, i);
-      humanityNeighbor = humanity(neighbor);
-      if (humanityNeighbor && humanityNeighbor.b === tileTypes.road) {
-        nRoads++;
-      }
-    }
-    if (nRoads >= 2) { return true; }
-  } else if (building === tileTypes.airport) {
-    var nGunsmiths = 0;
-    var nAirlands = 0;
-    for (var i = 0; i < 6; i++) {
-      var neighbor = neighborFromTile(tile, i);
-      humanityNeighbor = humanity(neighbor);
-      if (humanityNeighbor && humanityNeighbor.b === tileTypes.gunsmith) {
-        nGunsmiths++;
-      } else if (humanityNeighbor && humanityNeighbor.b === tileTypes.airland) {
-        nAirlands++;
-      }
-    }
-    if (nGunsmiths >= 1 && nAirlands >= 3) { return true; }
-  } else if (building === tileTypes.gunsmith) {
-    var nSkyscrapers = 0;
-    var nFactories = 0;
-    for (var i = 0; i < 6; i++) {
-      var neighbor = neighborFromTile(tile, i);
-      humanityNeighbor = humanity(neighbor);
-      if (humanityNeighbor && humanityNeighbor.b === tileTypes.skyscraper) {
-        nSkyscrapers++;
-      }
-      else if (humanityNeighbor && humanityNeighbor.b === tileTypes.factory) {
-        nFactories++;
-      }
-    }
-    if (nSkyscrapers >= 1 && nFactories >= 1) { return true; }
-  } else if (building === tileTypes.road) {
-    return true;
-  } else if (building === tileTypes.wall) {
-    var nResidences = 0;
-    for (var i = 0; i < 6; i++) {
-      var neighbor = neighborFromTile(tile, i);
-      humanityNeighbor = humanity(neighbor);
-      if (humanityNeighbor && humanityNeighbor.b === tileTypes.residence) {
-        nResidences++;
-      }
-    }
-    if (nResidences >= 1) { return true; }
-  }
+  } else { return true; }
   return false;
 }
 
@@ -469,7 +412,10 @@ function clearPlans() { plans = {}; }
 
 module.exports = terrain;
 module.exports.travel = humanTravelTo;
+module.exports.humanTravel = humanTravel;
 module.exports.tileTypes = tileTypes;
+module.exports.buildingTypes = buildingTypes;
+module.exports.buildingDependencies = buildingDependencies;
 module.exports.manufacture = manufacture;
 module.exports.validConstruction = validConstruction;
 module.exports.neighborFromTile = neighborFromTile;
