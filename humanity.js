@@ -122,9 +122,8 @@ var homePerHouse = {
   skyscraper: 6
 };
 
-var campIdCount = 0;
-function Camp() {
-  this.id = campIdCount++;
+function Camp(id) {
+  this.id = id;
   this.populationCap = 0;   // Max. number of people, based on number of houses.
   this.population = 0;      // Number of people.
   this.homes = {};          // Map from tileKey to number of homes.
@@ -132,6 +131,7 @@ function Camp() {
   this.residence = {};
   this.skyscraper = {};
   this.spawn = { q:0, r:0 };// Starting spot.
+  this.nActions = 0;        // Number of actions.
 }
 Camp.prototype = {
   loseHomes: function(tileKey, b) {
@@ -173,7 +173,7 @@ var numberOfCamps = 3;
 function makeCamps() {
   var camps = new Array(numberOfCamps);
   for (var i = 0; i < numberOfCamps; i++) {
-    camps[i] = new Camp();
+    camps[i] = new Camp(i);
   }
   return camps;
 }
