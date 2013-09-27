@@ -447,6 +447,7 @@ socket.onmessage = function(e) {
     // Update paint cache for each building change.
     updateCachedPaint(hexaSize, origin, change);
     paint(ctx, hexaSize, origin);
+    paintHumans(ctx, hexaSize, origin, humanityData);
   }
 };
 socket.onclose = function(e) {
@@ -1085,6 +1086,7 @@ function updateHumans() {
 // origin = {x0, y0} is the top left screen pixel position to the map's origin,
 // humanityData is a map from 'q:r' hexagonal coordinates to humanity data.
 function paintHumans(ctx, size, origin, humanityData) {
+  if (size < 20) { return; }
   ctx.drawImage(displayedPaint, 0, 0);
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
