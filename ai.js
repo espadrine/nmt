@@ -22,7 +22,7 @@ function clear(terrain, humanity) {
     constructionProjects[i] = {};
     stallingProjects[i] = {};
     destinationProjects[i] = [];
-    war[i] = false;
+    war[i] = -1;
   }
   // Building value.
   buildingValue[terrain.tileTypes.farm] = 4;
@@ -218,6 +218,7 @@ function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
   } else {
     // Go towards the enemy!
     var enemyPicked = ((Math.random() * humanity.numberOfCamps)|0);
+    if (war[campId] >= 0) { enemyPicked = war[campId]; }
     for (var tileKey in humanityData) {
       if (humanityData[tileKey].h > 0 && humanityData[tileKey].c === enemyPicked) {
         directionTile = tileKey;
@@ -279,7 +280,7 @@ function run(terrain, humanity) {
   }
   if (ourTiles.length <= 0) { return; }
   // Now, pick what we do.
-  if (!war[leastCamp.id] && Math.random() < 0.7) {
+  if (war[leastCamp.id] < 0 && Math.random() < 0.7) {
     // What building do we want to create?
     var building = selectBuilding();
     // Let's pick a location to build that.
@@ -290,9 +291,13 @@ function run(terrain, humanity) {
     }
   }
   if (Math.random() < 0.01 && leastCamp.population > 10) {
-    war[leastCamp.id] = !war[leastCamp.id];
+    if (war[leastCamp.id] < 0) {
+      war[leastCamp.id] = (Math.random() * humanity.numberOfCamps)|0;
+    } else {
+      war[leastCamp.id] = -1;
+    }
   }
-  if (war[leastCamp.id]) { console.log('at war!'); }
+  if (war[leastCamp.id] >= 0) { console.log('at war!'); }
   // We're going to travel.
   return findTravelPlan(terrain, humanity, humanityData, ourTiles, leastCamp.id);
 }
