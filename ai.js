@@ -297,7 +297,6 @@ function run(terrain, humanity) {
       war[leastCamp.id] = -1;
     }
   }
-  if (war[leastCamp.id] >= 0) { console.log('at war!'); }
   // We're going to travel.
   return findTravelPlan(terrain, humanity, humanityData, ourTiles, leastCamp.id);
 }
