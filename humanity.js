@@ -1,6 +1,6 @@
 var fs = require('fs');
 var genName = require('./gen-name.js');
-var worldFile = './world.json';
+var worldFile = process.argv[3] || './world.json';
 
 var dirtyWorld = false;
 function saveWorld() {
