@@ -450,7 +450,7 @@ socket.onmessage = function(e) {
     paintHumans(ctx, hexaSize, origin, humanityData);
   }
 };
-socket.onclose = function(e) {
+socket.onclose = socket.onerror = function(e) {
   alert('You are disconnected.\nPlease reload the page.');
 };
 
