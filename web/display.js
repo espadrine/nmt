@@ -464,6 +464,11 @@ function sendMove(from, to, humans) {
   }));
 }
 
+function sendPos(at, to) {
+  if (!at) { return; }
+  socket.send(JSON.stringify({ at: keyFromTile(at), to: keyFromTile(to) }));
+}
+
 function sendBuild(at, building) {
   if (!at) { return; }
   socket.send(JSON.stringify({
@@ -1212,6 +1217,7 @@ function paintPopulation(ctx) {
 }
 
 // Tile Messages.
+// FIXME: do surrender messages.
 var hungerMessages = [
   "Hungry!",
   "Is dinner ready?",
@@ -1578,6 +1584,8 @@ window.onkeydown = function keyInputManagement(event) {
 function mouseSelection(event) {
   canvas.removeEventListener('mousemove', mouseDrag);
   canvas.removeEventListener('mouseup', mouseSelection);
+  var posTile = tileFromPixel({ x: event.clientX, y: event.clientY },
+        origin, hexaSize);
 
   if ((selectionMode === selectionModes.travel
     || selectionMode === selectionModes.split)
@@ -1587,17 +1595,15 @@ function mouseSelection(event) {
       numberOfPeople = (numberOfPeople * splitInputWidget.value / 100)|0;
     }
     // Send travel information.
-    var startTile = tileFromPixel({ x: event.clientX, y: event.clientY },
-        origin, hexaSize);
+    var startTile = posTile;
     if (humanTravelTo(currentTile, startTile).length > 1) {
       sendMove(currentTile, startTile, numberOfPeople);
     }
     enterMode(selectionModes.normal);
-  }
+  } else { sendPos(currentTile, posTile); }
 
   // Move there.
-  currentTile = tileFromPixel({ x: event.clientX, y: event.clientY },
-      origin, hexaSize);
+  currentTile = posTile;
   updateCurrentTileInformation();
   paint(ctx, hexaSize, origin);
 };

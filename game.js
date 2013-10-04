@@ -4,6 +4,10 @@ var ai = require('./ai');
 
 var cheatMode = false;
 
+// Tiles that are in use by a user / a bot.
+// Map from tileKey to truthy values.
+var lockedTiles = {};
+
 // Send and receive data from players.
 
 function actWSStart(socket) {
@@ -47,7 +51,11 @@ function campFromIP(ip) {
 // at, to: tileKeys (see terrain.tileFromKey).
 // b: building number. See terrain.tileTypes.
 function judgePlan(ip, plan, cheatMode) {
-  console.log('Suggested plan:', plan);
+  console.log('Suggested ' + (ip === 0? 'AI ': '') + 'plan:', plan);
+  if (ip !== 0 && plan.at != null && plan.to != null) {
+    delete lockedTiles[plan.at];
+    lockedTiles[plan.to] = ip;
+  }
 
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
     // Check camp.
@@ -162,7 +170,10 @@ function applyPlan(plan) {
   if (Math.random() < 0.8) {
     setTimeout(function runAI() {
       var aiPlan = ai(terrain, humanity);
-      if (aiPlan != null) { judgePlan(0, aiPlan, true); }
+      if (aiPlan != null && lockedTiles[aiPlan.at] === undefined) {
+        // The plan exists and doesn't bother users.
+        judgePlan(0, aiPlan, true);
+      }
     }, gameTurnTime / 2);
   }
 }
