@@ -28,6 +28,6 @@
 <script>
 // Sneaky code reader, here's your reward! /me winks.
 paymentForm.addEventListener('submit', function() {
-  localStorage.setItem('paid', 'yes');
+  localStorage.setItem('paid', new Date().getFullYear());
 });
 </script>

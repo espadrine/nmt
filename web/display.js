@@ -578,7 +578,8 @@ var helpPane = document.getElementById('helpPane');
 addEventListener('load', function showIntro() {
   if (!localStorage.getItem('firstRun')) {
     localStorage.setItem('firstRun', 'no');
-  } else if (Math.random() < 0.5 && !localStorage.getItem('paid')) {
+  } else if (Math.random() < 0.5 &&
+    localStorage.getItem('paid') !== (new Date()).getFullYear()) {
     showHelp('intro');
   }
 });
