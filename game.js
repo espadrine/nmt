@@ -21,6 +21,7 @@ function actWSStart(socket) {
     population: humanity.population(),
     camp: camp,
     goto: playerCamp.spawn,
+    places: humanity.getPlaces(),
   }));
 }
 

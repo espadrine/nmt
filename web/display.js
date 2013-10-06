@@ -436,10 +436,13 @@ socket.onmessage = function(e) {
     }
     if (change.goto !== undefined) {
       // goto is the spawn tile.
-      var spawnPixel = pixelFromTile(change.goto, { x0:0, y0:0 }, hexaSize);
-      origin.x0 = spawnPixel.x - ((canvas.width / 2)|0);
-      origin.y0 = spawnPixel.y - ((canvas.height / 2)|0);
+      gotoPlace(change.goto);
       delete change.goto;
+    }
+    if (change.places !== undefined) {
+      // Set the places.
+      insertPlaces(change.places);
+      delete change.places;
     }
     addStarveMessages(change);
     changeHumanity(humanityData, change);
@@ -476,6 +479,30 @@ function sendBuild(at, building) {
     do: planTypes.build,
     b: building
   }));
+}
+
+
+// Insert places = {"Place name": "tileKey"} into the panel.
+function insertPlaces(places) {
+  for (var place in places) {
+    var aPlace = document.createElement('p');
+    aPlace.textContent = place;
+    placesPanel.appendChild(aPlace);
+    aPlace.addEventListener('click', (function(t) {
+      return function() {
+        gotoPlace(t);
+        paint(ctx, hexaSize, origin);
+      };
+    }(tileFromKey(places[place]))));
+  }
+}
+
+// Focus the screen on tile t = {q, r}.
+// Changes `origin`.
+function gotoPlace(t) {
+  var spawnPixel = pixelFromTile(t, { x0:0, y0:0 }, hexaSize);
+  origin.x0 = spawnPixel.x - ((canvas.width / 2)|0);
+  origin.y0 = spawnPixel.y - ((canvas.height / 2)|0);
 }
 
 

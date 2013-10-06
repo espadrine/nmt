@@ -217,6 +217,8 @@ function population() {
   return list;
 }
 
+function getPlaces() { return places; }
+
 
 module.exports = humanity;
 module.exports.start = start;
@@ -232,3 +234,4 @@ module.exports.numberOfCamps = numberOfCamps;
 module.exports.population = population;
 module.exports.setSpawn = setSpawn;
 module.exports.winners = winners;
+module.exports.getPlaces = getPlaces;
