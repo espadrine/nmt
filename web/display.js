@@ -486,23 +486,50 @@ function sendBuild(at, building) {
 function insertPlaces(places) {
   for (var place in places) {
     var aPlace = document.createElement('p');
-    aPlace.textContent = place;
-    placesPanel.appendChild(aPlace);
+    var tile = tileFromKey(places[place]);
+    aPlace.setAttribute('data-tilekey', places[place]);
+    // Arrow: '→' or '►';
+    aPlace.innerHTML = '<div>→</div> ' + place;
     aPlace.addEventListener('click', (function(t) {
       return function() {
         gotoPlace(t);
         paint(ctx, hexaSize, origin);
       };
-    }(tileFromKey(places[place]))));
+    }(tile)));
+    placesPanel.appendChild(aPlace);
   }
 }
 
 // Focus the screen on tile t = {q, r}.
 // Changes `origin`.
 function gotoPlace(t) {
-  var spawnPixel = pixelFromTile(t, { x0:0, y0:0 }, hexaSize);
-  origin.x0 = spawnPixel.x - ((canvas.width / 2)|0);
-  origin.y0 = spawnPixel.y - ((canvas.height / 2)|0);
+  var placePixel = pixelFromTile(t, { x0:0, y0:0 }, hexaSize);
+  origin.x0 = placePixel.x - ((canvas.width / 2)|0);
+  origin.y0 = placePixel.y - ((canvas.height / 2)|0);
+}
+
+// Orient the arrows in the Places panel.
+function orientPlacesArrow() {
+  for (var i = 1; i < placesPanel.childNodes.length; i++) {
+    var block = placesPanel.childNodes[i];
+    if (block.getAttribute('data-tilekey') != null) {
+      var angle = -orientation({
+          x: origin.x0 + ((canvas.width / 2)|0),
+          y: origin.y0 + ((canvas.height / 2)|0)
+        }, pixelFromTile(tileFromKey(block.getAttribute('data-tilekey')),
+          {x0:0,y0:0}, hexaSize));
+      block.firstChild.style.transform = 'rotate(' + angle + 'rad)';
+      block.firstChild.style.WebkitTransform = 'rotate(' + angle + 'rad)';
+    }
+  }
+}
+
+// Orientation of the second pixel related to the first,
+// in radians, trigonometric direction. Both pixels are {x, y}.
+function orientation(p1, p2) {
+  var res = Math.atan((p1.y - p2.y) / Math.abs(p2.x - p1.x));
+  if (p2.x < p1.x) { res = Math.PI - res; }
+  return res;
 }
 
 
@@ -1022,6 +1049,10 @@ var displayedPaintContext = displayedPaint.getContext('2d');
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
 // compared to the pixel (0, 0) on the map.
 function paint(ctx, size, origin) {
+  if (selectionMode === selectionModes.places) {
+    // Show the direction of the places.
+    orientPlacesArrow();
+  }
   if (spritesLoaded) { paintTilesFromCache(ctx, size, origin);
   } else {
     paintTiles(ctx, size, origin);
@@ -1508,6 +1539,7 @@ function enterMode(newMode) {
     showPanel(splitPanel, splitBut);
     splitBut.addEventListener('click', enterNormalMode);
   } else if (newMode === selectionModes.places) {
+    orientPlacesArrow();
     showPanel(placesPanel, placesBut);
     placesBut.addEventListener('click', enterNormalMode);
   }
