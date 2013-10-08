@@ -633,7 +633,7 @@ addEventListener('load', function showIntro() {
   if (!localStorage.getItem('firstRun')) {
     localStorage.setItem('firstRun', 'no');
   } else if (Math.random() < 0.5 &&
-    localStorage.getItem('paid') !== (new Date()).getFullYear()) {
+    localStorage.getItem('paid') !== ''+(new Date()).getFullYear()) {
     showHelp('intro');
   }
 });
