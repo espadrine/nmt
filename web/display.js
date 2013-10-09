@@ -607,7 +607,7 @@ function tileFromPixel(px, px0, size) {
 // `size` is the radius of the smallest disk containing the hexagon.
 function pixelFromTile(p, px0, size) {
   return {
-    x: (size * Math.sqrt(3) * (p.q + p.r / 2)) - px0.x0,
+    x: ((size * Math.sqrt(3) * (p.q + p.r / 2))|0) - px0.x0,
     y: (size * 3/2 * p.r) - px0.y0
   };
 }
