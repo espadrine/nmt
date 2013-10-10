@@ -110,6 +110,7 @@ div#placesPanel > p[data-tilekey] > div {
   width: 2em;
   margin: auto;
 }
+div#placesPanel > p[data-tilekey] { cursor: pointer; }
 
 iframe#helpPane {
   display: none;
