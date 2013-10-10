@@ -486,9 +486,15 @@ function sendBuild(at, building) {
 function insertPlaces(places) {
   for (var place in places) {
     var aPlace = document.createElement('p');
+    aPlace.classList.add('buildSelection');
+    aPlace.classList.add('validSelection');
+    // Add a separator.
+    var aSep = document.createElement('hr');
+    aSep.classList.add('separator');
+    placesPanel.appendChild(aSep);
+    // Add the place block.
     var tile = tileFromKey(places[place]);
     aPlace.setAttribute('data-tilekey', places[place]);
-    // Arrow: '→' or '►';
     aPlace.innerHTML = '<div>→</div> ' + place;
     aPlace.addEventListener('click', (function(t) {
       return function() {
@@ -512,7 +518,7 @@ function gotoPlace(t) {
 function orientPlacesArrow() {
   for (var i = 1; i < placesPanel.childNodes.length; i++) {
     var block = placesPanel.childNodes[i];
-    if (block.getAttribute('data-tilekey') != null) {
+    if (block.getAttribute && block.getAttribute('data-tilekey') != null) {
       var angle = -orientation({
           x: origin.x0 + ((canvas.width / 2)|0),
           y: origin.y0 + ((canvas.height / 2)|0)
