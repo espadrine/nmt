@@ -82,7 +82,7 @@ function terrain(coord) {
     // Rivers are thinner in mountains.
     ((riverNoise < -0.99 - (heightNoise * 0.013)
     // Seas are smaller in mountains.
-    || heightNoise + seaNoise < -1.3) ?
+    || heightNoise + seaNoise < -1) ?
         tileTypes.water:
     (heightNoise < 0.1) ?
         tileTypes.steppe:
