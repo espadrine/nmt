@@ -851,7 +851,7 @@ function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
         }
       }
       if (!oriented) { paintSprite(ctx, size, cx, cy, human.b, 0); }
-    } else if (human.b === tileTypes.airport) {
+    } else if (human.b === tileTypes.airport || human.b === tileTypes.factory) {
       paintSprite(ctx, size, cx, cy, human.b, 0);
     } else {
       paintSprite(ctx, size, cx, cy, human.b, rotation);
