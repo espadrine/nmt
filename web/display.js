@@ -434,6 +434,10 @@ socket.onmessage = function(e) {
       addHumanMessages(warTiles, change.war, warMessages);
       delete change.war;
     }
+    if (change.surrender !== undefined) {
+      addHumanMessages(surrenderTiles, change.surrender, surrenderMessages);
+      delete change.surrender;
+    }
     if (change.goto !== undefined) {
       // goto is the spawn tile.
       gotoPlace(change.goto);
@@ -1282,7 +1286,10 @@ function paintPopulation(ctx) {
 }
 
 // Tile Messages.
-// FIXME: do surrender messages.
+var surrenderMessages = [
+  "We surrender!",
+  "I, for one, welcome our new overlords."
+];
 var hungerMessages = [
   "Hungry!",
   "Is dinner ready?",
@@ -1303,7 +1310,6 @@ var warMessages = [
   "Tell my wife I loved her… meals…",
   "I do!",
   "Resistance is futile.",
-  "I, for one, welcome our new overlords.",
   "I didn't expect the Spanish Inquisition!",
   "Whoop-de-doo!",
   "You'll never take me alive!",
@@ -1320,6 +1326,7 @@ var warMessages = [
 
 // Map from tile = "q:r" to {message, timeout} (including timeout IDs).
 var warTiles = {};
+var surrenderTiles = {};
 var starvedTiles = {};
 
 // Add textual bubble set in tileMessages
@@ -1387,6 +1394,9 @@ function paintMessage(ctx, size, origin, tileKey, msg) {
 function paintTileMessages(ctx, size, origin) {
   for (var tileKey in warTiles) {
     paintMessage(ctx, size, origin, tileKey, warTiles[tileKey].message);
+  }
+  for (var tileKey in surrenderTiles) {
+    paintMessage(ctx, size, origin, tileKey, surrenderTiles[tileKey].message);
   }
   for (var tileKey in starvedTiles) {
     paintMessage(ctx, size, origin, tileKey, starvedTiles[tileKey].message);

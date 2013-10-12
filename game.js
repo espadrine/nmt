@@ -84,6 +84,7 @@ function judgePlan(ip, plan, cheatMode) {
 
 var updatedHumanity = {};
 var warTiles = [];
+var surrenderTiles = [];
 
 function applyPlan(plan) {
   var humanityFrom = humanity.copy(humanity(terrain.tileFromKey(plan.at)));
@@ -107,7 +108,6 @@ function applyPlan(plan) {
     // Human movement.
     if (!emptyTarget && humanityTo.c !== humanityFrom.c) {
       // They're not us. This means war. Because culture difference.
-      warTiles.push(plan.to);
       var ourForces = plan.h;
       if ((humanityFrom.o & terrain.manufacture.gun) !== 0) {
         ourForces *= 2;
@@ -125,13 +125,16 @@ function applyPlan(plan) {
         humanityFrom.h -= plan.h;
         updatedHumanity[plan.at] = humanityFrom;
         updatedHumanity[plan.to] = humanityTo;
+        warTiles.push(plan.to);
         return;
       } else {
         // We win.
         if (surrender(plan.to, humanityFrom.c)) {
           humanityTo.h += plan.h;
+          surrenderTiles.push(plan.to);
         } else {
           humanityTo.h = plan.h - (plan.h * (1/imbalance))|0;
+          warTiles.push(plan.to);
         }
         humanityFrom.h -= plan.h;
         emptyTarget = true;
@@ -230,6 +233,7 @@ function gameTurn() {
     addPopulation(updatedHumanity);
     updatedHumanity.population = humanity.population();
     updatedHumanity.war = warTiles;
+    updatedHumanity.surrender = surrenderTiles;
     actChannel.clients.forEach(function (client) {
       client.send(JSON.stringify(updatedHumanity));
     });
@@ -237,6 +241,7 @@ function gameTurn() {
   terrain.clearPlans();
   updatedHumanity = {};
   warTiles = [];
+  surrenderTiles = [];
   // The game ends if one of the camps is empty, or is too high.
   var gameOver = false;
   for (var i = 0; i < humanity.numberOfCamps; i++) {
