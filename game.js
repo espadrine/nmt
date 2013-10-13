@@ -356,9 +356,7 @@ function findNearestTerrain(tile, type) {
   var k = 1;
   while (terrain(tile).type !== type) {
     // Take the bottom left tile.
-    for (var i = 0; i < k; i++) {
-      tile = terrain.neighborFromTile(tile, 4);
-    }
+    tile = terrain.neighborFromTile(tile, 4);
     // Go round.
     for (var i = 0; i < 6; i++) {
       for (var j = 0; j < k; j++) {
@@ -368,6 +366,7 @@ function findNearestTerrain(tile, type) {
         }
       }
     }
+    k++;
   }
   return tile;
 }
