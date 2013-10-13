@@ -343,7 +343,6 @@ function findTreasures(spawn) {
     q: (midSpot.q + distanceBetweenPlayers/2 * Math.cos(angle))|0,
     r: (midSpot.r + distanceBetweenPlayers/2 * Math.sin(angle))|0,
   };
-  console.log('treasure midpoint:', terrain.keyFromTile(oneSpot));
   // For now, we only have Black Death.
   treasures[terrain.keyFromTile(findNearestTerrain(oneSpot,
         terrain.tileTypes.mountain))] = terrain.tileTypes.blackdeath;
