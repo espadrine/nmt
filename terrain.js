@@ -30,7 +30,8 @@ var tileTypes = {
   airport:      14,
   gunsmith:     15,
   road:         16,
-  wall:         17
+  wall:         17,
+  blackdeath:   18
 };
 var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ];
 

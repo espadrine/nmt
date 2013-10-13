@@ -24,7 +24,8 @@ var tileTypes = {
   airport:      14,
   gunsmith:     15,
   road:         16,
-  wall:         17
+  wall:         17,
+  blackdeath:   18
 };
 var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ];
 
@@ -851,7 +852,8 @@ function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
         }
       }
       if (!oriented) { paintSprite(ctx, size, cx, cy, human.b, 0); }
-    } else if (human.b === tileTypes.airport || human.b === tileTypes.factory) {
+    } else if (human.b === tileTypes.airport || human.b === tileTypes.factory
+        || human.b > tileTypes.wall) {
       paintSprite(ctx, size, cx, cy, human.b, 0);
     } else {
       paintSprite(ctx, size, cx, cy, human.b, rotation);
