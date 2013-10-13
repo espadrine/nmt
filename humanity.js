@@ -17,7 +17,7 @@ function saveWorld() {
 }
 
 var terrain;
-function start(t, findSpawn) {
+function start(t, findSpawn, findTreasures) {
   terrain = t;
   try {
     var world = require(worldFile);
@@ -36,7 +36,7 @@ function start(t, findSpawn) {
       }
     }
   } catch(e) {
-    setSpawn(findSpawn());
+    setSpawn(findSpawn, findTreasures);
   }
   for (var i = 0; i < numberOfCamps; i++) {
     console.log('camp', i + ':', camps[i].spawn);
@@ -190,7 +190,9 @@ function winners() {
 
 // Given a list of {q,r} spawns, set the map.
 // Modifies `camps`.
-function setSpawn(spawns) {
+function setSpawn(findSpawn, findTreasures) {
+  var spawns = findSpawn();
+  var treasures = findTreasures(spawns);
   camps = makeCamps();
   humanityData = {};    // reset humanity.
   places = {};
@@ -204,6 +206,12 @@ function setSpawn(spawns) {
     humanityTile.h = 3;
     humanityTile.c = i;
     settlements[spawns[i].q + ':' + spawns[i].r] = humanityTile;
+  }
+  for (var tileKey in treasures) {
+    var humanityTile = makeDefault();
+    humanityTile.b = treasures[tileKey];
+    settlements[tileKey] = humanityTile;
+    places['Black Death'] = tileKey;
   }
   humanityChange(settlements);
 }

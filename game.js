@@ -306,34 +306,55 @@ function addFolk(homes, index) {
 
 // Possible win: the maximum population authorized in a game.
 var maxPopulation;
+var distanceBetweenPlayers;
 
 // Returns a list of spawn = {q,r}.
 function findSpawn() {
   var spawns = new Array(humanity.numberOfCamps);
-  // Increase the values to ((Math.random() * 500)|0) + 100 once we have cities
-  var distanceBetweenPlayers = ((Math.random() * 100)|0) + 50;
+  distanceBetweenPlayers = ((Math.random() * 100)|0) + 50;
   maxPopulation = distanceBetweenPlayers * distanceBetweenPlayers;
   var oneSpot = {
     q:(Math.random() * 10000)|0,
     r:(Math.random() * 10000)|0,
   };
-  spawns[0] = findNearestSteppe(oneSpot);
-  var angle, q, r;
+  spawns[0] = findNearestTerrain(oneSpot, terrain.tileTypes.steppe);
+  var angle;
   for (var i = 1; i < humanity.numberOfCamps; i++) {
     angle = Math.random() * 2 * Math.PI;
     oneSpot = {
       q: (oneSpot.q + distanceBetweenPlayers * Math.cos(angle))|0,
       r: (oneSpot.r + distanceBetweenPlayers * Math.sin(angle))|0,
     };
-    spawns[i] = findNearestSteppe(oneSpot);
+    spawns[i] = findNearestTerrain(oneSpot, terrain.tileTypes.steppe);
   }
   return spawns;
 }
 
+// Return a map from tilekeys "q:r" to treasure type (terrain.tileTypes).
+function findTreasures(spawn) {
+  var treasures = {};
+  var firstSpawn = spawn[0];
+  var lastSpawn = spawn[spawn.length - 1];
+  var midSpot = {q:0, r:0};
+  midSpot.q = (((firstSpawn.q + lastSpawn.q) / 2)|0);
+  midSpot.r = (((firstSpawn.r + lastSpawn.r) / 2)|0);
+  var angle = Math.random() * 2 * Math.PI;
+  var oneSpot = {
+    q: (midSpot.q + distanceBetweenPlayers/2 * Math.cos(angle))|0,
+    r: (midSpot.r + distanceBetweenPlayers/2 * Math.sin(angle))|0,
+  };
+  console.log('treasure midpoint:', terrain.keyFromTile(oneSpot));
+  // For now, we only have Black Death.
+  treasures[terrain.keyFromTile(findNearestTerrain(oneSpot,
+        terrain.tileTypes.mountain))] = terrain.tileTypes.blackdeath;
+  return treasures;
+}
+
 // tile = {q,r}
-function findNearestSteppe(tile) {
+// type: see terrain.tileTypes.
+function findNearestTerrain(tile, type) {
   var k = 1;
-  while (terrain(tile).type !== terrain.tileTypes.steppe) {
+  while (terrain(tile).type !== type) {
     // Take the bottom left tile.
     for (var i = 0; i < k; i++) {
       tile = terrain.neighborFromTile(tile, 4);
@@ -342,7 +363,7 @@ function findNearestSteppe(tile) {
     for (var i = 0; i < 6; i++) {
       for (var j = 0; j < k; j++) {
         tile = terrain.neighborFromTile(tile, i);
-        if (terrain(tile).type === terrain.tileTypes.steppe) {
+        if (terrain(tile).type === type) {
           return tile;
         }
       }
@@ -355,16 +376,19 @@ function findNearestSteppe(tile) {
 // Starting the game.
 
 function startGame() {
-  humanity.setSpawn(findSpawn());
+  humanity.setSpawn(findSpawn, findTreasures);
+  startGameLoop();
+}
+
+function startGameLoop() {
   ai.clear(terrain, humanity);
   setTimeout(gameTurn, gameTurnTime);
 }
 
 var actChannel;
 function start(camp) {
-  humanity.start(terrain, findSpawn);
-  ai.clear(terrain, humanity);
-  setTimeout(gameTurn, gameTurnTime);
+  humanity.start(terrain, findSpawn, findTreasures);
+  startGameLoop();
   actChannel = camp.ws('act', actWSStart);
 }
 
