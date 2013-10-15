@@ -1,5 +1,7 @@
-var terrain = require('./terrain.js');
+// Thaddée Tyl. AGPLv3.
+var terrain = require('./terrain');
 var humanity = require('./humanity');
+var treasure = require('./treasure');
 var ai = require('./ai');
 
 var cheatMode = false;
@@ -166,6 +168,12 @@ function applyPlan(plan) {
 
   } else if (plan.do === terrain.planTypes.build) {
     console.log('Plan: building', plan.b, 'at', plan.at);
+    if (plan.b === terrain.tileTypes.airport) {
+      // It can be a treasure activation.
+      if (humanityFrom.b === terrain.tileTypes.blackdeath) {
+        treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c);
+      }
+    }
     humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;
     collectFromTile(plan.at, humanityFrom, true);

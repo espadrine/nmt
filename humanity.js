@@ -79,6 +79,9 @@ function humanityChange(change) {
       // There is nothing to remember here.
       delete humanityData[tileKey];
     } else {
+      if (tileChanged.h <= 0) {
+        tileChanged.c = null; tileChanged.f = 0; tileChanged.o = 0;
+      }
       humanityData[tileKey] = tileChanged;
     }
     dirtyWorld = true;
