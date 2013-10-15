@@ -70,7 +70,7 @@ function findBuildingPlan(terrain, humanity, humanityData,
     // Let's make a project!
     var validTiles = [];
     for (var i = 0; i < ourTiles.length; i++) {
-      var tile = terrain.tileFromKey(ourTiles[i]);
+      var tile = terrain(terrain.tileFromKey(ourTiles[i]));
       if (tile.type !== terrain.tileTypes.water &&
           tile.type !== terrain.tileTypes.mountain) {
         validTiles.push(ourTiles[i]);
