@@ -9,27 +9,27 @@ function blackDeath(terrain, humanity, updatedHumanity, campid) {
     var camp = humanity.campFromId(i);
     // We remove half as many homes as there are population members.
     var population = camp.population;
-    var targetPopulation = population / 3;
+    var targetPopulation = population / 2;
     for (var tileKey in camp.skyscraper) {
       if (population <= targetPopulation) { break; }
       var humanityTile = humanity.copy(humanity(terrain.tileFromKey(tileKey)));
+      population -= humanityTile.h;
       humanityTile.h = 0;
       updatedHumanity[tileKey] = humanityTile;
-      population -= humanity.homePerHouse.skyscraper;
     }
     for (var tileKey in camp.residence) {
       if (population <= targetPopulation) { break; }
       var humanityTile = humanity.copy(humanity(terrain.tileFromKey(tileKey)));
+      population -= humanityTile.h;
       humanityTile.h = 0;
       updatedHumanity[tileKey] = humanityTile;
-      population -= humanity.homePerHouse.residence;
     }
     for (var tileKey in camp.farm) {
       if (population <= targetPopulation) { break; }
       var humanityTile = humanity.copy(humanity(terrain.tileFromKey(tileKey)));
+      population -= humanityTile.h;
       humanityTile.h = 0;
       updatedHumanity[tileKey] = humanityTile;
-      population -= humanity.homePerHouse.farm;
     }
   }
 }
