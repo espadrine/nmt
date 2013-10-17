@@ -1180,8 +1180,8 @@ function paintHumans(ctx, size, origin, humanityData) {
     for (var i = 0; i < number; i++) {
       var animation = humanAnimation[Math.abs(i+q^r^human.f) % humanAnimation.length];
       ctx.fillStyle = 'black';
-      ctx.fillRect(cx - size/2 + animation.x * size,
-          cy - size/2 + animation.y * size,
+      ctx.fillRect(cx - size + animation.x * 2 * size,
+          cy - size + animation.y * 2 * size,
           size/20, size/10);
     }
   }
