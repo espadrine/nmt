@@ -97,6 +97,8 @@ function applyPlan(plan) {
 
     // Do we have enough food?
     if (humanityFrom.f <= 0) {
+      if (terrain(terrain.tileFromKey(plan.at)).type ===
+          terrain.tileTypes.water) { humanityFrom.h = 0; }
       updatedHumanity[plan.at] = humanityFrom;
       return;
     }
