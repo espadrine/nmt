@@ -6,10 +6,11 @@ var constructionProjects;
 var stallingProjects;   // maps from building to # of attempts.
 // List from campId to list of tileKeys.
 var destinationProjects;
-// List from campId to booleans.
+// List from campId to campId.
 var war;
 
 var buildingValue = {};
+var buildingByWorth;
 var totalValue = 1;
 
 
@@ -26,15 +27,16 @@ function clear(terrain, humanity) {
   }
   // Building value.
   buildingValue[terrain.tileTypes.farm] = 4;
-  buildingValue[terrain.tileTypes.residence] = 30;
-  buildingValue[terrain.tileTypes.skyscraper] = 13;
-  buildingValue[terrain.tileTypes.factory] = 7;
+  buildingValue[terrain.tileTypes.residence] = 20;
+  buildingValue[terrain.tileTypes.skyscraper] = 40;
+  buildingValue[terrain.tileTypes.factory] = 10;
   buildingValue[terrain.tileTypes.dock] = 7;
-  buildingValue[terrain.tileTypes.gunsmith] = 35;
-  buildingValue[terrain.tileTypes.airland] = 4;
-  buildingValue[terrain.tileTypes.airport] = 15;
+  buildingValue[terrain.tileTypes.gunsmith] = 30;
+  buildingValue[terrain.tileTypes.airland] = 5;
+  buildingValue[terrain.tileTypes.airport] = 50;
   buildingValue[terrain.tileTypes.road] = 1;
   buildingValue[terrain.tileTypes.wall] = 0;
+  buildingByWorth = orderBuildings(terrain);
   totalValue = 0;
   for (var building in buildingValue) {
     totalValue += buildingValue[building];
@@ -122,9 +124,6 @@ function projectPlan(terrain, humanity, humanityData, ourTiles, campId,
       // We know what to build.
       if (unbuilt.length > 0) {
         // Someone can do it.
-        //return projectPlan(terrain, humanity, humanityData,
-        //  ourTiles, campId, requiredDependencies[j][1],
-        //  terrain.keyFromTile(unbuilt[0]));
         constructionProjects[campId][requiredDependencies[j][1]] = unbuilt[0];
         return {
           at: terrain.keyFromTile(unbuilt[0]),
@@ -249,15 +248,11 @@ function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
   }
 }
 
-// Select the building we want to construct.
-function selectBuilding() {
-  var select = Math.random();
-  var acc = 0;
-  for (var building in buildingValue) {
-    acc += buildingValue[building] / totalValue;
-    if (select < acc) { return +building; }
-  }
-  return +building;
+// Order buildings by worth, most worthy first.
+function orderBuildings(terrain) {
+  return terrain.buildingTypes.sort(function (a, b) {
+    return buildingValue[b] - buildingValue[a];
+  });
 }
 
 // Return a plan. Or undefined.
@@ -282,12 +277,15 @@ function run(terrain, humanity) {
   // Now, pick what we do.
   if (war[leastCamp.id] < 0 && Math.random() < 0.7) {
     // What building do we want to create?
-    var building = selectBuilding();
-    // Let's pick a location to build that.
-    var buildingPlan = findBuildingPlan(terrain, humanity, humanityData,
-        ourTiles, leastCamp.id, building);
-    if (buildingPlan != null) {
-      return buildingPlan;
+    for (var i = 0; i < buildingByWorth.length; i++) {
+      var building = buildingByWorth[i];
+      // Let's pick a location to build that.
+      var buildingPlan = findBuildingPlan(terrain, humanity, humanityData,
+          ourTiles, leastCamp.id, building);
+      if (buildingPlan != null && terrain.validConstruction(building,
+            terrain.tileFromKey(buildingPlan.at))) {
+        return buildingPlan;
+      }
     }
   }
   if (Math.random() < 0.01 && leastCamp.population > 10) {
