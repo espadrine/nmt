@@ -873,14 +873,17 @@ function paintTerrain(ctx, size, cx, cy,
   paintBuilding(ctx, size, cx, cy, tilePos, rotation);
   // Heavy rain makes it darker.
   pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
-  var grey = Math.floor((-t.rain + 1) / 2 * 127);
-  var transparency = (t.rain + 1) / 3;
+  var grey = Math.floor((1 - t.rain) / 2 * 127);
   if (t.type === tileTypes.water) {
-    ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + (grey-42) + ','
-        + transparency + ')';
+    grey = (grey / 2)|0;
+    ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ',0.3)';
   } else {
-    ctx.fillStyle = 'rgba(' + grey + ',' + (grey+50) + ',' + grey + ','
-        + transparency + ')';
+    var delta = (Math.abs(grey - 127/2) / 1)|0;
+    var red = grey;
+    var green = grey;
+    if (grey < 127/2) { red -= delta; green += delta; }
+    else if (grey > 127/2) { red += 2*delta; green += delta; }
+    ctx.fillStyle = 'rgba(' + red + ',' + green + ',' + grey + ',0.3)';
   }
   ctx.fill();
 }
