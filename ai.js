@@ -72,10 +72,15 @@ function findBuildingPlan(terrain, humanity, humanityData,
     // Let's make a project!
     var validTiles = [];
     for (var i = 0; i < ourTiles.length; i++) {
-      var tile = terrain(terrain.tileFromKey(ourTiles[i]));
-      if (tile.type !== terrain.tileTypes.water &&
-          tile.type !== terrain.tileTypes.mountain) {
-        validTiles.push(ourTiles[i]);
+      for (var j = 0; j < 6; j++) {
+        var tile = terrain.neighborFromTile(terrain.tileFromKey(ourTiles[i]), j);
+        var h = humanity(tile);
+        var t = terrain(tile);
+        if (t.type !== terrain.tileTypes.water &&
+            t.type !== terrain.tileTypes.mountain &&
+            (!h || h.b == null)) {
+          validTiles.push(terrain.keyFromTile(tile));
+        }
       }
     }
     if (validTiles.length > 0) {
@@ -204,11 +209,15 @@ function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
   }
   // Are we hungry there?
   if (fromHumanityTile.f < 2) {
-    return {
+    var buildingPlan = {
       at: fromTile,
       do: terrain.planTypes.build,
       b: terrain.tileTypes.farm
     };
+    if (terrain.validConstruction(buildingPlan.b,
+          terrain.tileFromKey(buildingPlan.at))) {
+      return buildingPlan;
+    }
   }
   // Go somewhere.
   var directionTile;
@@ -275,7 +284,7 @@ function run(terrain, humanity) {
   }
   if (ourTiles.length <= 0) { return; }
   // Now, pick what we do.
-  if (war[leastCamp.id] < 0 && Math.random() < 0.7) {
+  if (war[leastCamp.id] < 0 && Math.random() < 0.9) {
     // What building do we want to create?
     for (var i = 0; i < buildingByWorth.length; i++) {
       var building = buildingByWorth[i];
