@@ -181,11 +181,12 @@ function applyPlan(plan) {
     collectFromTile(plan.at, humanityFrom, true);
   }
   // Run ai.
-  if (Math.random() < 0.8) {
+  if (!plan.ai) {
     setTimeout(function runAI() {
       var aiPlan = ai(terrain, humanity);
       if (aiPlan != null && lockedTiles[aiPlan.at] === undefined) {
         // The plan exists and doesn't bother users.
+        aiPlan.ai = true;
         judgePlan(0, aiPlan, true);
       }
     }, gameTurnTime / 2);
@@ -195,7 +196,7 @@ function applyPlan(plan) {
 //setInterval(function () {
 //  var aiPlan = ai(terrain, humanity);
 //  console.log('ai plan:', aiPlan);
-//  if (aiPlan != null) { judgePlan(0, aiPlan, true); }
+//  if (aiPlan != null) { aiPlan.ai = true; judgePlan(0, aiPlan, true); }
 //}, 200);
 
 // Collect from the humanity tile. If `addBuilding` is truthy,
