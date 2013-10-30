@@ -48,13 +48,20 @@ function campFromIP(ip) {
   return campFromIPs[ip];
 }
 
+// The following should be constant. It is used for defaults.
+var emptyFunction = function(){};
+
 // Accept or reject a plan.
 // A plan is {do, at, to, b}.
 // do: see terrain.planTypes.
 // at, to: tileKeys (see terrain.tileFromKey).
 // b: building number. See terrain.tileTypes.
-function judgePlan(ip, plan, cheatMode) {
-  console.log('Suggested ' + (ip === 0? 'AI ': '') + 'plan:', plan);
+//
+// The callback `cb` runs after the plan is applied, if it is.
+// If the plan isn't applied, the callback has an `err` parameter to explain.
+function judgePlan(ip, plan, cheatMode, cb) {
+  cb = cb || emptyFunction;
+  //console.log('Suggested ' + (ip === 0? 'AI ': '') + 'plan:', plan);
   if (ip !== 0 && plan.at != null && plan.to != null) {
     delete lockedTiles[plan.at];
     lockedTiles[plan.to] = ip;
@@ -73,15 +80,15 @@ function judgePlan(ip, plan, cheatMode) {
                          terrain.tileFromKey(plan.to)).length > 1
        && (plan.h > 0 || plan.h <= humanityTile.h)) {
         // Is the move valid?
-        terrain.addPlan(plan);
+        process.nextTick(function() { applyPlan(plan); cb(); });
       } else if ((typeof plan.b === 'number' || plan.b === null)
              && plan.do === terrain.planTypes.build
              && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at))) {
         // Is the move valid?
-        terrain.addPlan(plan);
-      } else console.log('Plan denied.');
-    } else console.log('Camp denied or no camp detected.');
-  } else console.log('Plan invalid.');
+        process.nextTick(function() { applyPlan(plan); cb(); });
+      } else cb('Plan denied.');
+    } else cb('Camp denied or no camp detected.');
+  } else cb('Plan invalid.');
 }
 
 var updatedHumanity = {};
@@ -92,7 +99,7 @@ function applyPlan(plan) {
   var humanityFrom = humanity.copy(humanity(terrain.tileFromKey(plan.at)));
   humanity.campFromId(humanityFrom.c).nActions++;
   if (plan.do === terrain.planTypes.move) {
-    console.log('Plan: moving people from', plan.at, 'to', plan.to);
+    //console.log('Plan: moving people from', plan.at, 'to', plan.to);
     var humanityTo = humanity.copy(humanity(terrain.tileFromKey(plan.to)));
 
     // Do we have enough food?
@@ -122,7 +129,7 @@ function applyPlan(plan) {
       }
       // Imbalance is > 1 if we win.
       var imbalance = ourForces / theirForces;
-      console.log('imbalance:', imbalance);
+      //console.log('imbalance:', imbalance);
       if (imbalance <= 1) {
         // We lose.
         humanityTo.h -= (humanityTo.h * imbalance)|0;
@@ -169,7 +176,7 @@ function applyPlan(plan) {
     updatedHumanity[plan.to] = humanityTo;
 
   } else if (plan.do === terrain.planTypes.build) {
-    console.log('Plan: building', plan.b, 'at', plan.at);
+    //console.log('Plan: building', plan.b, 'at', plan.at);
     if (plan.b === terrain.tileTypes.airport) {
       // It can be a treasure activation.
       if (humanityFrom.b === terrain.tileTypes.blackdeath) {
@@ -182,16 +189,40 @@ function applyPlan(plan) {
   }
   // Run ai.
   if (!plan.ai) {
-    setTimeout(function runAI() {
-      var aiPlan = ai(terrain, humanity);
-      if (aiPlan != null && lockedTiles[aiPlan.at] === undefined) {
-        // The plan exists and doesn't bother users.
-        aiPlan.ai = true;
-        judgePlan(0, aiPlan, true);
+    // Find out the gap between the camp that did most actions and the others.
+    var maxActions = 0;
+    var maxActionId = 0;
+    for (var i = 0; i < humanity.numberOfCamps; i++) {
+      var nActions = humanity.campFromId(i).nActions;
+      if (maxActions < nActions) {
+        maxActions = nActions;
+        maxActionId = i;
       }
-    }, gameTurnTime / 2);
+    }
+    // Compute handicap = Σi (max - nAction[i]).
+    var handicap = 0;
+    for (var i = 0; i < humanity.numberOfCamps; i++) {
+      if (i !== maxActionId) {
+        handicap += maxActions - humanity.campFromId(i).nActions;
+      }
+    }
+    // Exact half the handicap.
+    //console.log('exacting handicap = ' + ((handicap / 2)|0));
+    runAiNTimes((handicap / 2)|0);
   }
 }
+
+// Run the AI algorithm `n` times. May span multiple ticks.
+function runAiNTimes(n) {
+  if (n <= 0) { return; }
+  var aiPlan = ai(terrain, humanity);
+  if (aiPlan != null && lockedTiles[aiPlan.at] === undefined) {
+    // The plan exists and doesn't bother users.
+    aiPlan.ai = true;
+    judgePlan(0, aiPlan, true, function() { runAiNTimes(n-1); });
+  }
+}
+
 // Uncomment the following to make the AI play constantly.
 //setInterval(function () {
 //  var aiPlan = ai(terrain, humanity);
@@ -233,11 +264,9 @@ function surrender(tileKey, camp) {
 
 // Game turn.
 
-var gameTurnTime = 100;     // Every 100ms.
+var gameTurnTime = 50;     // Every 50ms.
 
 function gameTurn() {
-  // Run all accepted plans.
-  terrain.eachPlan(applyPlan);
   // Send new humanity to all.
   if (Object.keys(updatedHumanity).length > 0) {
     humanity.change(updatedHumanity);
