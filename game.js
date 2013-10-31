@@ -275,7 +275,11 @@ function gameTurn() {
     updatedHumanity.war = warTiles;
     updatedHumanity.surrender = surrenderTiles;
     actChannel.clients.forEach(function (client) {
-      client.send(JSON.stringify(updatedHumanity));
+      try {
+        client.send(JSON.stringify(updatedHumanity));
+      } catch(e) {
+        console.error('Tried to send data to nonexistent client.');
+      }
     });
   }
   terrain.clearPlans();
