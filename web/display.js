@@ -883,6 +883,15 @@ function paintTerrain(ctx, size, cx, cy,
     var green = grey;
     if (grey < 127/2) { red -= delta; green += delta; }
     else if (grey > 127/2) { red += 2*delta; green += delta; }
+    if (t.type === tileTypes.steppe) {
+      // If it's next to water, make a beach.
+      var leftTile = neighborFromTile(tilePos, 0);
+      var rightTile = neighborFromTile(tilePos, 3);
+      if (terrain(leftTile).type === tileTypes.water
+       || terrain(rightTile).type === tileTypes.water) {
+        red += ((127-grey)/2)|0; green += ((127-grey)/4)|0;
+      }
+    }
     ctx.fillStyle = 'rgba(' + red + ',' + green + ',' + grey + ',0.3)';
   }
   ctx.fill();
