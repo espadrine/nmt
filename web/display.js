@@ -1288,13 +1288,15 @@ function paintPopulation(ctx) {
   }
   var start = left;
   var popWidth;
+  var allButLastWidth = 0;
   for (var i = 0; i < humanityPopulation.length - 1; i++) {
-    popWidth = width * humanityPopulation[i] / totalPopulation;
+    popWidth = (width * humanityPopulation[i] / totalPopulation)|0;
+    allButLastWidth += popWidth;
     ctx.fillStyle = 'hsl(' + campHueCreator9000(i) + ',80%,50%)';
     ctx.fillRect(start|0, top, popWidth|0, height);
     start += popWidth;
   }
-  popWidth = width * humanityPopulation[i] / totalPopulation;
+  popWidth = width - allButLastWidth - 1;
   ctx.fillStyle = 'hsl(' + campHueCreator9000(i) + ',80%,50%)';
   ctx.fillRect(start|0, top, (popWidth|0)+1, height);
 }
