@@ -408,13 +408,21 @@ function clearPlans() { plans = {}; }
 // Listen to server connection.
 
 var gameOver;
-var socket = new WebSocket(
-  // Trick: use the end of either http: or https:.
-  'ws' + window.location.protocol.slice(4) + '//' +
-    window.location.hostname +
-    (window.location.port.length > 0? (':' + window.location.port): '') +
-    '/$websocket:act');
-socket.onmessage = function(e) {
+var socket;
+var retries = 0;
+function connectSocket(cb) {
+  cb = cb || function(){};
+  socket = new WebSocket(
+    // Trick: use the end of either http: or https:.
+    'ws' + window.location.protocol.slice(4) + '//' +
+      window.location.hostname +
+      (window.location.port.length > 0? (':' + window.location.port): '') +
+      '/$websocket:act');
+  socket.onmessage = socketMessage;
+  socket.onclose = socket.onerror = socketError;
+  socket.onopen = function() { retries = 0; cb(); };
+}
+function socketMessage(e) {
   var change = JSON.parse(e.data);
   if (change.plans) {
     // FIXME: if you want to receive other players' plans.
@@ -457,19 +465,27 @@ socket.onmessage = function(e) {
     paint(ctx, hexaSize, origin);
     paintHumans(ctx, hexaSize, origin, humanityData);
   }
+}
+function socketError(e) {
+  retries++;
+  if (retries < 1) {
+    setTimeout(connectSocket, 50);
+  } else if (retries === 1) {
+    alert('You are disconnected.\nPlease reload the page.');
+  }
 };
-socket.onclose = socket.onerror = function(e) {
-  alert('You are disconnected.\nPlease reload the page.');
-};
+connectSocket();
 
 function sendMove(from, to, humans) {
   if (!from || !to) { return; }
-  socket.send(JSON.stringify({
-    at: keyFromTile(from),
-    do: planTypes.move,
-    to: keyFromTile(to),
-    h: humans
-  }));
+  if (socket.readyState === 1) {
+    socket.send(JSON.stringify({
+      at: keyFromTile(from),
+      do: planTypes.move,
+      to: keyFromTile(to),
+      h: humans
+    }));
+  } else { connectSocket(function(){sendMove(from, to, humans);}); }
 }
 
 function sendPos(at, to) {
@@ -479,11 +495,13 @@ function sendPos(at, to) {
 
 function sendBuild(at, building) {
   if (!at) { return; }
-  socket.send(JSON.stringify({
-    at: keyFromTile(at),
-    do: planTypes.build,
-    b: building
-  }));
+  if (socket.readyState === 1) {
+    socket.send(JSON.stringify({
+      at: keyFromTile(at),
+      do: planTypes.build,
+      b: building
+    }));
+  } else { connectSocket(function(){sendBuild(at, building);}); }
 }
 
 
