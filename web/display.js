@@ -1743,6 +1743,8 @@ function mouseDrag(event) {
   canvas.addEventListener('mousemove', dragMap);
   clearInterval(humanAnimationTimeout);
   currentlyDragging = true;
+  resetDragVector();
+  dragVelTo = setInterval(resetDragVector, dragVelInterval);
 }
 
 function mouseEndDrag(event) {
@@ -1752,6 +1754,9 @@ function mouseEndDrag(event) {
   humanAnimationTimeout = setInterval(animateHumans, 100);
   currentlyDragging = false;
   paint(ctx, hexaSize, origin);
+  clearInterval(dragVelTo);
+  computeDragVelocity();
+  inertiaDragMap();
 }
 
 canvas.onmousedown = function mouseInputManagement(event) {
@@ -1781,8 +1786,11 @@ var currentlyDragging = false;
 function dragMap(event) {
   if (drawingWhileDragging) { return; }
   drawingWhileDragging = true;
-  origin.x0 += (lastMousePosition.clientX - event.clientX);
-  origin.y0 += (lastMousePosition.clientY - event.clientY);
+  var velocityX = (lastMousePosition.clientX - event.clientX);
+  var velocityY = (lastMousePosition.clientY - event.clientY);
+  origin.x0 += velocityX;
+  origin.y0 += velocityY;
+  // Save the last mouse position.
   lastMousePosition.clientX = event.clientX;
   lastMousePosition.clientY = event.clientY;
   paint(ctx, hexaSize, origin);
@@ -1794,3 +1802,39 @@ function dragMap(event) {
 // Prevents Chrome from displaying a silly text cursor
 // while dragging on the canvas.
 canvas.onselectstart = function() { return false; }
+
+// Inertial map dragging.
+
+var dragVelocity = [0, 0];
+var dragVector = [0, 0];
+var dragTime = 0;
+var dragVelTo; // drag timeout.
+var dragVelInterval = 200; // 200ms.
+
+function resetDragVector() {
+  dragTime = Date.now();
+  dragVector[0] = origin.x0;
+  dragVector[1] = origin.y0;
+}
+
+function computeDragVelocity() {
+  dragTime = Date.now() - dragTime;
+  dragVector[0] = origin.x0 - dragVector[0];
+  dragVector[1] = origin.y0 - dragVector[1];
+  var nbFrames = dragTime * 0.03;  // 0.03 frames/ms
+  dragVelocity[0] = (dragVector[0] / nbFrames)|0;
+  dragVelocity[1] = (dragVector[1] / nbFrames)|0;
+}
+
+function inertiaDragMap() {
+  origin.x0 += dragVelocity[0];
+  origin.y0 += dragVelocity[1];
+  dragVelocity[0] = (dragVelocity[0] / 1.1)|0;
+  dragVelocity[1] = (dragVelocity[1] / 1.1)|0;
+  paint(ctx, hexaSize, origin);
+  requestAnimationFrame(function() {
+    if (dragVelocity[0] !== 0 || dragVelocity[1] !== 0) {
+      inertiaDragMap();
+    }
+  });
+}
