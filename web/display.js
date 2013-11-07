@@ -1616,7 +1616,7 @@ buildBut.addEventListener('click', enterBuildMode);
 splitBut.addEventListener('click', enterSplitMode);
 placesBut.addEventListener('click', enterPlacesMode);
 
-splitInputWidget.addEventListener('change', function changeSplitPortion() {
+splitInputWidget.addEventListener('input', function changeSplitPortion() {
   splitPanelPortion.textContent = '' + splitInputWidget.value;
 });
 
