@@ -1655,7 +1655,8 @@ window.onkeydown = function keyInputManagement(event) {
     voidCache = true;
     redraw = true;
   } else if (event.keyCode === 173 || event.keyCode === 189
-          || event.keyCode === 109 || event.keyCode === 219) {   // -
+          || event.keyCode === 109 || event.keyCode === 219
+          || event.keyCode === 169) {   // -
     // Unzoom.
     if (hexaSize > 2) {
       hexaSize = hexaSize / 2;
