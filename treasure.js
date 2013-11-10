@@ -1,9 +1,14 @@
 // Thaddée Tyl. AGPLv3.
 
+function Treasure (type, name) {
+  this.type = type;
+  this.name = name;
+}
+
 // updatedHumanity is a map from tileKey = "q:r" to humanityTile.
 // camp is the camp that caused the black death
 // (and is therefore not affected).
-function blackDeath(terrain, humanity, updatedHumanity, campid) {
+function blackDeath (terrain, humanity, updatedHumanity, campid) {
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     if (i === campid) { continue; }   // Don't modify the originator camp.
     var camp = humanity.campFromId(i);
@@ -34,4 +39,5 @@ function blackDeath(terrain, humanity, updatedHumanity, campid) {
   }
 }
 
-exports.blackDeath = blackDeath;
+module.exports.Treasure = Treasure;
+module.exports.blackDeath = blackDeath;

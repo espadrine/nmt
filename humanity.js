@@ -212,9 +212,10 @@ function setSpawn(findSpawn, findTreasures) {
   }
   for (var tileKey in treasures) {
     var humanityTile = makeDefault();
-    humanityTile.b = treasures[tileKey];
+    var treasure = treasures[tileKey];
+    humanityTile.b = treasure.type;
     settlements[tileKey] = humanityTile;
-    places['Black Death'] = tileKey;
+    places[treasure.name] = tileKey;
   }
   humanityChange(settlements);
 }

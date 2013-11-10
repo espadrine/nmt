@@ -374,23 +374,41 @@ function findSpawn() {
   return spawns;
 }
 
-// Return a map from tilekeys "q:r" to treasure type (terrain.tileTypes).
+// Return a map from tilekeys "q:r" to {type, name}
+// type: treasure type, see terrain.tileTypes
+// name: treasure name.
 function findTreasures(spawn) {
   var treasures = {};
   var firstSpawn = spawn[0];
   var lastSpawn = spawn[spawn.length - 1];
-  var midSpot = {q:0, r:0};
   midSpot.q = (((firstSpawn.q + lastSpawn.q) / 2)|0);
   midSpot.r = (((firstSpawn.r + lastSpawn.r) / 2)|0);
-  var angle = Math.random() * 2 * Math.PI;
-  var oneSpot = {
-    q: (midSpot.q + distanceBetweenPlayers/2 * Math.cos(angle))|0,
-    r: (midSpot.r + distanceBetweenPlayers/2 * Math.sin(angle))|0,
-  };
   // For now, we only have Black Death.
-  treasures[terrain.keyFromTile(findNearestTerrain(oneSpot,
-        terrain.tileTypes.mountain))] = terrain.tileTypes.blackdeath;
+  treasures[findBlackDeath(awayFromMidSpot(distanceBetweenPlayers/2))] =
+    new treasure.Treasure(terrain.tileTypes.blackdeath, 'Black Death');
   return treasures;
+}
+
+var midSpot = {q:0, r:0};
+
+// Return a tile position away from the mid point `midSpot`
+function awayFromMidSpot(distance) {
+  var angle = Math.random() * 2 * Math.PI;
+  return {
+    q: (midSpot.q + distance * Math.cos(angle))|0,
+    r: (midSpot.r + distance * Math.sin(angle))|0,
+  };
+}
+
+// Return a tileKey of the position of the black death.
+function findBlackDeath(oneSpot) {
+  return terrain.keyFromTile(findNearestTerrain(oneSpot,
+        terrain.tileTypes.mountain));
+}
+// Return a tileKey of the position of the medicine.
+function findMedicine(oneSpot) {
+  return terrain.keyFromTile(findNearestTerrain(oneSpot,
+        terrain.tileTypes.forest));
 }
 
 // tile = {q,r}
