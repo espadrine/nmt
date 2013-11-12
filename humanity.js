@@ -191,7 +191,9 @@ function winners() {
   return winners;
 }
 
-// Given a list of {q,r} spawns, set the map.
+// findSpawn: function returning a list of {q,r} spawns.
+// findTreasures: function returning {'q:r': {type,name}}
+// with `type` one of `terrain.tileTypes`.
 // Modifies `camps`.
 function setSpawn(findSpawn, findTreasures) {
   var spawns = findSpawn();
@@ -199,7 +201,12 @@ function setSpawn(findSpawn, findTreasures) {
   camps = makeCamps();
   humanityData = {};    // reset humanity.
   places = {};
-  for (var i = 0; i < numberOfCamps; i++) {
+  addSpawns(spawns);
+  addTreasures(treasures);
+}
+
+function addSpawns(spawns) {
+  for (var i = 0; i < spawns.length; i++) {
     places['Spawn #' + i] = terrain.keyFromTile(spawns[i]);
   }
   var settlements = {};
@@ -210,6 +217,11 @@ function setSpawn(findSpawn, findTreasures) {
     humanityTile.c = i;
     settlements[spawns[i].q + ':' + spawns[i].r] = humanityTile;
   }
+  humanityChange(settlements);
+}
+
+function addTreasures(treasures) {
+  var settlements = {};
   for (var tileKey in treasures) {
     var humanityTile = makeDefault();
     var treasure = treasures[tileKey];
@@ -217,6 +229,21 @@ function setSpawn(findSpawn, findTreasures) {
     settlements[tileKey] = humanityTile;
     places[treasure.name] = tileKey;
   }
+  humanityChange(settlements);
+}
+
+// pos: 'q:r'
+// type: one of `terrain.tileTypes`
+// name: string of the treasure's name.
+// updatedHumanity: object from 'q:r' to humanity data.
+// Elements get set if they were modified.
+function moveTreasure(type, name, pos, updatedHumanity) {
+  var settlements = {};
+  settlements[pos] = humanityData[pos] || makeDefault();
+  settlements[pos].b = type;
+  updatedHumanity[pos] = copy(settlements[pos]);
+  places[genName()] = places[name];
+  places[name] = pos;
   humanityChange(settlements);
 }
 
@@ -245,5 +272,6 @@ module.exports.campFromId = campFromId;
 module.exports.numberOfCamps = numberOfCamps;
 module.exports.population = population;
 module.exports.setSpawn = setSpawn;
+module.exports.moveTreasure = moveTreasure;
 module.exports.winners = winners;
 module.exports.getPlaces = getPlaces;

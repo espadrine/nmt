@@ -96,7 +96,8 @@ var warTiles = [];
 var surrenderTiles = [];
 
 function applyPlan(plan) {
-  var humanityFrom = humanity.copy(humanity(terrain.tileFromKey(plan.at)));
+  var tileFrom = terrain.tileFromKey(plan.at);
+  var humanityFrom = humanity.copy(humanity(tileFrom));
   humanity.campFromId(humanityFrom.c).nActions++;
   if (plan.do === terrain.planTypes.move) {
     //console.log('Plan: moving people from', plan.at, 'to', plan.to);
@@ -104,8 +105,9 @@ function applyPlan(plan) {
 
     // Do we have enough food?
     if (humanityFrom.f <= 0) {
-      if (terrain(terrain.tileFromKey(plan.at)).type ===
-          terrain.tileTypes.water) { humanityFrom.h = 0; }
+      if (terrain(tileFrom).type === terrain.tileTypes.water) {
+        humanityFrom.h = 0;
+      }
       updatedHumanity[plan.at] = humanityFrom;
       return;
     }
@@ -181,6 +183,11 @@ function applyPlan(plan) {
       // It can be a treasure activation.
       if (humanityFrom.b === terrain.tileTypes.blackdeath) {
         treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c);
+        humanity.moveTreasure(terrain.tileTypes.blackdeath, 'Black Death',
+          findBlackDeath(awayFrom(tileFrom, distanceBetweenPlayers)),
+          updatedHumanity);
+        // Send the new treasure.
+        updatedHumanity.places = humanity.getPlaces();
       }
     }
     humanityFrom.b = plan.b;
@@ -384,7 +391,7 @@ function findTreasures(spawn) {
   midSpot.q = (((firstSpawn.q + lastSpawn.q) / 2)|0);
   midSpot.r = (((firstSpawn.r + lastSpawn.r) / 2)|0);
   // For now, we only have Black Death.
-  treasures[findBlackDeath(awayFromMidSpot(distanceBetweenPlayers/2))] =
+  treasures[findBlackDeath(awayFrom(midSpot, distanceBetweenPlayers/2))] =
     new treasure.Treasure(terrain.tileTypes.blackdeath, 'Black Death');
   return treasures;
 }
@@ -392,7 +399,7 @@ function findTreasures(spawn) {
 var midSpot = {q:0, r:0};
 
 // Return a tile position away from the mid point `midSpot`
-function awayFromMidSpot(distance) {
+function awayFrom(midSpot, distance) {
   var angle = Math.random() * 2 * Math.PI;
   return {
     q: (midSpot.q + distance * Math.cos(angle))|0,
