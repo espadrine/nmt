@@ -504,9 +504,11 @@ function sendBuild(at, building) {
   } else { connectSocket(function(){sendBuild(at, building);}); }
 }
 
+var defaultPlacesPanelHTML = placesPanel.innerHTML;
 
 // Insert places = {"Place name": "tileKey"} into the panel.
 function insertPlaces(places) {
+  placesPanel.innerHTML = defaultPlacesPanelHTML;
   for (var place in places) {
     var aPlace = document.createElement('p');
     aPlace.classList.add('buildSelection');
