@@ -1,7 +1,3 @@
-var SimplexNoise = require('simplex-noise');
-var MersenneTwister = require('./mersenne-twister');
-var humanity = require('./humanity');
-
 var prng = new MersenneTwister(0);
 var simplex1 = new SimplexNoise(prng.random.bind(prng));
 var simplex2 = new SimplexNoise(prng.random.bind(prng));
@@ -409,21 +405,3 @@ function eachPlan(f) {
 }
 function clearPlans() { plans = {}; }
 
-
-module.exports = terrain;
-module.exports.travel = humanTravelTo;
-module.exports.humanTravel = humanTravel;
-module.exports.tileTypes = tileTypes;
-module.exports.buildingTypes = buildingTypes;
-module.exports.buildingDependencies = buildingDependencies;
-module.exports.manufacture = manufacture;
-module.exports.validConstruction = validConstruction;
-module.exports.neighborFromTile = neighborFromTile;
-
-module.exports.tileFromKey = tileFromKey;
-module.exports.keyFromTile = keyFromTile;
-
-module.exports.planTypes = planTypes;
-module.exports.addPlan = addPlan;
-module.exports.eachPlan = eachPlan;
-module.exports.clearPlans = clearPlans;
