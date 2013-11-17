@@ -2,8 +2,8 @@
   "author": "Thaddee Tyl <thaddee.tyl@gmail.com> (http://espadrine.github.com/)",
   "name": "nmt",
   "description": "Not My Territory (Yet).",
-  "version": "13.7.30",
-  "homepage": "file://dev/null",
+  "version": "13.11.17",
+  "homepage": "http://thefiletree.com:8080/",
   "repository": {
     "type": "git",
     "url": "git://github.com/espadrine/nmt.git"
@@ -13,8 +13,8 @@
     "test": "make test"
   },
   "dependencies": {
-    "camp": ">=13.8.24",
-    "fleau": ">=13.6.6",
+    "camp": ">=13.11.9",
+    "uglify-js": ">=1.2.5",
     "simplex-noise": ">=2.1.1"
   },
   "devDependencies": {},
