@@ -55,3 +55,11 @@ bundle('web/display.js', [
   'terrain-gen.js',
   'web/input.js',
 ], true);
+
+// Rendering worker thread.
+bundle('web/render-worker.js', [
+  'web/simplex-noise.js',
+  'web/mersenne-twister.js',
+  'terrain-gen.js',
+  'web/render.js',
+], true);

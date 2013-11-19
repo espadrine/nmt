@@ -289,11 +289,17 @@ function loadSprites() {
   return img;
 }
 var sprites = loadSprites();
+// Canvas with the sprites on it. Set when loaded.
+//var spriteCan = document.createElement('canvas');
 var spritesWidth = hexaSize * 2;  // Each element of the sprite is 2x20px.
 var spritesLoaded = false;
 sprites.onload = function loadingSprites() {
-  paint(ctx, hexaSize, origin);
+  //spriteCan.width = spritesWidth;
+  //spriteCan.height = img.height;
+  //var spriteCanCtx = spriteCan.getContext('2d');
+  //spriteCanCtx.drawImage(sprites, 0, 0);
   spritesLoaded = true;
+  paint(ctx, hexaSize, origin);
 };
 
 
@@ -597,28 +603,51 @@ function paintTilesRaw(ctx, size, origin) {
   ctx.putImageData(imgdata, 0, 0);
 }
 
-function paintTiles(ctx, size, origin) {
+var canvasBuffer = document.createElement('canvas');
+canvasBuffer.width = canvas.width;
+canvasBuffer.height = canvas.height;
+var imageBuffer =
+  canvasBuffer.getContext('2d').getImageData(0,0,canvas.width,canvas.height);
+var workerMessage = { image: null, size: hexaSize, origin: origin };
+function paintTiles(ctx, size, origin, cb) {
   if (size < 5) {
     // Special case: we're from too far above, use direct pixel manipulation.
-    paintTilesRaw(ctx, size, origin);
+    var worker = new Worker('render-worker.js');
+    worker.onmessage = function workerRecv(e) {
+      ctx.putImageData(e.data, 0, 0);
+      worker.terminate();
+      cb();
+    };
+    workerMessage.image = imageBuffer;
+    workerMessage.size = size;
+    workerMessage.origin = origin;
+    worker.postMessage(workerMessage);
   } else {
     paintTilesSprited(ctx, size, origin);
+    cb();
   }
 }
 
 // Cached paint reference is centered on the map origin.
 var cachedPaint = {};
-function getCachedPaint(size, origin, cacheX, cacheY) {
-  var cache = cachedPaint[cacheX + ':' + cacheY];
+var cachePending = {};  // map from 'x:y' to truthy values.
+function getCachedPaint(size, origin, cacheX, cacheY, cb) {
+  var pos = cacheX + ':' + cacheY;
+  var cache = cachedPaint[pos];
   if (cache === undefined) {
     var canvasBuffer = document.createElement('canvas');
     canvasBuffer.width = canvas.width;
     canvasBuffer.height = canvas.height;
     var ctxBuffer = canvasBuffer.getContext('2d');
-    paintTiles(ctxBuffer, size, { x0: cacheX, y0: cacheY });
-    cache = cachedPaint[cacheX + ':' + cacheY] = canvasBuffer;
-  }
-  return cache;
+    if (cachePending[pos] === undefined) {
+      cachePending[pos] = cb;
+      paintTiles(ctxBuffer, size, { x0: cacheX, y0: cacheY }, function() {
+        cache = cachedPaint[cacheX + ':' + cacheY] = canvasBuffer;
+        cachePending[pos](cache);
+        delete cachePending[pos];
+      });
+    } else { cachePending[pos] = cb; }
+  } else { cb(cache); }
 }
 
 // Given a pixel relative to the center of the map, find the cache.
@@ -636,7 +665,7 @@ function updateCachedRegion(width, height, cx, cy) {
 }
 
 // Given tiles = {tileKey:something}, update the cache. Mainly, buildings.
-function updateCachedPaint(size, origin, tiles) {
+function updateCachedPaint(size, origin, tiles, cb) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   for (var changedTile in tiles) {
@@ -651,13 +680,13 @@ function updateCachedPaint(size, origin, tiles) {
     var cx = centerPixel.x + origin.x0 - size/2;  // Top left pixel of hexagon.
     var cy = centerPixel.y + origin.y0 - size/2;
     // top left
-    updateCachedRegion(width, height, cx, cy);
+    updateCachedRegion(width, height, cx, cy, cb);
     // top right
-    updateCachedRegion(width, height, cx + size, cy);
+    updateCachedRegion(width, height, cx + size, cy, cb);
     // bottom left
-    updateCachedRegion(width, height, cx, cy + size);
+    updateCachedRegion(width, height, cx, cy + size, cb);
     // bottom right
-    updateCachedRegion(width, height, cx + size, cy + size);
+    updateCachedRegion(width, height, cx + size, cy + size, cb);
   }
 }
 
@@ -675,10 +704,15 @@ function paintTilesFromCache(ctx, size, origin) {
   var right  = origin.x0 + width - x;
   var top    = origin.y0 - y;
   var bottom = origin.y0 + height - y;
-  ctx.drawImage(getCachedPaint(size, origin, left, top), -x, -y);
-  ctx.drawImage(getCachedPaint(size, origin, right, top), width-x, -y);
-  ctx.drawImage(getCachedPaint(size, origin, left, bottom), -x, height-y);
-  ctx.drawImage(getCachedPaint(size, origin, right, bottom), width-x, height-y);
+  function makeDraw(x, y) {
+    return function draw(cache) {
+      ctx.drawImage(cache, x, y);
+    }
+  }
+  getCachedPaint(size, origin, left, top, makeDraw(-x, -y));
+  getCachedPaint(size, origin, right, top, makeDraw(width-x, -y));
+  getCachedPaint(size, origin, left, bottom, makeDraw(-x, height-y));
+  getCachedPaint(size, origin, right, bottom, makeDraw(width-x, height-y));
 }
 
 // Pixels currently on display. Useful for smooth animations.
@@ -698,9 +732,10 @@ function paint(ctx, size, origin) {
   }
   if (spritesLoaded) { paintTilesFromCache(ctx, size, origin);
   } else {
-    paintTiles(ctx, size, origin);
-    drawTitle(ctx, [
-        "Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
+    paintTiles(ctx, size, origin, function() {
+      drawTitle(ctx, [
+          "Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
+    });
   }
   if (currentTile != null && playerCamp != null) {
     ctx.lineWidth = 4;
