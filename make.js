@@ -6,7 +6,7 @@ var fs = require('fs');
 var path = require('path');
 var uglify = require('uglify-js');
 
-var debug = false;
+var debug = !!process.argv[2] || false;
 
 function bundle(file, inputs, compress) {
   compress = !!compress;
