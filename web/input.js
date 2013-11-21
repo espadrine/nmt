@@ -690,7 +690,7 @@ function updateCachedPaint(size, origin, tiles, cb) {
   }
 }
 
-function paintTilesFromCache(ctx, size, origin) {
+function paintTilesFromCache(ctx, size, origin, cb) {
   // We assume that the window width does not change.
   // We can have up to 4 caches to draw.
   var width = canvas.width;
@@ -704,9 +704,13 @@ function paintTilesFromCache(ctx, size, origin) {
   var right  = origin.x0 + width - x;
   var top    = origin.y0 - y;
   var bottom = origin.y0 + height - y;
+  var countDone = 0;
   function makeDraw(x, y) {
     return function draw(cache) {
       ctx.drawImage(cache, x, y);
+      // We have four jobs to make in total.
+      countDone++;
+      if (countDone >= 4) { cb(); }
     }
   }
   getCachedPaint(size, origin, left, top, makeDraw(-x, -y));
@@ -730,13 +734,17 @@ function paint(ctx, size, origin) {
     // Show the direction of the places.
     orientPlacesArrow();
   }
-  if (spritesLoaded) { paintTilesFromCache(ctx, size, origin);
-  } else {
-    paintTiles(ctx, size, origin, function() {
-      drawTitle(ctx, [
-          "Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
-    });
+  if (!spritesLoaded) {
+    drawTitle(ctx,
+      ["Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
+    return;
   }
+  paintTilesFromCache(ctx, size, origin, function() { paintIntermediateUI(ctx, size, origin); });
+  paintIntermediateUI(ctx, size, origin);
+}
+
+// Paint the UI for population, winner information, etc.
+function paintIntermediateUI(ctx, size, origin) {
   if (currentTile != null && playerCamp != null) {
     ctx.lineWidth = 4;
     paintTileHexagon(ctx, size, origin, currentTile, campHsl(playerCamp));
