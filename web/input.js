@@ -940,7 +940,7 @@ function paintPopulation(ctx) {
   ctx.moveTo(left - 0.5, top + height);
   ctx.lineTo(left - 0.5, top);
   ctx.strokeStyle = '#345';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1;
   ctx.stroke();
   ctx.lineWidth = 1;
   // Paint the population.
