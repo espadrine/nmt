@@ -22,6 +22,13 @@ function socketMessage(e) {
   } else if (change.winners) {
     // The game is over.
     gameOver = change.winners[0];
+    if (gameOver === playerCamp) {
+      // We won!
+      if (!localStorage.getItem('gamesWon')) {
+        localStorage.setItem('gamesWon', 0);
+      }
+      localStorage.setItem('gamesWon', (+localStorage.getItem('gamesWon'))+1);
+    }
     paint(ctx, hexaSize, origin);
   } else {
     if (change.camp !== undefined) {
