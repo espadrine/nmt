@@ -769,11 +769,22 @@ function paintIntermediateUI(ctx, size, origin) {
   if (gameOver !== undefined) {
     drawTitle(ctx, [
         "The winner is #" + gameOver + ".",
-        (gameOver === playerCamp? "YOU WON!": "YOU NEARLY WON!"),
+        (gameOver === playerCamp
+         ? ("YOU WON! (" + nth(localStorage.getItem('gamesWon')) + " win!)")
+         : "YOU NEARLY WON!"),
         "You can reload to engage in the next game!"],
         campHsl(gameOver));
   }
   displayedPaintContext.drawImage(canvas, 0, 0);
+}
+
+// Return the string corresponding to a rank (eg, 1→1st, etc.).
+function nth(n) {
+  var mod = n % 10;
+  if (mod === 1) { return n + 'th';
+  } else if (mod === 2) { return n + 'nd';
+  } else if (mod === 3) { return n + 'rd';
+  } else { return n + 'th'; }
 }
 
 // Draw three lines of text from a list of strings on the screen.
