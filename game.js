@@ -143,6 +143,7 @@ function applyPlan(plan) {
       } else {
         // We win.
         if (surrender(plan.to, humanityFrom.c)) {
+          if (plan.h + humanityTo.h > 20) { plan.h = 20 - humanityTo.h; }
           humanityTo.h += plan.h;
           surrenderTiles.push(plan.to);
         } else {
@@ -154,6 +155,7 @@ function applyPlan(plan) {
       }
     } else {
       // Joining forces.
+      if (plan.h + humanityTo.h > 20) { plan.h = 20 - humanityTo.h; }
       humanityTo.h += plan.h;
       humanityFrom.h -= plan.h;
     }
@@ -162,11 +164,9 @@ function applyPlan(plan) {
     // Food.
     humanityTo.f += humanityFrom.f - (byPlane? 2: 1);
     if (humanityTo.f > 20) { humanityTo.f = 20; }
-    if (emptyingOrigin) { humanityFrom.f = 0; }
     // Ownership is the intersection of what each group owns.
     if (!emptyTarget) { humanityTo.o &= humanityFrom.o; }
     else { humanityTo.o = humanityFrom.o; }
-    if (emptyingOrigin) { humanityFrom.o = 0; }
 
     // Collecting from the land.
     collectFromTile(plan.to, humanityTo, emptyTarget);
