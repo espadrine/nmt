@@ -442,10 +442,16 @@ function paintTileHexagon(ctx, size, origin, tile, color) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   var cp = pixelFromTile(tile, origin, size);
-  pathFromHex(ctx, size, cp, hexHorizDistance, hexVertDistance);
+  var radius = hexVertDistance;
+  ctx.beginPath();
+  ctx.arc(cp.x, cp.y, radius, 0, 2*Math.PI, true);
+  ctx.closePath();
   ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
   ctx.stroke();
+  ctx.lineWidth = 1;
 }
+
 
 // tilePos = {q, r} is the tile's hexagonal coordinates,
 // cx and cy are the hexagon's center pixel coordinates on the screen,
@@ -753,9 +759,7 @@ function paint(ctx, size, origin) {
 // Paint the UI for population, winner information, etc.
 function paintIntermediateUI(ctx, size, origin) {
   if (currentTile != null && playerCamp != null) {
-    ctx.lineWidth = 4;
     paintTileHexagon(ctx, size, origin, currentTile, campHsl(playerCamp));
-    ctx.lineWidth = 1;
   }
   paintCamps(ctx, size, origin);
   paintAroundTiles(ctx, size, origin, accessibleTiles);
