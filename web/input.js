@@ -452,6 +452,7 @@ function paintTileHexagon(ctx, size, origin, tile, color) {
   ctx.lineWidth = 1;
 }
 
+var mπd3 = - Math.PI / 3;   // Minus PI divided by 3.
 
 // tilePos = {q, r} is the tile's hexagonal coordinates,
 // cx and cy are the hexagon's center pixel coordinates on the screen,
@@ -459,10 +460,10 @@ function paintTileHexagon(ctx, size, origin, tile, color) {
 function paintSprite(ctx, size, cx, cy, sprite, rotation) {
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate(-rotation * Math.PI / 3);
+  ctx.rotate(rotation * mπd3);
   ctx.drawImage(sprites,
-      0, spritesWidth * sprite, spritesWidth, spritesWidth,
-      (-size)|0, (-size)|0, size * 2, size * 2);
+      0, (spritesWidth * sprite)|0, spritesWidth, spritesWidth,
+      (-size)|0, (-size)|0, (size * 2)|0, (size * 2)|0);
   ctx.restore();
 }
 
