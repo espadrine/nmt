@@ -739,6 +739,9 @@ displayedPaint.width = canvas.width;
 displayedPaint.height = canvas.height;
 var displayedPaintContext = displayedPaint.getContext('2d');
 
+var showTitleScreen = true;
+setTimeout(function() { showTitleScreen = false; }, 2000);
+
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
@@ -748,11 +751,7 @@ function paint(ctx, size, origin) {
     // Show the direction of the places.
     orientPlacesArrow();
   }
-  if (!spritesLoaded) {
-    drawTitle(ctx,
-      ["Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
-    return;
-  }
+  if (!spritesLoaded) { return; }
   paintTilesFromCache(ctx, size, origin, function() { paintIntermediateUI(ctx, size, origin); });
   paintIntermediateUI(ctx, size, origin);
 }
@@ -779,6 +778,9 @@ function paintIntermediateUI(ctx, size, origin) {
          : "YOU NEARLY WON!"),
         "You can reload to engage in the next game!"],
         campHsl(gameOver));
+  }
+  if (showTitleScreen) {
+    drawTitle(ctx, ["Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
   }
   displayedPaintContext.drawImage(canvas, 0, 0);
 }
