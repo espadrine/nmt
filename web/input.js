@@ -727,6 +727,8 @@ function paintTilesFromCache(ctx, size, origin, cb) {
       if (countDone >= 4) { cb(); }
     }
   }
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, width, height);
   getCachedPaint(size, origin, left, top, makeDraw(-x, -y));
   getCachedPaint(size, origin, right, top, makeDraw(width-x, -y));
   getCachedPaint(size, origin, left, bottom, makeDraw(-x, height-y));
