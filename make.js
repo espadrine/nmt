@@ -46,7 +46,7 @@ bundle('terrain.js', [
   'terrain-node-before.js',
   'terrain-gen.js',
   'terrain-node-after.js',
-]);
+], true);
 
 // Client-side terrain.
 bundle('web/display.js', [
