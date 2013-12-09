@@ -297,14 +297,9 @@ function loadSprites() {
 }
 var sprites = loadSprites();
 // Canvas with the sprites on it. Set when loaded.
-//var spriteCan = document.createElement('canvas');
 var spritesWidth = hexaSize * 2;  // Each element of the sprite is 2x20px.
 var spritesLoaded = false;
 sprites.onload = function loadingSprites() {
-  //spriteCan.width = spritesWidth;
-  //spriteCan.height = img.height;
-  //var spriteCanCtx = spriteCan.getContext('2d');
-  //spriteCanCtx.drawImage(sprites, 0, 0);
   spritesLoaded = true;
   paint(ctx, hexaSize, origin);
 };
@@ -384,16 +379,18 @@ function partialPathFromHex(ctx, size, cp, mask,
   mask = mask|0;
   var cx = cp.x|0;
   var cy = cp.y|0;
+  var halfHorizDistance = hexHorizDistance/2;
+  var halfSize = size/2;
   ctx.moveTo(cx, cy - size);    // top
   if ((mask & 4) === 0) {
-    ctx.lineTo(cx - hexHorizDistance/2, cy - size/2); // top left
+    ctx.lineTo(cx - halfHorizDistance, cy - halfSize); // top left
   } else {
-    ctx.moveTo(cx - hexHorizDistance/2, cy - size/2); // top left
+    ctx.moveTo(cx - halfHorizDistance, cy - halfSize); // top left
   }
   if ((mask & 8) === 0) {
-    ctx.lineTo(cx - hexHorizDistance/2, cy + size/2); // bottom left
+    ctx.lineTo(cx - halfHorizDistance, cy + halfSize); // bottom left
   } else {
-    ctx.moveTo(cx - hexHorizDistance/2, cy + size/2); // bottom left
+    ctx.moveTo(cx - halfHorizDistance, cy + halfSize); // bottom left
   }
   if ((mask & 16) === 0) {
     ctx.lineTo(cx, cy + size);    // bottom
@@ -401,14 +398,14 @@ function partialPathFromHex(ctx, size, cp, mask,
     ctx.moveTo(cx, cy + size);    // bottom
   }
   if ((mask & 32) === 0) {
-    ctx.lineTo(cx + hexHorizDistance/2, cy + size/2); // bottom right
+    ctx.lineTo(cx + halfHorizDistance, cy + halfSize); // bottom right
   } else {
-    ctx.moveTo(cx + hexHorizDistance/2, cy + size/2); // bottom right
+    ctx.moveTo(cx + halfHorizDistance, cy + halfSize); // bottom right
   }
   if ((mask & 1) === 0) {
-    ctx.lineTo(cx + hexHorizDistance/2, cy - size/2); // top right
+    ctx.lineTo(cx + halfHorizDistance, cy - halfSize); // top right
   } else {
-    ctx.moveTo(cx + hexHorizDistance/2, cy - size/2); // top right
+    ctx.moveTo(cx + halfHorizDistance, cy - halfSize); // top right
   }
   if ((mask & 2) === 0) {
     ctx.lineTo(cx, cy - size);    // top
@@ -514,7 +511,15 @@ function paintTerrain(ctx, size, cx, cy,
   pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
   var grey = Math.floor((1 - t.rain) / 2 * 127);
   if (t.type === tileTypes.water) {
-    grey = (grey / 2)|0;
+    grey = (grey)|0;
+    // If it's next to something, make a beach.
+    var border = false;
+    for (var i = 0; i < 6; i++) {
+      if (terrain(neighborFromTile(tilePos, i)).type !== tileTypes.water) {
+        border = true;
+      }
+    }
+    if (border) { grey += 15; }
     ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ',0.3)';
   } else {
     var delta = (Math.abs(grey - 127/2) / 1)|0;

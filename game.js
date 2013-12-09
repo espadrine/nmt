@@ -381,6 +381,15 @@ function findSpawn() {
   return spawns;
 }
 
+var metallicFormation = [
+  'Orebody',
+  'Lore',
+  'Cavern',
+  'Pit',
+  'Vein',
+  'Reef'
+];
+
 // Return a map from tilekeys "q:r" to {type, name}
 // type: treasure type, see terrain.tileTypes
 // name: treasure name.
@@ -390,9 +399,16 @@ function findTreasures(spawn) {
   var lastSpawn = spawn[spawn.length - 1];
   midSpot.q = (((firstSpawn.q + lastSpawn.q) / 2)|0);
   midSpot.r = (((firstSpawn.r + lastSpawn.r) / 2)|0);
-  // For now, we only have Black Death.
+  // Black Death.
   treasures[findBlackDeath(awayFrom(midSpot, distanceBetweenPlayers/2))] =
     new treasure.Treasure(terrain.tileTypes.blackdeath, 'Black Death');
+  // Metal.
+  for (var i = 0; i < 3; i++) {
+    var name = metallicFormation[(metallicFormation.length * Math.random())|0];
+    treasures[findBlackDeath(awayFrom(midSpot, distanceBetweenPlayers/2))] =
+      new treasure.Treasure(terrain.tileTypes.metal,
+                            'Metal ' + name);
+  }
   return treasures;
 }
 
