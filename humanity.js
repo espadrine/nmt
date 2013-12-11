@@ -24,7 +24,7 @@ function start(t, findSpawn, findTreasures) {
     camps = makeCamps();
     places = world.places;
     for (var i = 0; i < numberOfCamps; i++) {
-      camps[i].spawn = terrain.tileFromKey(places['Spawn #' + i]);
+      camps[i].spawn = terrain.tileFromKey(Object.keys(places)[i]);
     }
     delete world.places;
     humanityData = world;
@@ -207,7 +207,7 @@ function setSpawn(findSpawn, findTreasures) {
 
 function addSpawns(spawns) {
   for (var i = 0; i < spawns.length; i++) {
-    places['Spawn #' + i] = terrain.keyFromTile(spawns[i]);
+    places[terrain.keyFromTile(spawns[i])] = 'Spawn #' + i;
   }
   var settlements = {};
   for (var i = 0; i < numberOfCamps; i++) {
@@ -227,23 +227,23 @@ function addTreasures(treasures) {
     var treasure = treasures[tileKey];
     humanityTile.b = treasure.type;
     settlements[tileKey] = humanityTile;
-    places[treasure.name] = tileKey;
+    places[tileKey] = treasure.name;
   }
   humanityChange(settlements);
 }
 
-// pos: 'q:r'
 // type: one of `terrain.tileTypes`
-// name: string of the treasure's name.
+// oldpos: 'q:r'
+// pos: 'q:r'
 // updatedHumanity: object from 'q:r' to humanity data.
 // Elements get set if they were modified.
-function moveTreasure(type, name, pos, updatedHumanity) {
+function moveTreasure(type, oldpos, pos, updatedHumanity) {
   var settlements = {};
   settlements[pos] = humanityData[pos] || makeDefault();
   settlements[pos].b = type;
   updatedHumanity[pos] = copy(settlements[pos]);
-  places[genName()] = places[name];
-  places[name] = pos;
+  places[pos] = places[oldpos];
+  places[oldpos] = genName();
   humanityChange(settlements);
 }
 

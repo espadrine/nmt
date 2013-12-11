@@ -183,7 +183,7 @@ function applyPlan(plan) {
       // It can be a treasure activation.
       if (humanityFrom.b === terrain.tileTypes.blackdeath) {
         treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c);
-        humanity.moveTreasure(terrain.tileTypes.blackdeath, 'Black Death',
+        humanity.moveTreasure(terrain.tileTypes.blackdeath, plan.at,
           findBlackDeath(awayFrom(tileFrom, distanceBetweenPlayers)),
           updatedHumanity);
         // Send the new treasure.
@@ -383,8 +383,8 @@ function findSpawn() {
 
 var metallicFormation = [
   'Orebody',
-  'Lore',
   'Cavern',
+  'Lore',
   'Pit',
   'Vein',
   'Reef'
@@ -400,12 +400,13 @@ function findTreasures(spawn) {
   midSpot.q = (((firstSpawn.q + lastSpawn.q) / 2)|0);
   midSpot.r = (((firstSpawn.r + lastSpawn.r) / 2)|0);
   // Black Death.
-  treasures[findBlackDeath(awayFrom(midSpot, distanceBetweenPlayers/2))] =
+  treasures[findBlackDeath(awayFrom(midSpot, distanceBetweenPlayers))] =
     new treasure.Treasure(terrain.tileTypes.blackdeath, 'Black Death');
   // Metal.
+  var metalFormStart = (metallicFormation.length * Math.random())|0;
   for (var i = 0; i < 3; i++) {
-    var name = metallicFormation[(metallicFormation.length * Math.random())|0];
-    treasures[findBlackDeath(awayFrom(midSpot, distanceBetweenPlayers/2))] =
+    var name = metallicFormation[(metalFormStart+i) % metallicFormation.length];
+    treasures[findBlackDeath(awayFrom(midSpot, distanceBetweenPlayers))] =
       new treasure.Treasure(terrain.tileTypes.metal,
                             'Metal ' + name);
   }

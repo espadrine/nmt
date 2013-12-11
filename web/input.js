@@ -106,7 +106,7 @@ function sendBuild(at, building) {
 
 var defaultPlacesPanelHTML = placesPanel.innerHTML;
 
-// Insert places = {"Place name": "tileKey"} into the panel.
+// Insert places = {"tileKey": "Place name"} into the panel.
 function insertPlaces(places) {
   placesPanel.innerHTML = defaultPlacesPanelHTML;
   for (var place in places) {
@@ -118,9 +118,9 @@ function insertPlaces(places) {
     aSep.classList.add('separator');
     placesPanel.appendChild(aSep);
     // Add the place block.
-    var tile = tileFromKey(places[place]);
-    aPlace.setAttribute('data-tilekey', places[place]);
-    aPlace.innerHTML = '<div>→</div> ' + place;
+    var tile = tileFromKey(place);
+    aPlace.setAttribute('data-tilekey', place);
+    aPlace.innerHTML = '<div>→</div> ' + places[place];
     aPlace.addEventListener('click', (function(t) {
       return function() {
         gotoPlace(t);
