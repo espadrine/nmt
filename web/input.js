@@ -1167,8 +1167,8 @@ function showTileInformation(tile) {
 var buildSelectionButtons = document.querySelectorAll('p.buildSelection');
 function indicateValidConstructions(currentTile) {
   var valid;
-  for (var b = tileTypes.farm, i = 0; b < tileTypes.wall + 1; b++, i++) {
-    if (validConstruction(b, currentTile)) {
+  for (var i = 0; i < buildingTypes.length; i++) {
+    if (validConstruction(buildingTypes[i], currentTile)) {
       buildSelectionButtons[i].classList.add('validSelection');
     } else {
       buildSelectionButtons[i].classList.remove('validSelection');
@@ -1176,12 +1176,12 @@ function indicateValidConstructions(currentTile) {
   }
 }
 function hookBuildSelectionButtons() {
-  for (var b = tileTypes.farm, i = 0; b < tileTypes.wall + 1; b++, i++) {
+  for (var i = 0; i < buildingTypes.length; i++) {
     var hook = (function(b) { return function hookBuildSelectionButton() {
         sendBuild(currentTile, b);
         enterMode(selectionModes.normal);
       };
-    }(b));
+    }(buildingTypes[i]));
     buildSelectionButtons[i].addEventListener('click', hook);
   }
 }
@@ -1303,7 +1303,7 @@ var buildHotKeys = {
   54: tileTypes.factory,    // "6"
   55: tileTypes.dock,       // "7"
   56: tileTypes.gunsmith,   // "8"
-  57: tileTypes.airland,    // "9"
+  57: tileTypes.airland     // "9"
 };
 
 window.onkeydown = function keyInputManagement(event) {

@@ -26,9 +26,10 @@ var tileTypes = {
   road:         16,
   wall:         17,
   blackdeath:   18,
-  metal:        19
+  metal:        19,
+  lumber:       20
 };
-var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ];
+var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20 ];
 
 var tileVegetationTypeFromSteepness = [];
 tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
@@ -346,6 +347,9 @@ var buildingDependencies = [,,,,,,,,
     [[1, tileTypes.gunsmith], [3, tileTypes.airland]],
     [[1, tileTypes.skyscraper], [1, tileTypes.factory]],
     ,
+    [[1, tileTypes.residence]],
+    ,
+    ,
     [[1, tileTypes.residence]]
 ];
 
@@ -384,6 +388,10 @@ function validConstruction(building, tile) {
       if (dependencies[j] < requiredDependencies[j][0]) {
         return false;
       }
+    }
+    // Lumber is on forests.
+    if (building === tileTypes.lumber && tileInfo.type !== tileTypes.forest) {
+      return false;
     }
     return true;
   } else { return true; }
