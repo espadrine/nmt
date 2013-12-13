@@ -347,7 +347,7 @@ var buildingDependencies = [,,,,,,,,
     [[1, tileTypes.gunsmith], [3, tileTypes.airland]],
     [[1, tileTypes.skyscraper], [1, tileTypes.factory]],
     ,
-    [[1, tileTypes.residence]],
+    [[1, tileTypes.road]],
     ,
     ,
     [[1, tileTypes.residence]]
