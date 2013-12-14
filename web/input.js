@@ -497,6 +497,45 @@ function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
   }
 }
 
+// Paint on a canvas with hexagonal tiles with `size` being the radius of the
+// smallest disk containing the hexagon.
+// The `origin` {x0, y0} is the position of the top left pixel on the screen,
+// compared to the pixel (0, 0) on the map.
+function paintBuildingsSprited(ctx, size, origin) {
+  var width = ctx.canvas.width;
+  var height = ctx.canvas.height;
+  // This is a jigsaw. We want the corner tiles of the screen.
+  var tilePos = tileFromPixel({ x:0, y:0 }, origin, size);
+  var centerPixel = pixelFromTile({ q: tilePos.q, r: tilePos.r-1 },
+    origin, size);
+  var cx = centerPixel.x;
+  var cy = centerPixel.y;
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+
+  var offLeft = true;     // Each row is offset from the row above.
+  while (cy - hexVertDistance < height) {
+    while (cx - hexHorizDistance < width) {
+      tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
+      // Draw building.
+      var t = terrain(tilePos);
+      var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
+      paintBuilding(ctx, size, cx, cy, tilePos, rotation);
+      cx += hexHorizDistance;
+    }
+    cy += hexVertDistance;
+    cx = centerPixel.x;
+    if (offLeft) {
+      cx -= hexHorizDistance / 2;   // This row is offset.
+      offLeft = false;
+    } else {
+      offLeft = true;
+    }
+    cx = Math.floor(cx);
+    cy = Math.floor(cy);
+  }
+}
+
 // tilePos = {q, r} is the tile's hexagonal coordinates,
 // cx and cy are the hexagon's center pixel coordinates on the screen.
 function paintTerrain(ctx, size, cx, cy,
@@ -505,8 +544,6 @@ function paintTerrain(ctx, size, cx, cy,
   // Draw terrain.
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
   paintSprite(ctx, size, cx, cy, t.type, rotation);
-  // Draw building.
-  paintBuilding(ctx, size, cx, cy, tilePos, rotation);
   // Heavy rain makes it darker.
   pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
   var grey = Math.floor((1 - t.rain) / 2 * 127);
@@ -541,6 +578,9 @@ function paintTerrain(ctx, size, cx, cy,
   ctx.fill();
 }
 
+// From 'size:x:y' to cached terrain, centered on the map origin.
+var cachedTerrainPaint = {};
+
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
@@ -557,26 +597,40 @@ function paintTilesSprited(ctx, size, origin) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
 
-  var offLeft = true;     // Each row is offset from the row above.
-  while (cy - hexVertDistance < height) {
-    while (cx - hexHorizDistance < width) {
-      tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
-      // Draw terrain.
-      paintTerrain(ctx, size, cx, cy,
-          hexHorizDistance, hexVertDistance, tilePos);
-      cx += hexHorizDistance;
+  // Check the cache.
+  var cachePos = size + ':' + cx + ':' + cy;
+  if (cachedTerrainPaint[cachePos] === undefined) {
+    // Prepare cache.
+    var canvasBuffer = document.createElement('canvas');
+    canvasBuffer.width = canvas.width;
+    canvasBuffer.height = canvas.height;
+    var ctxBuffer = canvasBuffer.getContext('2d');
+
+    var offLeft = true;     // Each row is offset from the row above.
+    while (cy - hexVertDistance < height) {
+      while (cx - hexHorizDistance < width) {
+        tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
+        // Draw terrain.
+        paintTerrain(ctxBuffer, size, cx, cy,
+            hexHorizDistance, hexVertDistance, tilePos);
+        cx += hexHorizDistance;
+      }
+      cy += hexVertDistance;
+      cx = centerPixel.x;
+      if (offLeft) {
+        cx -= hexHorizDistance / 2;   // This row is offset.
+        offLeft = false;
+      } else {
+        offLeft = true;
+      }
+      cx = Math.floor(cx);
+      cy = Math.floor(cy);
     }
-    cy += hexVertDistance;
-    cx = centerPixel.x;
-    if (offLeft) {
-      cx -= hexHorizDistance / 2;   // This row is offset.
-      offLeft = false;
-    } else {
-      offLeft = true;
-    }
-    cx = Math.floor(cx);
-    cy = Math.floor(cy);
+
+    cachedTerrainPaint[cachePos] = canvasBuffer;
   }
+
+  ctx.drawImage(cachedTerrainPaint[cachePos], 0, 0);
 }
 
 
@@ -643,6 +697,7 @@ function paintTiles(ctx, size, origin, cb) {
     worker.postMessage(workerMessage);
   } else {
     paintTilesSprited(ctx, size, origin);
+    paintBuildingsSprited(ctx, size, origin);
     cb();
   }
 }
