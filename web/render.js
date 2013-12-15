@@ -1,6 +1,6 @@
 onmessage = function workerRecv(e) {
   paintTilesRaw(e.data.image, e.data.size, e.data.origin);
-  postMessage(e.data.image);
+  postMessage({image:e.data.image,size:e.data.size,origin:e.data.origin});
 };
 
 // Rendering primitives.
@@ -45,6 +45,9 @@ function tileFromPixel(px, px0, size) {
   });
 }
 
+// From 'size:x:y' to cached terrain, centered on the map origin.
+var cachedTerrainPaint = {};
+
 // Paint on a canvas with hexagonal tiles with `size` being the radius of the
 // smallest disk containing the hexagon.
 // The `origin` {x0, y0} is the position of the top left pixel on the screen,
@@ -52,35 +55,42 @@ function tileFromPixel(px, px0, size) {
 function paintTilesRaw(imgdata, size, origin) {
   var width = imgdata.width;
   var height = imgdata.height;
-  var data = imgdata.data;
-  for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
-      var tilePos = tileFromPixel({ x:x, y:y }, origin, size);
-      var t = terrain(tilePos);
-      var color = [180, 0, 0];
-      if (t.steepness == tileTypes.water) {
-        color = [50, 50, 180];
-      } else if (t.steepness == tileTypes.steppe) {
-        color = [0, 180, 0];
-      } else if (t.steepness == tileTypes.hill) {
-        color = [180, 100, 0];
+  var arraySize = width * height * 4;
+  var pos = size + ':' + origin.x0 + ':' + origin.y0;
+  if (cachedTerrainPaint[pos] === undefined) {
+    var data = new Uint8ClampedArray(arraySize);
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        var tilePos = tileFromPixel({ x:x, y:y }, origin, size);
+        var t = terrain(tilePos);
+        var color = [180, 0, 0];
+        if (t.steepness == tileTypes.water) {
+          color = [50, 50, 180];
+        } else if (t.steepness == tileTypes.steppe) {
+          color = [0, 180, 0];
+        } else if (t.steepness == tileTypes.hill) {
+          color = [180, 100, 0];
+        }
+        // Rainfall
+        var rain = Math.min(Math.abs(color[0] - color[1]) / 2 * t.rain, 255);
+        color[0] -= rain; // darker red
+        color[1] -= rain; // darker green
+        color[2] -= Math.min(t.rain * 50, 255);   // darker blue
+        // Vegetation
+        if (t.vegetation) {
+          color[0] -= 100;
+          color[1] -= 50;
+          color[2] -= 100;
+        }
+        var position = (x + y * width) * 4;
+        data[position + 0] = color[0];
+        data[position + 1] = color[1];
+        data[position + 2] = color[2];
+        data[position + 3] = 255;
       }
-      // Rainfall
-      var rain = Math.min(Math.abs(color[0] - color[1]) / 2 * t.rain, 255);
-      color[0] -= rain; // darker red
-      color[1] -= rain; // darker green
-      color[2] -= Math.min(t.rain * 50, 255);   // darker blue
-      // Vegetation
-      if (t.vegetation) {
-        color[0] -= 100;
-        color[1] -= 50;
-        color[2] -= 100;
-      }
-      var position = (x + y * width) * 4;
-      data[position + 0] = color[0];
-      data[position + 1] = color[1];
-      data[position + 2] = color[2];
-      data[position + 3] = 255;
     }
+    cachedTerrainPaint[pos] = data;
   }
+  // Set the contents of imgdata.data.
+  imgdata.data.set(cachedTerrainPaint[pos]);
 }

@@ -682,19 +682,22 @@ canvasBuffer.height = canvas.height;
 var imageBuffer =
   canvasBuffer.getContext('2d').getImageData(0,0,canvas.width,canvas.height);
 var workerMessage = { image: null, size: hexaSize, origin: origin };
+var renderWorker = new Worker('render-worker.js');
 function paintTiles(ctx, size, origin, cb) {
   if (size < 5) {
     // Special case: we're from too far above, use direct pixel manipulation.
-    var worker = new Worker('render-worker.js');
-    worker.onmessage = function workerRecv(e) {
-      ctx.putImageData(e.data, 0, 0);
-      worker.terminate();
-      cb();
-    };
+    renderWorker.addEventListener('message', function workerRecv(e) {
+      if (e.data.origin.x0 === origin.x0 && e.data.origin.y0 === origin.y0
+        && e.data.size === size) {
+        ctx.putImageData(e.data.image, 0, 0);
+        renderWorker.removeEventListener('message', workerRecv);
+        cb();
+      }
+    });
     workerMessage.image = imageBuffer;
     workerMessage.size = size;
     workerMessage.origin = origin;
-    worker.postMessage(workerMessage);
+    renderWorker.postMessage(workerMessage);
   } else {
     paintTilesSprited(ctx, size, origin);
     paintBuildingsSprited(ctx, size, origin);
