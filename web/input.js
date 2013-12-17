@@ -546,9 +546,8 @@ function paintTerrain(ctx, size, cx, cy,
   paintSprite(ctx, size, cx, cy, t.type, rotation);
   // Heavy rain makes it darker.
   pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
-  var grey = Math.floor((1 - t.rain) / 2 * 127);
+  var grey = Math.floor((1 - t.rain) / 2 * 127)|0;
   if (t.type === tileTypes.water) {
-    grey = (grey)|0;
     // If it's next to something, make a beach.
     var border = false;
     for (var i = 0; i < 6; i++) {
@@ -598,7 +597,7 @@ function paintTilesSprited(ctx, size, origin) {
   var hexVertDistance = size * 3/2;
 
   // Check the cache.
-  var cachePos = size + ':' + cx + ':' + cy;
+  var cachePos = size + ':' + origin.x0 + ':' + origin.y0;
   if (cachedTerrainPaint[cachePos] === undefined) {
     // Prepare cache.
     var canvasBuffer = document.createElement('canvas');
