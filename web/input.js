@@ -555,7 +555,7 @@ function paintTerrain(ctx, size, cx, cy,
         border = true;
       }
     }
-    if (border) { grey += 15; }
+    if (border) { grey += 20; }
     ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ',0.3)';
   } else {
     var delta = (Math.abs(grey - 127/2) / 1)|0;
