@@ -129,10 +129,11 @@ function Camp(id) {
   this.id = id;
   this.populationCap = 0;   // Max. number of people, based on number of houses.
   this.population = 0;      // Number of people.
-  this.homes = {};          // Map from tileKey to number of homes.
-  this.farm = {};
+  this.farm = {};           // Maps from tileKey to number of homes.
   this.residence = {};
   this.skyscraper = {};
+  this.lumber = 0;          // Number of lumber spots occupied.
+  this.usedLumber = 0;      // Never decreases.
   this.spawn = { q:0, r:0 };// Starting spot.
   this.nActions = 0;        // Number of actions.
 }
@@ -149,6 +150,8 @@ Camp.prototype = {
       delete this.residence[tileKey];
     } else if (b === terrain.tileTypes.skyscraper) {
       delete this.skyscraper[tileKey];
+    } else if (b === terrain.tileTypes.lumber) {
+      this.lumber--;
     }
   },
   winHomes: function(tileKey, b) {
@@ -164,6 +167,8 @@ Camp.prototype = {
       this.residence[tileKey] = homes;
     } else if (b === terrain.tileTypes.skyscraper) {
       this.skyscraper[tileKey] = homes;
+    } else if (b === terrain.tileTypes.lumber) {
+      this.lumber++;
     }
   }
 };
