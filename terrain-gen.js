@@ -31,6 +31,11 @@ var tileTypes = {
 };
 var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20 ];
 
+var resourceTypes = {
+  lumber:   -1,
+  metal:    -2
+};
+
 var tileVegetationTypeFromSteepness = [];
 tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
 tileVegetationTypeFromSteepness[tileTypes.steppe]   = tileTypes.meadow;
@@ -339,12 +344,12 @@ function speedFromHuman(human) {
 // It is a list of [number, tileType] requirements to build something.
 var buildingDependencies = [,,,,,,,,
     ,
-    [[2, tileTypes.farm]],
+    [[2, tileTypes.farm]],      // residence [9].
     [[6, tileTypes.residence]],
     [[3, tileTypes.residence], [2, tileTypes.road]],
-    [[1, tileTypes.residence], [1, tileTypes.water]],
+    [[1, tileTypes.residence], [1, tileTypes.water], [1, resourceTypes.lumber]],
     [[2, tileTypes.road]],
-    [[1, tileTypes.gunsmith], [3, tileTypes.airland]],
+    [[1, tileTypes.gunsmith], [3, tileTypes.airland], [1, resourceTypes.lumber]],
     [[1, tileTypes.skyscraper], [1, tileTypes.factory]],
     ,
     [[1, tileTypes.road]],
@@ -355,7 +360,8 @@ var buildingDependencies = [,,,,,,,,
 
 // Given a building (see tileTypes) and a tile = {q, r},
 // check whether the building can be built there.
-function validConstruction(building, tile) {
+// spareLumber is the number of lumber available for use.
+function validConstruction(building, tile, spareLumber, spareMetal) {
   if (building === null) { return true; }   // Destruction is always valid.
   var humanityTile = humanity(tile);
   var tileInfo = terrain(tile);
@@ -376,10 +382,19 @@ function validConstruction(building, tile) {
       var humanityNeighbor = humanity(neighbor);
       var terrainNeighbor = terrain(neighbor);
       for (var j = 0; j < requiredDependencies.length; j++) {
-        if ((humanityNeighbor
+        if (requiredDependencies[j][1] >= 0 && (humanityNeighbor
              && humanityNeighbor.b === requiredDependencies[j][1]) ||
             terrainNeighbor.type === requiredDependencies[j][1]) {
           dependencies[j]++;
+        } else if (requiredDependencies[j][1] < 0) {
+          // Resources.
+          if (requiredDependencies[j][1] === resourceTypes.lumber
+              && spareLumber < requiredDependencies[j][1]) {
+              return false;
+          } else if (requiredDependencies[j][1] === resourceTypes.metal
+              && spareMetal < requiredDependencies[j][1]) {
+              return false;
+          }
         }
       }
     }

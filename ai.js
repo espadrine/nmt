@@ -46,11 +46,13 @@ function clear(terrain, humanity) {
 // Return a plan, or undefined (if unsuccessful).
 function findBuildingPlan(terrain, humanity, humanityData,
     ourTiles, campId, building) {
+  var camp = humanity.campFromId(campId);
   // Are there valid construction sites?
   for (var i = 0; i < ourTiles.length; i++) {
     var tile = terrain.tileFromKey(ourTiles[i]);
     var humanityTile = humanityData[ourTiles[i]];
-    if (terrain.validConstruction(building, tile)) {
+    if (terrain.validConstruction(building, tile,
+          camp.lumber - camp.usedLumber)) {
       if (constructionProjects[campId][building] === ourTiles[i]) {
         constructionProjects[campId][building] = null;
         stallingProjects[campId][building] = 0;
@@ -175,6 +177,7 @@ function closestTowards(terrain, humanity, atTileKey, toTileKey) {
 function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
   // Find someone to go somewhere.
   var fromTile, fromHumanityTile;
+  var camp = humanity.campFromId(campId);
   var travelToBuild = destinationProjects[campId].length > 0;
   if (travelToBuild) {
     var closest = Infinity;   // Will seek the closest humans.
@@ -215,7 +218,8 @@ function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
       b: terrain.tileTypes.farm
     };
     if (terrain.validConstruction(buildingPlan.b,
-          terrain.tileFromKey(buildingPlan.at))) {
+          terrain.tileFromKey(buildingPlan.at),
+          camp.lumber - camp.usedLumber)) {
       return buildingPlan;
     }
   }
@@ -291,8 +295,10 @@ function run(terrain, humanity) {
       // Let's pick a location to build that.
       var buildingPlan = findBuildingPlan(terrain, humanity, humanityData,
           ourTiles, leastCamp.id, building);
-      if (buildingPlan != null && terrain.validConstruction(building,
-            terrain.tileFromKey(buildingPlan.at))) {
+      if (buildingPlan != null
+          && terrain.validConstruction(building,
+              terrain.tileFromKey(buildingPlan.at),
+              leastCamp.lumber - leastCamp.usedLumber)) {
         return buildingPlan;
       }
     }

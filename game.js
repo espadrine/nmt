@@ -73,6 +73,7 @@ function judgePlan(ip, plan, cheatMode, cb) {
     if (cheatMode ||
         (humanityTile !== undefined && humanityTile.c === campFromIP(ip)
          && humanityTile.h > 0)) {
+      var camp = humanity.campFromId(humanityTile.c);
       // Check plan.
       if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
        && plan.do === terrain.planTypes.move
@@ -83,7 +84,8 @@ function judgePlan(ip, plan, cheatMode, cb) {
         process.nextTick(function() { applyPlan(plan); cb(); });
       } else if ((typeof plan.b === 'number' || plan.b === null)
              && plan.do === terrain.planTypes.build
-             && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at))) {
+             && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at),
+               camp.lumber - camp.usedLumber)) {
         // Is the move valid?
         process.nextTick(function() { applyPlan(plan); cb(); });
       } else cb('Plan denied.');
@@ -281,6 +283,7 @@ function gameTurn() {
     updatedHumanity.population = humanity.population();
     updatedHumanity.war = warTiles;
     updatedHumanity.surrender = surrenderTiles;
+    updatedHumanity.resources = humanity.getResources();
     actChannel.clients.forEach(function (client) {
       try {
         client.send(JSON.stringify(updatedHumanity));

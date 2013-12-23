@@ -263,6 +263,17 @@ function population() {
 
 function getPlaces() { return places; }
 
+function getResources() {
+  var list = new Array(camps.length);
+  for (var i = 0; i < camps.length; i++) {
+    list[i] = {
+      lumber: camps[i].lumber,
+      usedLumber: camps[i].usedLumber
+    };
+  }
+  return list;
+}
+
 
 module.exports = humanity;
 module.exports.start = start;
@@ -280,3 +291,4 @@ module.exports.setSpawn = setSpawn;
 module.exports.moveTreasure = moveTreasure;
 module.exports.winners = winners;
 module.exports.getPlaces = getPlaces;
+module.exports.getResources = getResources;

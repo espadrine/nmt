@@ -35,6 +35,10 @@ function socketMessage(e) {
       playerCamp = change.camp;
       delete change.camp;
     }
+    if (change.resources !== undefined) {
+      resources = change.resources[playerCamp];
+      delete change.resources;
+    }
     if (change.population !== undefined) {
       humanityPopulation = change.population;
       delete change.population;
@@ -177,6 +181,10 @@ function orientation(p1, p2) {
 var humanityData = {};
 var humanityPopulation;
 var playerCamp;
+var resources = {
+  lumber: 0,
+  usedLumber: 0
+};
 
 // Takes a tile = {q, r}, returns the humanity information for that tile.
 // (See above for humanity information.)
@@ -1225,7 +1233,8 @@ var buildSelectionButtons = document.querySelectorAll('p.buildSelection');
 function indicateValidConstructions(currentTile) {
   var valid;
   for (var i = 0; i < buildingTypes.length; i++) {
-    if (validConstruction(buildingTypes[i], currentTile)) {
+    if (validConstruction(buildingTypes[i], currentTile,
+          resources.lumber - resources.usedLumber)) {
       buildSelectionButtons[i].classList.add('validSelection');
     } else {
       buildSelectionButtons[i].classList.remove('validSelection');
