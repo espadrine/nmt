@@ -24,6 +24,7 @@ function actWSStart(socket) {
     camp: camp,
     goto: playerCamp.spawn,
     places: humanity.getPlaces(),
+    resources: humanity.getResources(),
   }));
 }
 
