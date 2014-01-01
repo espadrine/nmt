@@ -86,7 +86,7 @@ function judgePlan(ip, plan, cheatMode, cb) {
       } else if ((typeof plan.b === 'number' || plan.b === null)
              && plan.do === terrain.planTypes.build
              && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at),
-               camp.lumber - camp.usedLumber)) {
+               camp.resources)) {
         // Is the move valid?
         process.nextTick(function() { applyPlan(plan); cb(); });
       } else cb('Plan denied.');

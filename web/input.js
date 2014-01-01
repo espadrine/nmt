@@ -183,7 +183,9 @@ var humanityPopulation;
 var playerCamp;
 var resources = {
   lumber: 0,
-  usedLumber: 0
+  usedLumber: 0,
+  metal: 0,
+  usedMetal: 0
 };
 
 // Takes a tile = {q, r}, returns the humanity information for that tile.
@@ -1233,8 +1235,7 @@ var buildSelectionButtons = document.querySelectorAll('p.buildSelection');
 function indicateValidConstructions(currentTile) {
   var valid;
   for (var i = 0; i < buildingTypes.length; i++) {
-    if (validConstruction(buildingTypes[i], currentTile,
-          resources.lumber - resources.usedLumber)) {
+    if (validConstruction(buildingTypes[i], currentTile, resources)) {
       buildSelectionButtons[i].classList.add('validSelection');
     } else {
       buildSelectionButtons[i].classList.remove('validSelection');

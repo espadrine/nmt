@@ -51,8 +51,7 @@ function findBuildingPlan(terrain, humanity, humanityData,
   for (var i = 0; i < ourTiles.length; i++) {
     var tile = terrain.tileFromKey(ourTiles[i]);
     var humanityTile = humanityData[ourTiles[i]];
-    if (terrain.validConstruction(building, tile,
-          camp.lumber - camp.usedLumber)) {
+    if (terrain.validConstruction(building, tile, camp.resources)) {
       if (constructionProjects[campId][building] === ourTiles[i]) {
         constructionProjects[campId][building] = null;
         stallingProjects[campId][building] = 0;
@@ -218,8 +217,7 @@ function findTravelPlan(terrain, humanity, humanityData, ourTiles, campId) {
       b: terrain.tileTypes.farm
     };
     if (terrain.validConstruction(buildingPlan.b,
-          terrain.tileFromKey(buildingPlan.at),
-          camp.lumber - camp.usedLumber)) {
+          terrain.tileFromKey(buildingPlan.at), camp.resources)) {
       return buildingPlan;
     }
   }
@@ -297,8 +295,7 @@ function run(terrain, humanity) {
           ourTiles, leastCamp.id, building);
       if (buildingPlan != null
           && terrain.validConstruction(building,
-              terrain.tileFromKey(buildingPlan.at),
-              leastCamp.lumber - leastCamp.usedLumber)) {
+              terrain.tileFromKey(buildingPlan.at), leastCamp.resources)) {
         return buildingPlan;
       }
     }

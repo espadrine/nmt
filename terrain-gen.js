@@ -360,11 +360,14 @@ var buildingDependencies = [,,,,,,,,
 
 // Given a building (see tileTypes) and a tile = {q, r},
 // check whether the building can be built there.
-// spareLumber is the number of lumber available for use.
-function validConstruction(building, tile, spareLumber, spareMetal) {
+// resources = {lumber, usedLumber, metal, usedMetal} is the resources available
+// for use in the current camp.
+function validConstruction(building, tile, resources) {
   if (building === null) { return true; }   // Destruction is always valid.
   var humanityTile = humanity(tile);
   var tileInfo = terrain(tile);
+  var spareLumber = resources.lumber - resources.usedLumber;
+  var spareMetal = resources.metal - resources.usedMetal;
   if (!humanityTile || humanityTile.h <= 0) { return false; }
   if (tileInfo.type === tileTypes.water &&
       (building === tileTypes.farm || building === tileTypes.residence ||

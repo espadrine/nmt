@@ -134,6 +134,8 @@ function Camp(id) {
   this.skyscraper = {};
   this.lumber = 0;          // Number of lumber spots occupied.
   this.usedLumber = 0;      // Never decreases.
+  this.metal = 0;           // Number of lumber spots occupied.
+  this.usedMetal = 0;       // Never decreases.
   this.spawn = { q:0, r:0 };// Starting spot.
   this.nActions = 0;        // Number of actions.
 }
@@ -170,7 +172,15 @@ Camp.prototype = {
     } else if (b === terrain.tileTypes.lumber) {
       this.lumber++;
     }
-  }
+  },
+  get resources () {
+    return {
+      lumber: this.lumber,
+      usedLumber: this.usedLumber,
+      metal: this.metal,
+      usedMetal: this.usedMetal,
+    };
+  },
 };
 
 var camps = [];
@@ -266,10 +276,7 @@ function getPlaces() { return places; }
 function getResources() {
   var list = new Array(camps.length);
   for (var i = 0; i < camps.length; i++) {
-    list[i] = {
-      lumber: camps[i].lumber,
-      usedLumber: camps[i].usedLumber
-    };
+    list[i] = camps[i].resources;
   }
   return list;
 }
