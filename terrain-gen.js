@@ -391,7 +391,7 @@ function validConstruction(building, tile, resources) {
         validCurrentTile = true;
       }
     }
-    if (!validCurrentTile) { console.log('current tile');return false; }
+    if (!validCurrentTile) { return false; }
   }
   // Requirements on the surrounding tiles.
   if (buildingDependencies[building] !== undefined) {
@@ -413,11 +413,9 @@ function validConstruction(building, tile, resources) {
           // Resources.
           if (requiredDependencies[j][1] === resourceTypes.lumber
               && spareLumber < requiredDependencies[j][0]) {
-                console.log('spare lumber:', spareLumber, 'required', requiredDependencies[j][0]);
               return false;
           } else if (requiredDependencies[j][1] === resourceTypes.metal
               && spareMetal < requiredDependencies[j][0]) {
-                console.log('metal');
               return false;
           }
           dependencies[j] = requiredDependencies[j][0];
@@ -427,13 +425,11 @@ function validConstruction(building, tile, resources) {
     // Check that we have the correct number of buildings around.
     for (var j = 0; j < dependencies.length; j++) {
       if (dependencies[j] < requiredDependencies[j][0]) {
-        console.log('dep', j, 'is', dependencies[j]);
         return false;
       }
     }
     return true;
   } else { return true; }
-  console.log('through');
   return false;
 }
 

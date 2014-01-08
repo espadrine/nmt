@@ -101,7 +101,8 @@ var surrenderTiles = [];
 function applyPlan(plan) {
   var tileFrom = terrain.tileFromKey(plan.at);
   var humanityFrom = humanity.copy(humanity(tileFrom));
-  humanity.campFromId(humanityFrom.c).nActions++;
+  var currentCamp = humanity.campFromId(humanityFrom.c);
+  currentCamp.nActions++;
   if (plan.do === terrain.planTypes.move) {
     //console.log('Plan: moving people from', plan.at, 'to', plan.to);
     var humanityTo = humanity.copy(humanity(terrain.tileFromKey(plan.to)));
@@ -192,16 +193,18 @@ function applyPlan(plan) {
         updatedHumanity);
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
-    } else if (plan.b === terrain.tileTypes.metal) {
+    } else if (plan.b === terrain.tileTypes.mine) {
       // It can be a mine construction.
-      if (humanityFrom.b === terrain.tileTypes.mine) {
-        updatedHumanity.resources = humanity.getResources();
-      }
       humanity.moveTreasure(terrain.tileTypes.metal, plan.at,
         findBlackDeath(awayFrom(tileFrom, distanceBetweenPlayers)),
         updatedHumanity);
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
+    } else if (plan.b === terrain.tileTypes.dock
+            || plan.b === terrain.tileTypes.airport
+            || plan.b === terrain.tileTypes.mine) {
+      // Lumber cost.
+      currentCamp.usedLumber++;
     }
     humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;
