@@ -77,7 +77,7 @@ p.buildSelection {
   padding: 5px 0;
   cursor: default;
   /* Invalid by default */
-  color: #500050;
+  color: #303;
   text-shadow: 0px 1px 1px #f7f;
 }
 p.validSelection {
