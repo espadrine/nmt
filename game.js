@@ -204,9 +204,10 @@ function applyPlan(plan) {
         updatedHumanity);
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
-    } else if (plan.b === terrain.tileTypes.dock
-            || plan.b === terrain.tileTypes.airport
-            || plan.b === terrain.tileTypes.mine) {
+    }
+    if (plan.b === terrain.tileTypes.dock
+     || plan.b === terrain.tileTypes.airport
+     || plan.b === terrain.tileTypes.mine) {
       // Lumber cost.
       currentCamp.usedLumber++;
     }
