@@ -189,14 +189,14 @@ function applyPlan(plan) {
         treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c);
       }
       humanity.moveTreasure(terrain.tileTypes.blackdeath, plan.at,
-        findBlackDeath(awayFrom(tileFrom, distanceBetweenPlayers)),
+        findBlackDeath(awayFrom(tileFrom, generateRandomDistance())),
         updatedHumanity);
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
     } else if (plan.b === terrain.tileTypes.mine) {
       // It can be a mine construction.
       humanity.moveTreasure(terrain.tileTypes.metal, plan.at,
-        findBlackDeath(awayFrom(tileFrom, distanceBetweenPlayers)),
+        findBlackDeath(awayFrom(tileFrom, generateRandomDistance())),
         updatedHumanity);
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
@@ -374,12 +374,15 @@ function addFolk(homes, index) {
 
 // Possible win: the maximum population authorized in a game.
 var maxPopulation;
-var distanceBetweenPlayers;
+
+function generateRandomDistance() {
+  return ((Math.random() * 100)|0) + 50;
+}
 
 // Returns a list of spawn = {q,r}.
 function findSpawn() {
   var spawns = new Array(humanity.numberOfCamps);
-  distanceBetweenPlayers = ((Math.random() * 100)|0) + 50;
+  var distanceBetweenPlayers = generateRandomDistance();
   maxPopulation = distanceBetweenPlayers * distanceBetweenPlayers;
   var oneSpot = {
     q:(Math.random() * 10000)|0,
@@ -417,13 +420,13 @@ function findTreasures(spawn) {
   midSpot.q = (((firstSpawn.q + lastSpawn.q) / 2)|0);
   midSpot.r = (((firstSpawn.r + lastSpawn.r) / 2)|0);
   // Black Death.
-  treasures[findBlackDeath(awayFrom(midSpot, distanceBetweenPlayers))] =
+  treasures[findBlackDeath(awayFrom(midSpot, generateRandomDistance()))] =
     new treasure.Treasure(terrain.tileTypes.blackdeath, 'Black Death');
   // Metal.
   var metalFormStart = (metallicFormation.length * Math.random())|0;
   for (var i = 0; i < 3; i++) {
     var name = metallicFormation[(metalFormStart+i) % metallicFormation.length];
-    treasures[findBlackDeath(awayFrom(midSpot, distanceBetweenPlayers))] =
+    treasures[findBlackDeath(awayFrom(midSpot, generateRandomDistance()))] =
       new treasure.Treasure(terrain.tileTypes.metal,
                             'Metal ' + name);
   }
