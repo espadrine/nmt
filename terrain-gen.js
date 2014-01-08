@@ -27,9 +27,10 @@ var tileTypes = {
   wall:         17,
   blackdeath:   18,
   metal:        19,
-  lumber:       20
+  lumber:       20,
+  mine:         21
 };
-var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20 ];
+var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21 ];
 
 var resourceTypes = {
   lumber:   -1,
@@ -342,6 +343,7 @@ function speedFromHuman(human) {
 
 // The index is the tileTypes id.
 // It is a list of [number, tileType] requirements to build something.
+// This is for tiles around the building.
 var buildingDependencies = [,,,,,,,,
     ,
     [[2, tileTypes.farm]],      // residence [9].
@@ -355,7 +357,13 @@ var buildingDependencies = [,,,,,,,,
     [[1, tileTypes.road]],
     ,
     ,
-    [[1, tileTypes.residence]]
+    [[1, tileTypes.residence]],
+    [[1, resourceTypes.lumber]]
+];
+// What the current tile must hold to allow a building to be constructed.
+var buildingTileDependency = [,,,,,,,, ,,,,,,,,,,,,
+    [tileTypes.forest, tileTypes.taiga],         // Lumber [20]
+    [tileTypes.metal]
 ];
 
 // Given a building (see tileTypes) and a tile = {q, r},
@@ -363,17 +371,29 @@ var buildingDependencies = [,,,,,,,,
 // resources = {lumber, usedLumber, metal, usedMetal} is the resources available
 // for use in the current camp.
 function validConstruction(building, tile, resources) {
-  if (building === null) { return true; }   // Destruction is always valid.
+  if (building == null) { return true; }   // Destruction is always valid.
   var humanityTile = humanity(tile);
   var tileInfo = terrain(tile);
   var spareLumber = resources.lumber - resources.usedLumber;
   var spareMetal = resources.metal - resources.usedMetal;
   if (!humanityTile || humanityTile.h <= 0) { return false; }
+  // Requirements on the current tile.
   if (tileInfo.type === tileTypes.water &&
       (building === tileTypes.farm || building === tileTypes.residence ||
        building === tileTypes.skyscraper || building === tileTypes.factory ||
        building === tileTypes.airland || building === tileTypes.airport ||
        building === tileTypes.gunsmith)) { return false; }
+  if (buildingTileDependency[building] !== undefined) {
+    var validCurrentTile = false;
+    for (var i = 0; i < buildingTileDependency[building].length; i++) {
+      if (buildingTileDependency[building][i] === tileInfo.type ||
+          buildingTileDependency[building][i] === humanityTile.b) {
+        validCurrentTile = true;
+      }
+    }
+    if (!validCurrentTile) { console.log('current tile');return false; }
+  }
+  // Requirements on the surrounding tiles.
   if (buildingDependencies[building] !== undefined) {
     // There are dependency requirements.
     var requiredDependencies = buildingDependencies[building];
@@ -392,27 +412,28 @@ function validConstruction(building, tile, resources) {
         } else if (requiredDependencies[j][1] < 0) {
           // Resources.
           if (requiredDependencies[j][1] === resourceTypes.lumber
-              && spareLumber < requiredDependencies[j][1]) {
+              && spareLumber < requiredDependencies[j][0]) {
+                console.log('spare lumber:', spareLumber, 'required', requiredDependencies[j][0]);
               return false;
           } else if (requiredDependencies[j][1] === resourceTypes.metal
-              && spareMetal < requiredDependencies[j][1]) {
+              && spareMetal < requiredDependencies[j][0]) {
+                console.log('metal');
               return false;
           }
+          dependencies[j] = requiredDependencies[j][0];
         }
       }
     }
     // Check that we have the correct number of buildings around.
     for (var j = 0; j < dependencies.length; j++) {
       if (dependencies[j] < requiredDependencies[j][0]) {
+        console.log('dep', j, 'is', dependencies[j]);
         return false;
       }
     }
-    // Lumber is on forests.
-    if (building === tileTypes.lumber && tileInfo.type !== tileTypes.forest) {
-      return false;
-    }
     return true;
   } else { return true; }
+  console.log('through');
   return false;
 }
 
