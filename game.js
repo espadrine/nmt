@@ -259,14 +259,42 @@ function collectFromTile(tileKey, humanityTile, addBuilding) {
   if (humanityTile.b === terrain.tileTypes.farm) {
     humanityTile.f = 20;
   } else if (humanityTile.b === terrain.tileTypes.factory) {
-    humanityTile.o |= terrain.manufacture.car;
+    getManufacture(humanityTile, terrain.manufacture.car);
   } else if (humanityTile.b === terrain.tileTypes.dock) {
-    humanityTile.o |= terrain.manufacture.boat;
+    getManufacture(humanityTile, terrain.manufacture.boat);
   } else if (humanityTile.b === terrain.tileTypes.airport) {
-    humanityTile.o |= terrain.manufacture.plane;
+    getManufacture(humanityTile, terrain.manufacture.plane);
   } else if (humanityTile.b === terrain.tileTypes.gunsmith) {
-    humanityTile.o |= terrain.manufacture.gun;
+    getManufacture(humanityTile, terrain.manufacture.gun);
   }
+}
+
+function getManufacture(humanityTile, manufacture) {
+  humanityTile.o |= manufacture;
+  var binSum = binDigitSum(humanityTile.o);
+  if (binSum > 2) {
+    // We have to drop something.
+    humanityTile.o = clearBit(humanityTile.o);
+  }
+}
+
+function binDigitSum(a) {
+  a = a|0;
+  var sum = 0;
+  while (a !== 0) {
+    sum += (a & 1);
+    a >>= 1;
+  }
+  return sum;
+}
+function clearBit(a) {
+  a = a|0;
+  var b = a|0;
+  for (var i = 1; i < 32; i++) {
+    a &= ~i;
+    if (b !== a) { return a; }
+  }
+  return a;
 }
 
 // Are the people in tileKey = "q:r" surrounded by camp?
