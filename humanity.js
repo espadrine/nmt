@@ -11,6 +11,7 @@ function saveWorld() {
       world[tileKey] = humanityData[tileKey];
     }
     world.places = places;
+    world.usedResources = getUsedResources();
     fs.writeFile(worldFile, JSON.stringify(world));
     dirtyWorld = false;
   }
@@ -27,6 +28,12 @@ function start(t, findSpawn, findTreasures) {
       camps[i].spawn = terrain.tileFromKey(Object.keys(places)[i]);
     }
     delete world.places;
+    var usedResources = world.usedResources;
+    for (var i = 0; i < numberOfCamps; i++) {
+      camps[i].usedLumber = usedResources[i].usedLumber;
+      camps[i].usedMetal = usedResources[i].usedMetal;
+    }
+    delete world.usedResources;
     humanityData = world;
     for (var tileKey in world) {
       var humanityTile = world[tileKey];
@@ -285,6 +292,13 @@ function getResources() {
   return list;
 }
 
+function getUsedResources() {
+  var list = new Array(camps.length);
+  for (var i = 0; i < camps.length; i++) {
+    list[i] = {usedLumber: camps[i].usedLumber, usedMetal: camps[i].usedMetal};
+  }
+  return list;
+}
 
 module.exports = humanity;
 module.exports.start = start;
