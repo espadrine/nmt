@@ -105,7 +105,8 @@ function applyPlan(plan) {
   currentCamp.nActions++;
   if (plan.do === terrain.planTypes.move) {
     //console.log('Plan: moving people from', plan.at, 'to', plan.to);
-    var humanityTo = humanity.copy(humanity(terrain.tileFromKey(plan.to)));
+    var tileTo = terrain.tileFromKey(plan.to);
+    var humanityTo = humanity.copy(humanity(tileTo));
 
     // Do we have enough food?
     if (humanityFrom.f <= 0) {
@@ -132,6 +133,9 @@ function applyPlan(plan) {
       var theirForces = humanityTo.h;
       if ((humanityTo.o & terrain.manufacture.gun) !== 0) {
         theirForces *= 2;
+      }
+      if (tileTo.vegetation) {
+        theirForces *= 1.5;
       }
       // Imbalance is > 1 if we win.
       var imbalance = ourForces / theirForces;
