@@ -186,12 +186,22 @@ function applyPlan(plan) {
       // It can be a treasure activation.
       if (humanityFrom.b === terrain.tileTypes.blackdeath) {
         treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c);
-        humanity.moveTreasure(terrain.tileTypes.blackdeath, plan.at,
-          findBlackDeath(awayFrom(tileFrom, distanceBetweenPlayers)),
-          updatedHumanity);
-        // Send the new treasure.
-        updatedHumanity.places = humanity.getPlaces();
       }
+      humanity.moveTreasure(terrain.tileTypes.blackdeath, plan.at,
+        findBlackDeath(awayFrom(tileFrom, distanceBetweenPlayers)),
+        updatedHumanity);
+      // Send the new treasure.
+      updatedHumanity.places = humanity.getPlaces();
+    } else if (plan.b === terrain.tileTypes.metal) {
+      // It can be a mine construction.
+      if (humanityFrom.b === terrain.tileTypes.mine) {
+        updatedHumanity.resources = humanity.getResources();
+      }
+      humanity.moveTreasure(terrain.tileTypes.metal, plan.at,
+        findBlackDeath(awayFrom(tileFrom, distanceBetweenPlayers)),
+        updatedHumanity);
+      // Send the new treasure.
+      updatedHumanity.places = humanity.getPlaces();
     }
     humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;

@@ -154,6 +154,8 @@ Camp.prototype = {
       delete this.skyscraper[tileKey];
     } else if (b === terrain.tileTypes.lumber) {
       this.lumber--;
+    } else if (b === terrain.tileTypes.mine) {
+      this.metal--;
     }
   },
   winHomes: function(tileKey, b) {
@@ -171,6 +173,8 @@ Camp.prototype = {
       this.skyscraper[tileKey] = homes;
     } else if (b === terrain.tileTypes.lumber) {
       this.lumber++;
+    } else if (b === terrain.tileTypes.mine) {
+      this.metal++;
     }
   },
   get resources () {
