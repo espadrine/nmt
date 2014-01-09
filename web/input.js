@@ -830,7 +830,6 @@ function paint(ctx, size, origin) {
   }
   if (!spritesLoaded) { return; }
   paintTilesFromCache(ctx, size, origin, function() { paintIntermediateUI(ctx, size, origin); });
-  paintIntermediateUI(ctx, size, origin);
 }
 
 // Paint the UI for population, winner information, etc.
