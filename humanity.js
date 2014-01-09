@@ -270,13 +270,13 @@ function addTreasures(treasures) {
 // pos: 'q:r'
 // updatedHumanity: object from 'q:r' to humanity data.
 // Elements get set if they were modified.
-function moveTreasure(type, oldpos, pos, updatedHumanity) {
+function moveTreasure(type, oldpos, pos, updatedHumanity, name) {
   var settlements = {};
   settlements[pos] = humanityData[pos] || makeDefault();
   settlements[pos].b = type;
   updatedHumanity[pos] = copy(settlements[pos]);
   places[pos] = places[oldpos];
-  places[oldpos] = genName();
+  places[oldpos] = genName() + ' ' + name;
   humanityChange(settlements);
 }
 
