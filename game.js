@@ -211,6 +211,10 @@ function applyPlan(plan) {
       // Lumber cost.
       currentCamp.usedLumber++;
     }
+    if (plan.b === terrain.tileTypes.industry) {
+      // Metal cost.
+      currentCamp.usedMetal++;
+    }
     humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;
     collectFromTile(plan.at, humanityFrom, true);

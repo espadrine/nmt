@@ -166,6 +166,8 @@ Camp.prototype = {
       this.lumber--;
     } else if (b === terrain.tileTypes.mine) {
       this.metal--;
+    } else if (b === terrain.tileTypes.industry) {
+      this.populationLimit -= industryPopulationLimit;
     }
   },
   winHomes: function(tileKey, b) {
@@ -185,6 +187,8 @@ Camp.prototype = {
       this.lumber++;
     } else if (b === terrain.tileTypes.mine) {
       this.metal++;
+    } else if (b === terrain.tileTypes.industry) {
+      this.populationLimit += industryPopulationLimit;
     }
   },
   get resources () {
@@ -194,13 +198,6 @@ Camp.prototype = {
       metal: this.metal,
       usedMetal: this.usedMetal,
     };
-  },
-  increasePopulationLimit: function(n) {
-    // Increase the population limit n times.
-    while (n > 0) {
-      this.populationLimit += industryPopulationLimit;
-      n--;
-    }
   },
 };
 

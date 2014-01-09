@@ -79,6 +79,7 @@ p.buildSelection {
   /* Invalid by default */
   color: #303;
   text-shadow: 0px 1px 1px #f7f;
+  font-size: 0.8em;
 }
 p.validSelection {
   color: #f7f;
