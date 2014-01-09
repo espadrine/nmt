@@ -12,6 +12,7 @@ function saveWorld() {
     }
     world.places = places;
     world.usedResources = getUsedResources();
+    world.populationLimits = getPopulationLimits();
     fs.writeFile(worldFile, JSON.stringify(world));
     dirtyWorld = false;
   }
@@ -34,6 +35,11 @@ function start(t, findSpawn, findTreasures) {
       camps[i].usedMetal = usedResources[i].usedMetal;
     }
     delete world.usedResources;
+    var populationLimits = world.populationLimits;
+    for (var i = 0; i < numberOfCamps; i++) {
+      camps[i].populationLimit = populationLimits[i];
+    }
+    delete world.populationLimits;
     humanityData = world;
     for (var tileKey in world) {
       var humanityTile = world[tileKey];
@@ -303,6 +309,13 @@ function getUsedResources() {
   var list = new Array(camps.length);
   for (var i = 0; i < camps.length; i++) {
     list[i] = {usedLumber: camps[i].usedLumber, usedMetal: camps[i].usedMetal};
+  }
+  return list;
+}
+function getPopulationLimits() {
+  var list = new Array(camps.length);
+  for (var i = 0; i < camps.length; i++) {
+    list[i] = camps[i].populationLimit;
   }
   return list;
 }
