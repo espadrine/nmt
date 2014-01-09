@@ -148,7 +148,7 @@ function Camp(id) {
   this.farm = {};           // Maps from tileKey to number of homes.
   this.residence = {};
   this.skyscraper = {};
-  this.lumber = 0;          // Number of lumber spots occupied.
+  this.lumber = 1;          // Number of lumber spots occupied.
   this.usedLumber = 0;      // Never decreases.
   this.metal = 0;           // Number of lumber spots occupied.
   this.usedMetal = 0;       // Never decreases.
