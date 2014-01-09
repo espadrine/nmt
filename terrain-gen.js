@@ -329,8 +329,8 @@ function humanTravelTo(tpos, tend) {
 
 var manufacture = {
   car: 1,
-  plane: 2,
-  boat: 4,
+  boat: 2,
+  plane: 4,
   gun: 8
 };
 

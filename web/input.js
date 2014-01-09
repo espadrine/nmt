@@ -949,6 +949,7 @@ function paintHumans(ctx, size, origin, humanityData) {
     var q = +tileKeyCoord[0];
     var r = +tileKeyCoord[1];
     var human = humanityData[tileKey];
+    var tile = terrain(tileFromKey(tileKey));
     var centerPixel = pixelFromTile({ q:q, r:r }, origin, size);
     var cx = centerPixel.x;
     var cy = centerPixel.y;
@@ -957,10 +958,28 @@ function paintHumans(ctx, size, origin, humanityData) {
     if (number > humanAnimation.length) { number = humanAnimation.length; }
     for (var i = 0; i < number; i++) {
       var animation = humanAnimation[Math.abs(i+q^r^human.f) % humanAnimation.length];
+      var animx = cx - size + animation.x * 2 * size;
+      var animy = cy - size + animation.y * 2 * size;
+      var pixel = size/20;
       ctx.fillStyle = 'black';
-      ctx.fillRect(cx - size + animation.x * 2 * size,
-          cy - size + animation.y * 2 * size,
-          size/20, size/10);
+      if ((tile.type === tileTypes.water || tile.type === tileTypes.swamp)
+          && (human.o & manufacture.boat) !== 0) {
+        ctx.fillStyle = '#aaf';
+        ctx.fillRect(animx - pixel, animy - pixel, pixel, pixel);
+        ctx.fillRect(animx, animy, 7*pixel, pixel);
+        ctx.fillRect(animx + 7*pixel, animy - pixel, pixel, pixel);
+      } else if ((human.o & manufacture.plane) !== 0) {
+        ctx.fillStyle = '#edf';
+        ctx.fillRect(animx - pixel, animy - pixel, 2*pixel, pixel);
+        ctx.fillRect(animx, animy, 9*pixel, pixel);
+        ctx.fillRect(animx + 5*pixel, animy - pixel, pixel, pixel);
+        ctx.fillRect(animx + 3*pixel, animy + pixel, pixel, pixel);
+      } else if ((human.o & manufacture.car) !== 0) {
+        ctx.fillStyle = '#420';
+        ctx.fillRect(animx, animy, size/10, size/20);
+      } else {
+        ctx.fillRect(animx, animy, pixel, pixel);
+      }
     }
   }
 }
