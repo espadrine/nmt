@@ -366,6 +366,9 @@ function addPopulation(updatedHumanity) {
   var camp;
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     camp = humanity.campFromId(i);
+    // Check for industry limit of population support.
+    if (camp.population >= camp.populationLimit) { continue; }
+    // Check for future increase of population.
     var newPopulation = camp.populationCap - camp.population;
     if (newPopulation > 0) {
       var farmHomes = Object.keys(camp.farm);

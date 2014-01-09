@@ -132,10 +132,13 @@ var homePerHouse = {
   skyscraper: 6
 };
 
+var industryPopulationLimit = 100;
+
 function Camp(id) {
   this.id = id;
   this.populationCap = 0;   // Max. number of people, based on number of houses.
   this.population = 0;      // Number of people.
+  this.populationLimit = industryPopulationLimit;
   this.farm = {};           // Maps from tileKey to number of homes.
   this.residence = {};
   this.skyscraper = {};
@@ -191,6 +194,13 @@ Camp.prototype = {
       metal: this.metal,
       usedMetal: this.usedMetal,
     };
+  },
+  increasePopulationLimit: function(n) {
+    // Increase the population limit n times.
+    while (n > 0) {
+      this.populationLimit += industryPopulationLimit;
+      n--;
+    }
   },
 };
 
