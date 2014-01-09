@@ -863,11 +863,14 @@ function paintIntermediateUI(ctx, size, origin) {
 
 // Return the string corresponding to a rank (eg, 1→1st, etc.).
 function nth(n) {
+  n = n|0;
+  var strNum = ''+n;
+  if (strNum.charCodeAt(strNum.length - 2) === 49) { return strNum + 'th'; }
   var mod = n % 10;
-  if (mod === 1) { return n + 'th';
-  } else if (mod === 2) { return n + 'nd';
-  } else if (mod === 3) { return n + 'rd';
-  } else { return n + 'th'; }
+  if (mod === 1) { return strNum + 'st';
+  } else if (mod === 2) { return strNum + 'nd';
+  } else if (mod === 3) { return strNum + 'rd';
+  } else { return strNum + 'th'; }
 }
 
 // Draw three lines of text from a list of strings on the screen.
