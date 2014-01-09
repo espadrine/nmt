@@ -124,3 +124,19 @@ iframe#helpPane {
   opacity: 0.9;
   z-index: 1;
 }
+
+/* Resources panel */
+#resourcesPanel {
+  position: absolute;
+  top: 73px;
+  left: 7px;
+  padding: 0 5px;
+  background: rgba(0,0,0,.6);
+  border: 1px solid #345;
+  border-radius: 2px;
+  font-style: italic;
+  z-index: -2;
+}
+div.populationPanel { color: pink; }
+div.woodPanel { color: orange; }
+div.metalPanel { color: #99f; }

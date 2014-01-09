@@ -38,6 +38,8 @@ function socketMessage(e) {
     if (change.resources !== undefined) {
       resources = change.resources[playerCamp];
       delete change.resources;
+      woodPanel.value = resources.lumber - resources.usedLumber;
+      metalPanel.value = resources.metal - resources.usedMetal;
     }
     if (change.population !== undefined) {
       humanityPopulation = change.population;
@@ -61,6 +63,7 @@ function socketMessage(e) {
       insertPlaces(change.places);
       delete change.places;
     }
+    populationPanel.value = humanityPopulation? humanityPopulation[playerCamp]: 0;
     addStarveMessages(change);
     changeHumanity(humanityData, change);
     updateCurrentTileInformation();
