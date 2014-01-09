@@ -240,7 +240,7 @@ function setSpawn(findSpawn, findTreasures) {
 
 function addSpawns(spawns) {
   for (var i = 0; i < spawns.length; i++) {
-    places[terrain.keyFromTile(spawns[i])] = 'Spawn #' + i;
+    places[terrain.keyFromTile(spawns[i])] = genName() + ' Town';
   }
   var settlements = {};
   for (var i = 0; i < numberOfCamps; i++) {
