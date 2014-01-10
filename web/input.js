@@ -976,9 +976,9 @@ function paintHumans(ctx, size, origin, humanityData) {
         ctx.fillRect(animx + 3*pixel, animy + pixel, pixel, pixel);
       } else if ((human.o & manufacture.car) !== 0) {
         ctx.fillStyle = '#420';
-        ctx.fillRect(animx, animy, size/10, size/20);
+        ctx.fillRect(animx, animy, 2*pixel, pixel);
       } else {
-        ctx.fillRect(animx, animy, pixel, pixel);
+        ctx.fillRect(animx, animy, pixel, 2*pixel);
       }
     }
   }
