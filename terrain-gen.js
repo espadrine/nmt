@@ -359,7 +359,7 @@ var buildingDependencies = [,,,,,,,,
     ,
     ,
     [[1, tileTypes.residence]],
-    [[1, resourceTypes.lumber]],
+    [[1, resourceTypes.lumber], [1, tileTypes.factory]],
     [[1, resourceTypes.metal], [1, tileTypes.dock], [1, tileTypes.meadow], [1, tileTypes.hill]]
 ];
 // What the current tile must hold to allow a building to be constructed.
