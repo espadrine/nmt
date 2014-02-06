@@ -83,13 +83,17 @@ function socketError(e) {
 };
 connectSocket();
 
+var registerMoves = Object.create(null);
 function sendMove(from, to, humans) {
   if (!from || !to) { return; }
+  var keyTo = keyFromTile(to);
+  registerMoves[keyTo] = from;
   if (socket.readyState === 1) {
+    var keyFrom = keyFromTile(from);
     socket.send(JSON.stringify({
-      at: keyFromTile(from),
+      at: keyFrom,
       do: planTypes.move,
-      to: keyFromTile(to),
+      to: keyTo,
       h: humans
     }));
   } else { connectSocket(function(){sendMove(from, to, humans);}); }
@@ -198,7 +202,10 @@ function humanity(tile) {
 }
 
 function changeHumanity(humanityData, change) {
-  for (var tileKey in change) { humanityData[tileKey] = change[tileKey]; }
+  for (var tileKey in change) {
+    humanityData[tileKey] = change[tileKey];
+    delete registerMoves[tileKey];
+  }
 }
 
 
@@ -838,11 +845,18 @@ function paintIntermediateUI(ctx, size, origin) {
     paintTileHexagon(ctx, size, origin, currentTile, campHsl(playerCamp));
   }
   paintCamps(ctx, size, origin);
+  // Paint the set of accessible tiles.
   paintAroundTiles(ctx, size, origin, accessibleTiles);
   if (currentTile != null && targetTile != null &&
       (selectionMode === selectionModes.travel ||
        selectionMode === selectionModes.split)) {
+    // Paint the path that the selected folks would take.
     paintAlongTiles(ctx, size, origin, humanTravelTo(currentTile,targetTile));
+  }
+  // Paint the path that folks will take.
+  for (var to in registerMoves) {
+    paintAlongTiles(ctx, size, origin,
+        humanTravelTo(registerMoves[to],tileFromKey(to)));
   }
   paintTileMessages(ctx, size, origin);
   paintPopulation(ctx);
