@@ -375,62 +375,228 @@ function paintAlongTiles(ctx, size, origin, tiles) {
 function pathFromTiles(ctx, size, origin, tiles,
                        hexHorizDistance, hexVertDistance) {
   ctx.beginPath();
+  var vertices = [];
   for (var tileKey in tiles) {
     var tile = tileFromKey(tileKey);
     var cp = pixelFromTile(tile, origin, size);
-    var cx = cp.x;
-    var cy = cp.y;
-    var mask = 0|0;
     for (var f = 0; f < 6; f++) {
-      // For each, face, set the mask.
+      // For each face, add the vertices.
       var neighbor = neighborFromTile(tile, f);
-      mask |= (((tiles[keyFromTile(neighbor)] !== undefined)|0) << f);
+      if (tiles[keyFromTile(neighbor)] === undefined) {
+        vertices = vertices.concat(vertexFromFace(tileKey, f));
+      }
     }
-    partialPathFromHex(ctx, size, cp, mask, hexHorizDistance, hexVertDistance);
   }
+  pathFromPolygons(ctx,
+      polygonFromVertices(vertices, origin, size, hexHorizDistance));
+}
+
+// Given a face 0…5 (0 = right, 1 = top right…), return the two vertices
+// delimiting the segment for that face.
+function vertexFromFace(tileKey, face) {
+  var vertex1 = (face + 4) % 6;
+  var vertex2 = (vertex1 + 1) % 6;
+  return [
+    vertexFromTileKey(tileKey, vertex1),
+    vertexFromTileKey(tileKey, vertex2)
+  ];
+}
+
+// Coordinate system for vertices.
+// Takes a tileKey "q:r" and a vertex 0…5 (0 = top, 1 = top left…)
+// Returns a vertex key "q:r:0" for the bottom right vertex of tile "q:r", and
+// "q:r:1" for the top right vertex of tile "q:r".
+function vertexFromTileKey(tileKey, vertex) {
+  if (vertex === 0) {
+    return keyFromTile(neighborFromTile(tileFromKey(tileKey), 2)) + ":0";
+  } else if (vertex === 1) {
+    return keyFromTile(neighborFromTile(tileFromKey(tileKey), 3)) + ":1";
+  } else if (vertex === 2) {
+    return keyFromTile(neighborFromTile(tileFromKey(tileKey), 3)) + ":0";
+  } else if (vertex === 3) {
+    return keyFromTile(neighborFromTile(tileFromKey(tileKey), 4)) + ":1";
+  } else if (vertex === 4) {
+    return tileKey + ":0";
+  } else if (vertex === 5) {
+    return tileKey + ":1";
+  } else { return "invalid:vertex:key"; }
+}
+
+// Take a vertex key, return the {x,y} point in the screen's coordinate.
+function pointFromVertex(vertex, origin, size, hexHorizDistance) {
+  var vertexSide = +vertex.slice(-1);
+  var tileKey = vertex.slice(0, -2);
+  var tile = tileFromKey(tileKey);
+  var cp = pixelFromTile(tile, origin, size);
+  var cx = cp.x|0;
+  var cy = cp.y|0;
+  var halfHorizDistance = hexHorizDistance/2|0;
+  var halfSize = size/2|0;
+  if (vertexSide === 0) {
+    return {x: cx + halfHorizDistance, y: cy + halfSize};
+  } else if (vertexSide === 1) {
+    return {x: cx + halfHorizDistance, y: cy - halfSize};
+  }
+}
+
+// Given a list of vertices "q:r:0" containing from / to line information,
+// return a list of polygons [{x,y}] with no duplicate point.
+function polygonFromVertices(vertices, origin, size, hexHorizDistance) {
+  var verticesLeft = new Array(vertices.length);
+  for (var i = 0; i < vertices.length; i++) {
+    verticesLeft[i] = vertices[i];
+  }
+  var polygons = [];
+  while (verticesLeft.length > 0) {
+    var startVertex = verticesLeft.shift();
+    var currentVertex = verticesLeft.shift();
+    var polygon = [
+      pointFromVertex(startVertex, origin, size, hexHorizDistance),
+      pointFromVertex(currentVertex, origin, size, hexHorizDistance)
+    ];
+    var infiniteLoopCut = 10000;
+    while (currentVertex !== startVertex && (infiniteLoopCut--) > 0) {
+      for (var i = 0; i < verticesLeft.length; i += 2) {
+        if (verticesLeft[i] === currentVertex) {
+          polygon.push(pointFromVertex(verticesLeft[i+1],
+                origin, size, hexHorizDistance));
+          currentVertex = verticesLeft[i+1];
+          verticesLeft.splice(i, 2);
+          break;
+        } else if (verticesLeft[i+1] === currentVertex) {
+          polygon.push(pointFromVertex(verticesLeft[i],
+                origin, size, hexHorizDistance));
+          currentVertex = verticesLeft[i];
+          verticesLeft.splice(i, 2);
+          break;
+        }
+      }
+    }
+    polygons.push(polygon);
+  }
+  return polygons;
+}
+
+// Continue the path of a polygon [{x,y}].
+function partialPathFromPolygon(ctx, polygon) {
+  ctx.moveTo(polygon[0].x, polygon[0].y);
+  for (var i = 1; i < polygon.length; i++) {
+    ctx.lineTo(polygon[i].x, polygon[i].y);
+  }
+  ctx.closePath();
+}
+
+// Construct the path of list of polygons [{x,y}].
+function pathFromPolygons(ctx, polygons) {
+  ctx.beginPath();
+  for (var i = 0; i < polygons.length; i++) {
+    partialPathForSmoothPolygon(ctx, polygons[i]);
+  }
+}
+
+// Average point {x,y} of two points {x,y}.
+function averagePoint(a, b) {
+  return { x:(a.x + b.x)>>1, y:(a.y + b.y)>>1 };
+}
+// Given a point b {x,y} and two points around it in a polygon,
+// return a point which makes the three points further apart.
+function extremizePoint(a, b, c) {
+  var avgPoint = averagePoint(a, c);
+  return { x:b.x - ((avgPoint.x - b.x)/2)|0, y:b.y - ((avgPoint.y - b.y)/2)|0 };
+}
+
+// Given a canvas context and a polygon [{x,y}],
+// construct the path that draws a smoother version of the polygon.
+function partialPathForSmoothPolygon(ctx, oldPolygon) {
+  if (oldPolygon.length < 3) { return partialPathFromPolygon(oldPolygon); }
+  // This polygon's vertices are the middle of each edge.
+  var intermPolygon = new Array(oldPolygon.length);
+  var avgPoint;
+  for (var i = 0; i < oldPolygon.length; i++) {
+    avgPoint = averagePoint(oldPolygon[i], oldPolygon[(i+1)%oldPolygon.length]);
+    intermPolygon[i] = avgPoint;
+  }
+  // This polygon has increased features which makes it bigger when convex.
+  var polygon = new Array(oldPolygon.length);
+  for (var i = 0; i < polygon.length; i++) {
+    avgPoint = extremizePoint(intermPolygon[i], intermPolygon[(i+1)%polygon.length], intermPolygon[(i+2)%polygon.length]);
+    polygon[i] = avgPoint;
+  }
+  // Spline between the middle of each edge,
+  // making each vertex the control point.
+  var avgPoint = averagePoint(polygon[0], polygon[1]);
+  ctx.moveTo(avgPoint.x, avgPoint.y);
+  for (var i = 1; i < polygon.length; i++) {
+    var polygoni = polygon[i%polygon.length];
+    avgPoint = averagePoint(polygon[i], polygon[(i+1)%polygon.length]);
+    ctx.quadraticCurveTo(polygon[i].x, polygon[i].y,
+                         avgPoint.x, avgPoint.y);
+  }
+  avgPoint = averagePoint(polygon[0], polygon[1]);
+  ctx.quadraticCurveTo(polygon[0].x, polygon[0].y,
+                       avgPoint.x, avgPoint.y);
 }
 
 // Draw a hexagon of size given, from the center point cp = {x, y},
 // on the canvas context ctx.
 // The mask is a sequence of six bits, each representing a hexagon edge,
 // that are set to 1 in order to hide that edge.
+// Returns a list of all points {x,y} gone through.
 function partialPathFromHex(ctx, size, cp, mask,
                             hexHorizDistance, hexVertDistance) {
   mask = mask|0;
   var cx = cp.x|0;
   var cy = cp.y|0;
-  var halfHorizDistance = hexHorizDistance/2;
-  var halfSize = size/2;
+  var halfHorizDistance = hexHorizDistance/2|0;
+  var halfSize = size/2|0;
   ctx.moveTo(cx, cy - size);    // top
+  // top left
+  var x = cx - halfHorizDistance;
+  var y = cy - halfSize;
   if ((mask & 4) === 0) {
-    ctx.lineTo(cx - halfHorizDistance, cy - halfSize); // top left
+    ctx.lineTo(x, y);
   } else {
-    ctx.moveTo(cx - halfHorizDistance, cy - halfSize); // top left
+    ctx.moveTo(x, y);
   }
+  // bottom left
+  x = cx - halfHorizDistance;
+  y = cy + halfSize;
   if ((mask & 8) === 0) {
-    ctx.lineTo(cx - halfHorizDistance, cy + halfSize); // bottom left
+    ctx.lineTo(x, y);
   } else {
-    ctx.moveTo(cx - halfHorizDistance, cy + halfSize); // bottom left
+    ctx.moveTo(x, y);
   }
+  // bottom
+  x = cx;
+  y = cy + size;
   if ((mask & 16) === 0) {
-    ctx.lineTo(cx, cy + size);    // bottom
+    ctx.lineTo(x, y);
   } else {
-    ctx.moveTo(cx, cy + size);    // bottom
+    ctx.moveTo(x, y);
   }
+  // bottom right
+  x = cx + halfHorizDistance;
+  y = cy + halfSize;
   if ((mask & 32) === 0) {
-    ctx.lineTo(cx + halfHorizDistance, cy + halfSize); // bottom right
+    ctx.lineTo(x, y);
   } else {
-    ctx.moveTo(cx + halfHorizDistance, cy + halfSize); // bottom right
+    ctx.moveTo(x, y);
   }
+  // top right
+  x = cx + halfHorizDistance;
+  y = cy - halfSize;
   if ((mask & 1) === 0) {
-    ctx.lineTo(cx + halfHorizDistance, cy - halfSize); // top right
+    ctx.lineTo(x, y);
   } else {
-    ctx.moveTo(cx + halfHorizDistance, cy - halfSize); // top right
+    ctx.moveTo(x, y);
   }
+  // top
+  x = cx;
+  y = cy - size;
   if ((mask & 2) === 0) {
-    ctx.lineTo(cx, cy - size);    // top
+    ctx.lineTo(x, y);
   } else {
-    ctx.moveTo(cx, cy - size);    // top
+    ctx.moveTo(x, y);
   }
 }
 

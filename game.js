@@ -260,7 +260,7 @@ function runAiNTimes(n) {
 //  var aiPlan = ai(terrain, humanity);
 //  console.log('ai plan:', aiPlan);
 //  if (aiPlan != null) { aiPlan.ai = true; judgePlan(0, aiPlan, true); }
-//}, 200);
+//}, 1000);
 
 // Collect from the humanity tile. If `addBuilding` is truthy,
 // we add the building as a resource for a camp.
