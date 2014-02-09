@@ -91,6 +91,7 @@ function terrain(coord) {
   var steepness = (
     // Rivers are thinner in mountains.
     (riverNoise - (heightNoise > 0? heightNoise/42: 0) > 0.98
+    || heightNoise < -0.994
     // Seas are smaller in mountains.
     || seaNoise < -0.7) ?
         tileTypes.water:
