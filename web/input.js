@@ -472,6 +472,7 @@ function polygonFromVertices(vertices, origin, size, hexHorizDistance) {
         }
       }
     }
+    polygon.pop();
     polygons.push(polygon);
   }
   return polygons;
@@ -518,8 +519,8 @@ function partialPathForSmoothPolygon(ctx, oldPolygon) {
   }
   // This polygon has increased features which makes it bigger when convex.
   var polygon = new Array(oldPolygon.length);
-  for (var i = 0; i < polygon.length; i++) {
-    avgPoint = extremizePoint(intermPolygon[i], intermPolygon[(i+1)%polygon.length], intermPolygon[(i+2)%polygon.length]);
+  for (var i = 0; i < intermPolygon.length; i++) {
+    avgPoint = extremizePoint(intermPolygon[i], intermPolygon[(i+1)%intermPolygon.length], intermPolygon[(i+2)%intermPolygon.length]);
     polygon[i] = avgPoint;
   }
   // Spline between the middle of each edge,
@@ -527,7 +528,6 @@ function partialPathForSmoothPolygon(ctx, oldPolygon) {
   var avgPoint = averagePoint(polygon[0], polygon[1]);
   ctx.moveTo(avgPoint.x, avgPoint.y);
   for (var i = 1; i < polygon.length; i++) {
-    var polygoni = polygon[i%polygon.length];
     avgPoint = averagePoint(polygon[i], polygon[(i+1)%polygon.length]);
     ctx.quadraticCurveTo(polygon[i].x, polygon[i].y,
                          avgPoint.x, avgPoint.y);
