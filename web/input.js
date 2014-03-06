@@ -1646,13 +1646,15 @@ function mouseSelection(event) {
   if ((selectionMode === selectionModes.travel
     || selectionMode === selectionModes.split)
     && currentTile !== undefined && humanity(currentTile) !== undefined) {
-    var numberOfPeople = humanity(currentTile).h;
+    var humanityTile = humanity(currentTile);
+    var numberOfPeople = humanityTile.h;
     if (selectionMode === selectionModes.split) {
       numberOfPeople = (numberOfPeople * splitInputWidget.value / 100)|0;
     }
     // Send travel information.
     var startTile = posTile;
-    if (humanTravelTo(currentTile, startTile).length > 1) {
+    if (humanTravelTo(currentTile, startTile).length > 1
+        && humanityTile.f > 0) {
       sendMove(currentTile, startTile, numberOfPeople);
     }
     enterMode(selectionModes.normal);
