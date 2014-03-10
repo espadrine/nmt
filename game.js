@@ -159,6 +159,7 @@ function applyPlan(plan) {
           warTiles.push(plan.to);
         }
         humanityFrom.h -= plan.h;
+        humanityFrom.f -= (maxFood / 2)|0;
         emptyTarget = true;
       }
     } else {
@@ -170,7 +171,7 @@ function applyPlan(plan) {
     // Camp
     humanityTo.c = humanityFrom.c;
     // Food.
-    humanityTo.f += humanityFrom.f - (byPlane? 2: 1);
+    humanityTo.f = humanityFrom.f - (byPlane? 2: 1);
     if (humanityTo.f > 20) { humanityTo.f = 20; }
     // Ownership is the intersection of what each group owns.
     if (!emptyTarget) { humanityTo.o &= humanityFrom.o; }
@@ -262,11 +263,13 @@ function runAiNTimes(n) {
 //  if (aiPlan != null) { aiPlan.ai = true; judgePlan(0, aiPlan, true); }
 //}, 1000);
 
+var maxFood = 20;
+
 // Collect from the humanity tile. If `addBuilding` is truthy,
 // we add the building as a resource for a camp.
 function collectFromTile(tileKey, humanityTile, addBuilding) {
   if (humanityTile.b === terrain.tileTypes.farm) {
-    humanityTile.f = 20;
+    humanityTile.f = maxFood;
   } else if (humanityTile.b === terrain.tileTypes.factory) {
     getManufacture(humanityTile, terrain.manufacture.car);
   } else if (humanityTile.b === terrain.tileTypes.dock) {
