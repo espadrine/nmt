@@ -1653,9 +1653,14 @@ function mouseSelection(event) {
     }
     // Send travel information.
     var startTile = posTile;
-    if (humanTravelTo(currentTile, startTile).length > 1
-        && humanityTile.f > 0) {
-      sendMove(currentTile, startTile, numberOfPeople);
+    if (humanTravelTo(currentTile, startTile).length > 1) {
+      if (humanityTile.f > 0) {
+        sendMove(currentTile, startTile, numberOfPeople);
+      } else {
+        var starveMessage = {};
+        starveMessage[keyFromTile(currentTile)] = humanityTile;
+        addStarveMessages(starveMessage);
+      }
     }
     enterMode(selectionModes.normal);
   } else { sendPos(currentTile, posTile); }
