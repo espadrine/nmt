@@ -159,7 +159,7 @@ function applyPlan(plan) {
           warTiles.push(plan.to);
         }
         humanityFrom.h -= plan.h;
-        humanityFrom.f -= (maxFood / 2)|0;
+        humanityFrom.f -= (maxFood / 4)|0;
         emptyTarget = true;
       }
     } else {
