@@ -502,8 +502,9 @@ function averagePoint(a, b) {
 // Given a point b {x,y} and two points around it in a polygon,
 // return a point which makes the three points further apart.
 function extremizePoint(a, b, c) {
-  var avgPoint = averagePoint(a, c);
-  return { x:b.x - ((avgPoint.x - b.x)/2)|0, y:b.y - ((avgPoint.y - b.y)/2)|0 };
+  var avgPoint = averagePoint(a1, c2);
+  var avgPointLocal = averagePoint(a2, c1);
+  return { x:b.x - ((avgPoint.x - b.x)/2)|0 + ((avgPointLocal.x - b.x)/2)|0, y:b.y - ((avgPoint.y - b.y)/2)|0 + ((avgPointLocal.y - b.y)/2)|0 };
 }
 
 // Given a canvas context and a polygon [{x,y}],
@@ -511,16 +512,10 @@ function extremizePoint(a, b, c) {
 function partialPathForSmoothPolygon(ctx, oldPolygon) {
   if (oldPolygon.length < 3) { return partialPathFromPolygon(oldPolygon); }
   // This polygon's vertices are the middle of each edge.
-  var intermPolygon = new Array(oldPolygon.length);
+  var polygon = new Array(oldPolygon.length);
   var avgPoint;
   for (var i = 0; i < oldPolygon.length; i++) {
     avgPoint = averagePoint(oldPolygon[i], oldPolygon[(i+1)%oldPolygon.length]);
-    intermPolygon[i] = avgPoint;
-  }
-  // This polygon has increased features which makes it bigger when convex.
-  var polygon = new Array(oldPolygon.length);
-  for (var i = 0; i < intermPolygon.length; i++) {
-    avgPoint = extremizePoint(intermPolygon[i], intermPolygon[(i+1)%intermPolygon.length], intermPolygon[(i+2)%intermPolygon.length]);
     polygon[i] = avgPoint;
   }
   // Spline between the middle of each edge,
