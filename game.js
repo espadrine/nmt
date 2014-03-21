@@ -12,12 +12,14 @@ var lockedTiles = {};
 
 // Send and receive data from players.
 
+var playerIdCount = 1;  // 0 is reserved for the AI.
 function actWSStart(socket) {
-  var ip = socket._socket.remoteAddress;
-  console.log('Player', ip, 'entered the game.');
-  socket.on('message', makeActWSRecv(ip));
+  var playerId = playerIdCount++;
+  console.log('Player', playerId, '[' + socket._socket.remoteAddress + ']',
+              'entered the game.');
+  socket.on('message', makeActWSRecv(playerId));
   socket.send(JSON.stringify(humanity.data()));
-  var camp = campFromIP(ip);
+  var camp = campFromId(playerId);
   var playerCamp = humanity.campFromId(camp);
   socket.send(JSON.stringify({
     population: humanity.population(),
@@ -28,25 +30,25 @@ function actWSStart(socket) {
   }));
 }
 
-function makeActWSRecv(ip) {
+function makeActWSRecv(playerId) {
   return function actWSRecv(data) {
     var plan;
     try {
       plan = JSON.parse(data);
     } catch(e) { return; }
-    judgePlan(ip, plan, cheatMode);
+    judgePlan(playerId, plan, cheatMode);
   };
 }
 
 var switchCamp = 0;
-var campFromIPs = {};
-function campFromIP(ip) {
-  if (campFromIPs[ip] === undefined) {
-    campFromIPs[ip] = switchCamp;
+var campFromId = {};
+function campFromId(playerId) {
+  if (campFromId[playerId] === undefined) {
+    campFromId[playerId] = switchCamp;
     switchCamp++;
     switchCamp %= humanity.numberOfCamps;
   }
-  return campFromIPs[ip];
+  return campFromId[playerId];
 }
 
 // The following should be constant. It is used for defaults.
@@ -60,19 +62,19 @@ var emptyFunction = function(){};
 //
 // The callback `cb` runs after the plan is applied, if it is.
 // If the plan isn't applied, the callback has an `err` parameter to explain.
-function judgePlan(ip, plan, cheatMode, cb) {
+function judgePlan(playerId, plan, cheatMode, cb) {
   cb = cb || emptyFunction;
-  //console.log('Suggested ' + (ip === 0? 'AI ': '') + 'plan:', plan);
-  if (ip !== 0 && plan.at != null && plan.to != null) {
+  //console.log('Suggested ' + (playerId === 0? 'AI ': '') + 'plan:', plan);
+  if (playerId !== 0 && plan.at != null && plan.to != null) {
     delete lockedTiles[plan.at];
-    lockedTiles[plan.to] = ip;
+    lockedTiles[plan.to] = playerId;
   }
 
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
     // Check camp.
     var humanityTile = humanity(terrain.tileFromKey(plan.at));
     if (cheatMode ||
-        (humanityTile !== undefined && humanityTile.c === campFromIP(ip)
+        (humanityTile !== undefined && humanityTile.c === campFromId(playerId)
          && humanityTile.h > 0)) {
       var camp = humanity.campFromId(humanityTile.c);
       // Check plan.
