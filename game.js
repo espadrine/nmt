@@ -41,14 +41,14 @@ function makeActWSRecv(playerId) {
 }
 
 var switchCamp = 0;
-var campFromId = {};
+var campFromIds = {};
 function campFromId(playerId) {
-  if (campFromId[playerId] === undefined) {
-    campFromId[playerId] = switchCamp;
+  if (campFromIds[playerId] === undefined) {
+    campFromIds[playerId] = switchCamp;
     switchCamp++;
     switchCamp %= humanity.numberOfCamps;
   }
-  return campFromId[playerId];
+  return campFromIds[playerId];
 }
 
 // The following should be constant. It is used for defaults.
