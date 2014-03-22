@@ -337,9 +337,11 @@ function pathAlongTiles(ctx, size, origin, tiles,
   var cy = cp.y|0;
   ctx.moveTo(cp.x|0, cp.y|0);
   for (var i = 0; i < tiles.length - 1; i++) {
-    cp = pixelFromTile(tileFromKey(tiles[i]), origin, size);
-    ctx.lineTo(cp.x|0, cp.y|0);
+    cpNext = pixelFromTile(tileFromKey(tiles[i+1]), origin, size);
+    var avgPoint = averagePoint(cp, cpNext);
+    ctx.quadraticCurveTo(cp.x|0, cp.y|0, avgPoint.x|0, avgPoint.y|0);
     if (i === tiles.length - 2) { penultimate = cp; }
+    cp = cpNext;
   }
   // Arrow at the end.
   cp = pixelFromTile(tileFromKey(tiles[tiles.length-1]), origin, size);
@@ -1200,8 +1202,11 @@ function paintCamps(ctx, size, origin) {
     visibleCamps[humans.c][visibleHumans[i]] = true;
   }
   for (var i = 0; i < numberOfCamps; i++) {
-    ctx.lineWidth = 1.5;
-    paintAroundTiles(ctx, size, origin, visibleCamps[i], campHsl(i));
+    ctx.lineWidth = 4;
+    paintAroundTiles(ctx, size, origin, visibleCamps[i], '#777');
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = campHsl(i);
+    ctx.stroke();
     ctx.lineWidth = 1;
   }
 }
