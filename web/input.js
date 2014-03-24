@@ -1002,6 +1002,8 @@ function paint(ctx, size, origin) {
   paintTilesFromCache(ctx, size, origin, function() { paintIntermediateUI(ctx, size, origin); });
 }
 
+var humanTravelToCache;
+
 // Paint the UI for population, winner information, etc.
 function paintIntermediateUI(ctx, size, origin) {
   if (currentTile != null && playerCamp != null) {
@@ -1014,7 +1016,11 @@ function paintIntermediateUI(ctx, size, origin) {
       (selectionMode === selectionModes.travel ||
        selectionMode === selectionModes.split)) {
     // Paint the path that the selected folks would take.
-    paintAlongTiles(ctx, size, origin, humanTravelTo(currentTile,targetTile));
+    if (humanTravelToCache === undefined) {
+      humanTravelToCache = humanTravelTo(currentTile,targetTile);
+      setTimeout(function() { humanTravelToCache = undefined; }, 70);
+    }
+    paintAlongTiles(ctx, size, origin, humanTravelToCache);
   }
   // Paint the path that folks will take.
   for (var to in registerMoves) {
