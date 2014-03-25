@@ -1011,7 +1011,9 @@ function paintIntermediateUI(ctx, size, origin) {
   }
   paintCamps(ctx, size, origin);
   // Paint the set of accessible tiles.
+  ctx.lineWidth = 1.5;
   paintAroundTiles(ctx, size, origin, accessibleTiles);
+  ctx.lineWidth = 1;
   if (currentTile != null && targetTile != null &&
       (selectionMode === selectionModes.travel ||
        selectionMode === selectionModes.split)) {
