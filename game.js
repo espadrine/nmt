@@ -7,7 +7,7 @@ var ai = require('./ai');
 var cheatMode = false;
 
 // Tiles that are in use by a user / a bot.
-// Map from tileKey to truthy values.
+// Map from tileKey to camp values.
 var lockedTiles = {};
 
 // Send and receive data from players.
@@ -67,7 +67,14 @@ function judgePlan(playerId, plan, cheatMode, cb) {
   //console.log('Suggested ' + (playerId === 0? 'AI ': '') + 'plan:', plan);
   if (playerId !== 0 && plan.at != null && plan.to != null) {
     delete lockedTiles[plan.at];
-    lockedTiles[plan.to] = playerId;
+    lockedTiles[plan.to] = campFromIds[playerId];
+    actChannel.clients.forEach(function (client) {
+      try {
+        client.send(JSON.stringify({lockedTiles:lockedTiles}));
+      } catch(e) {
+        console.error('Tried to send data to nonexistent client.');
+      }
+    });
   }
 
   if (plan.do !== undefined && (typeof plan.at === 'string')) {

@@ -17,8 +17,9 @@ function connectSocket(cb) {
 }
 function socketMessage(e) {
   var change = JSON.parse(e.data);
-  if (change.plans) {
+  if (change.lockedTiles) {
     // FIXME: if you want to receive other players' plans.
+    lockedTiles = change.lockedTiles;
   } else if (change.winners) {
     // The game is over.
     gameOver = change.winners[0];
@@ -29,7 +30,6 @@ function socketMessage(e) {
       }
       localStorage.setItem('gamesWon', (+localStorage.getItem('gamesWon'))+1);
     }
-    paint(ctx, hexaSize, origin);
   } else {
     if (change.camp !== undefined) {
       playerCamp = change.camp;
@@ -69,9 +69,9 @@ function socketMessage(e) {
     updateCurrentTileInformation();
     // Update paint cache for each building change.
     updateCachedPaint(hexaSize, origin, change);
-    paint(ctx, hexaSize, origin);
-    paintHumans(ctx, hexaSize, origin, humanityData);
   }
+  paint(ctx, hexaSize, origin);
+  paintHumans(ctx, hexaSize, origin, humanityData);
 }
 function socketError(e) {
   retries++;
@@ -618,7 +618,7 @@ function paintAroundTiles(ctx, size, origin, tiles, color) {
   ctx.stroke();
 }
 
-function paintTileHexagon(ctx, size, origin, tile, color) {
+function paintTileHexagon(ctx, size, origin, tile, color, lineWidth) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   var cp = pixelFromTile(tile, origin, size);
@@ -627,7 +627,7 @@ function paintTileHexagon(ctx, size, origin, tile, color) {
   ctx.arc(cp.x, cp.y, radius, 0, 2*Math.PI, true);
   ctx.closePath();
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = lineWidth? lineWidth: 3;
   ctx.stroke();
   ctx.lineWidth = 1;
 }
@@ -1006,6 +1006,11 @@ var humanTravelToCache;
 
 // Paint the UI for population, winner information, etc.
 function paintIntermediateUI(ctx, size, origin) {
+  // Show tiles controlled by a player.
+  for (var tileKey in lockedTiles) {
+    paintTileHexagon(ctx, size, origin, tileFromKey(tileKey),
+        campHsl(lockedTiles[tileKey]), 1);
+  }
   if (currentTile != null && playerCamp != null) {
     paintTileHexagon(ctx, size, origin, currentTile, campHsl(playerCamp));
   }
@@ -1407,8 +1412,9 @@ function attributeNameFromTile() {
 var tileNames = attributeNameFromTile();
 
 var tileInfo = document.getElementById('info');
+var lockedTiles;    // Map from tileKey to camp index.
 var accessibleTiles;
-var currentTile;
+var currentTile;    // {q,r}.
 
 // For a mouse event, give the information of the tile under the cursor.
 function showTileInformation(tile) {
