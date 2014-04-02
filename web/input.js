@@ -18,7 +18,6 @@ function connectSocket(cb) {
 function socketMessage(e) {
   var change = JSON.parse(e.data);
   if (change.lockedTiles) {
-    // FIXME: if you want to receive other players' plans.
     lockedTiles = change.lockedTiles;
   } else if (change.winners) {
     // The game is over.
@@ -1667,7 +1666,8 @@ function mouseSelection(event) {
     }
     // Send travel information.
     var startTile = posTile;
-    if (humanTravelTo(currentTile, startTile).length > 1) {
+    if (humanTravelTo(currentTile, startTile).length > 1
+        && humanityTile.c === playerCamp) {
       if (humanityTile.f > 0) {
         sendMove(currentTile, startTile, numberOfPeople);
       } else {
