@@ -99,8 +99,10 @@ function sendMove(from, to, humans) {
 }
 
 function sendPos(at, to) {
-  if (!at) { return; }
-  socket.send(JSON.stringify({ at: keyFromTile(at), to: keyFromTile(to) }));
+  socket.send(JSON.stringify({
+    at: at? keyFromTile(at): null,
+    to: keyFromTile(to)
+  }));
 }
 
 function sendBuild(at, building) {

@@ -28,6 +28,7 @@ function actWSStart(socket) {
     places: humanity.getPlaces(),
     resources: humanity.getResources(),
   }));
+  socket.send(JSON.stringify({lockedTiles:lockedTiles}));
 }
 
 function makeActWSRecv(playerId) {
@@ -65,8 +66,10 @@ var emptyFunction = function(){};
 function judgePlan(playerId, plan, cheatMode, cb) {
   cb = cb || emptyFunction;
   //console.log('Suggested ' + (playerId === 0? 'AI ': '') + 'plan:', plan);
-  if (playerId !== 0 && plan.at != null && plan.to != null) {
-    delete lockedTiles[plan.at];
+  if (playerId !== 0 && plan.to != null) {
+    if (plan.at != null) {
+      delete lockedTiles[plan.at];
+    }
     lockedTiles[plan.to] = campFromIds[playerId];
     actChannel.clients.forEach(function (client) {
       try {
