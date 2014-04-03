@@ -9,6 +9,8 @@ var cheatMode = false;
 // Tiles that are in use by a user / a bot.
 // Map from tileKey to camp values.
 var lockedTiles = {};
+// Map from playerId to tileKey.
+var lockedTileFromPlayerId = {};
 
 // Send and receive data from players.
 
@@ -18,6 +20,9 @@ function actWSStart(socket) {
   console.log('Player', playerId, '[' + socket._socket.remoteAddress + ']',
               'entered the game.');
   socket.on('message', makeActWSRecv(playerId));
+  socket.on('close', function() {
+    delete lockedTiles[lockedTileFromPlayerId[playerId]];
+  });
   socket.send(JSON.stringify(humanity.data()));
   var camp = campFromId(playerId);
   var playerCamp = humanity.campFromId(camp);
@@ -71,6 +76,7 @@ function judgePlan(playerId, plan, cheatMode, cb) {
       delete lockedTiles[plan.at];
     }
     lockedTiles[plan.to] = campFromIds[playerId];
+    lockedTileFromPlayerId[playerId] = plan.to;
     actChannel.clients.forEach(function (client) {
       try {
         client.send(JSON.stringify({lockedTiles:lockedTiles}));
