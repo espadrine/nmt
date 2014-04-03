@@ -1542,6 +1542,7 @@ function enterMode(newMode) {
     showPanel(buildPanel, buildBut);
     buildBut.addEventListener('click', enterNormalMode);
   } else if (newMode === selectionModes.split) {
+    splitPanelSetMoveStay();
     showPanel(splitPanel, splitBut);
     splitBut.addEventListener('click', enterNormalMode);
   } else if (newMode === selectionModes.places) {
@@ -1574,7 +1575,17 @@ placesBut.addEventListener('click', enterPlacesMode);
 
 splitInputWidget.addEventListener('input', function changeSplitPortion() {
   splitPanelPortion.textContent = '' + splitInputWidget.value;
+  splitPanelSetMoveStay();
 });
+
+// Update the number of people who move and stay in the split panel UI.
+function splitPanelSetMoveStay() {
+  var humanityTile = humanity(currentTile);
+  var move = ((humanityTile.h * splitInputWidget.value / 100)|0);
+  var stay = humanityTile.h - move;
+  splitPanelPortionMove.textContent = '' + move;
+  splitPanelPortionStay.textContent = '' + stay;
+}
 
 
 // Keyboard events.
