@@ -163,11 +163,12 @@ function tileFromKey(key) {
 // Find the set of tiles one can move to, from a starter tile.
 // Requires humans to be on that tile.
 // `tstart` is a {q, r} tile position. (It's Dijkstra.)
-// Returns a map from tile keys (see keyFromTile) to truthy values.
+// Returns a map from tileKey (see keyFromTile) to the tile key whence we come.
 function travelFrom(tstart, speed) {
   var camp = humanity(tstart).c;    // Camp which wants to travel.
   var walkedTiles = {};     // Valid accessible tiles.
   var current = keyFromTile(tstart);
+  walkedTiles[current] = current;
   var consideredTiles = {}; // Map from tile keys to distance walked.
   consideredTiles[current] = 0;
   var fastest = [];         // List of tile keys from fastest to slowest.
@@ -175,7 +176,6 @@ function travelFrom(tstart, speed) {
   // Going through each considered tile.
   while (fastest.length > 0) {
     current = fastest.shift();
-    walkedTiles[current] = true;
     // Check the camp. Is there a potential battle?
     var humanityNeighbor = humanity(tileFromKey(current));
     if (humanityNeighbor && humanityNeighbor.c != null
@@ -196,6 +196,7 @@ function travelFrom(tstart, speed) {
         if (consideredTiles[neighborKey] === undefined &&
             walkedTiles[neighborKey] === undefined) {
           consideredTiles[neighborKey] = newDistance;
+          walkedTiles[neighborKey] = current;
           // Where should we insert it in `fastest`?
           var insertionIndex = -1;
           for (var k = 0; k < fastest.length; k++) {

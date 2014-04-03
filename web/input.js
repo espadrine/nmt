@@ -1003,7 +1003,20 @@ function paint(ctx, size, origin) {
   paintTilesFromCache(ctx, size, origin, function() { paintIntermediateUI(ctx, size, origin); });
 }
 
-var humanTravelToCache;
+var humanTravelCache;
+
+// previousTile is a map from tileKey to the previous tileKey.
+function humanTravelToCache(currentTile, targetTile, previousTile) {
+  var trajectory = [];
+  var tileKey = keyFromTile(targetTile);
+  if (previousTile[tileKey] === undefined) { return trajectory; }
+  while (previousTile[tileKey] !== tileKey) {
+    trajectory.unshift(tileKey);
+    tileKey = previousTile[tileKey];
+  }
+  trajectory.unshift(tileKey);
+  return trajectory;
+}
 
 // Paint the UI for population, winner information, etc.
 function paintIntermediateUI(ctx, size, origin) {
@@ -1024,11 +1037,8 @@ function paintIntermediateUI(ctx, size, origin) {
       (selectionMode === selectionModes.travel ||
        selectionMode === selectionModes.split)) {
     // Paint the path that the selected folks would take.
-    if (humanTravelToCache === undefined) {
-      humanTravelToCache = humanTravelTo(currentTile,targetTile);
-      setTimeout(function() { humanTravelToCache = undefined; }, 70);
-    }
-    paintAlongTiles(ctx, size, origin, humanTravelToCache);
+    paintAlongTiles(ctx, size, origin,
+        humanTravelToCache(currentTile, targetTile, accessibleTiles));
   }
   // Paint the path that folks will take.
   for (var to in registerMoves) {
