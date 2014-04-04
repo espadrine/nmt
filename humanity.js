@@ -261,7 +261,9 @@ function addSpawns(spawns) {
   for (var i = 0; i < numberOfCamps; i++) {
     camps[i].spawn = spawns[i];
     var humanityTile = makeDefault();
-    humanityTile.h = 3;
+    humanityTile.h = 3;  // Just enough to survive losing the initial town.
+    humanityTile.f = 3;  // Just enough to have the starving message.
+    humanityTile.b = terrain.tileTypes.residence;
     humanityTile.c = i;
     settlements[spawns[i].q + ':' + spawns[i].r] = humanityTile;
   }
