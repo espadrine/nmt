@@ -224,6 +224,10 @@ function applyPlan(plan) {
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
     }
+    if (plan.b === terrain.tileTypes.farm) {
+      // Human cost.
+      humanityFrom.h--;
+    }
     if (plan.b === terrain.tileTypes.dock
      || plan.b === terrain.tileTypes.airport
      || plan.b === terrain.tileTypes.mine) {
