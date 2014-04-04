@@ -92,20 +92,28 @@ function humanityChange(change) {
       // There is nothing to remember here.
       delete humanityData[tileKey];
     } else {
-      if (tileChanged.h <= 0) {
-        tileChanged.c = null; tileChanged.f = 0; tileChanged.o = 0;
-      }
+      makeCoherentTile(tileChanged);
       humanityData[tileKey] = tileChanged;
     }
     dirtyWorld = true;
   }
 }
 
+// Set f and o when the tile doesn't contain humans.
+function makeCoherentTile(tile) {
+  if (tile.h <= 0) {
+    tile.f = 0; tile.o = 0;
+    if (tile.b === null) {
+      tile.c = null;
+    }
+  }
+}
+
 function campChange(tileKey, oldTile, newTile) {
   if (oldTile == null) { oldTile = makeDefault(); }
   // Nullify camps when necessary.
-  if (oldTile.h <= 0) { oldTile.c = null; oldTile.f = 0; }
-  if (newTile.h <= 0) { newTile.c = null; newTile.f = 0; }
+  makeCoherentTile(oldTile);
+  makeCoherentTile(newTile);
   var oldCamp = campFromId(oldTile.c);
   var newCamp = campFromId(newTile.c);
   if (oldTile.c !== newTile.c) {
@@ -133,7 +141,6 @@ function campChange(tileKey, oldTile, newTile) {
 
 // Population management.
 var homePerHouse = {
-  farm: 1,
   residence: 2,
   skyscraper: 6
 };
@@ -148,6 +155,8 @@ function Camp(id) {
   this.farm = {};           // Maps from tileKey to number of homes.
   this.residence = {};
   this.skyscraper = {};
+  this.farm = 0;
+  this.usedFarm = 0;        // Never decreases.
   this.lumber = 1;          // Number of lumber spots occupied.
   this.usedLumber = 0;      // Never decreases.
   this.metal = 0;           // Number of lumber spots occupied.
@@ -158,16 +167,15 @@ function Camp(id) {
 Camp.prototype = {
   loseHomes: function(tileKey, b) {
     this.populationCap -=
-      b === terrain.tileTypes.farm? homePerHouse.farm:
       b === terrain.tileTypes.residence? homePerHouse.residence:
       b === terrain.tileTypes.skyscraper? homePerHouse.skyscraper:
       0;
-    if (b === terrain.tileTypes.farm) {
-      delete this.farm[tileKey];
-    } else if (b === terrain.tileTypes.residence) {
+    if (b === terrain.tileTypes.residence) {
       delete this.residence[tileKey];
     } else if (b === terrain.tileTypes.skyscraper) {
       delete this.skyscraper[tileKey];
+    } else if (b === terrain.tileTypes.farm) {
+      this.farm--;
     } else if (b === terrain.tileTypes.lumber) {
       this.lumber--;
     } else if (b === terrain.tileTypes.mine) {
@@ -178,17 +186,16 @@ Camp.prototype = {
   },
   winHomes: function(tileKey, b) {
     var homes =
-      b === terrain.tileTypes.farm? homePerHouse.farm:
       b === terrain.tileTypes.residence? homePerHouse.residence:
       b === terrain.tileTypes.skyscraper? homePerHouse.skyscraper:
       0;
     this.populationCap += homes;
-    if (b === terrain.tileTypes.farm) {
-      this.farm[tileKey] = homes;
-    } else if (b === terrain.tileTypes.residence) {
+    if (b === terrain.tileTypes.residence) {
       this.residence[tileKey] = homes;
     } else if (b === terrain.tileTypes.skyscraper) {
       this.skyscraper[tileKey] = homes;
+    } else if (b === terrain.tileTypes.farm) {
+      this.farm++;
     } else if (b === terrain.tileTypes.lumber) {
       this.lumber++;
     } else if (b === terrain.tileTypes.mine) {
@@ -199,6 +206,8 @@ Camp.prototype = {
   },
   get resources () {
     return {
+      farm: this.farm,
+      usedFarm: this.usedFarm,
       lumber: this.lumber,
       usedLumber: this.usedLumber,
       metal: this.metal,

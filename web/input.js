@@ -37,6 +37,7 @@ function socketMessage(e) {
     if (change.resources !== undefined) {
       resources = change.resources[playerCamp];
       delete change.resources;
+      farmPanel.value = resources.farm - resources.usedFarm;
       woodPanel.value = resources.lumber - resources.usedLumber;
       metalPanel.value = resources.metal - resources.usedMetal;
     }
@@ -1209,7 +1210,7 @@ function listVisibleHumans(ctx, size, origin) {
   for (var tileKey in humanityData) {
     tile = tileFromKey(tileKey);
     if (tile.q >= minQ && tile.q <= maxQ && tile.r >= minR && tile.r <= maxR
-        && humanityData[tileKey].h > 0) {
+        && humanityData[tileKey].c != null) {
       visibleHumans.push(tileKey);
     }
   }

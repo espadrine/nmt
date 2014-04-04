@@ -142,5 +142,6 @@ iframe#helpPane {
   z-index: -2;
 }
 div.populationPanel { color: pink; }
-div.woodPanel { color: orange; }
+div.farmPanel { color: #dd0; }
+div.woodPanel { color: #ea0; }
 div.metalPanel { color: #99f; }
