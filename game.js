@@ -425,6 +425,7 @@ function addFolk(homes, index) {
   var randomHome = homes[index];
   var randomHomeTile = humanity(terrain.tileFromKey(randomHome));
   randomHomeTile.h++;
+  randomHomeTile.f = maxFood;
   updatedHumanity[randomHome] = randomHomeTile;
 }
 
