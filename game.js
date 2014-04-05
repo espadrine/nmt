@@ -152,8 +152,13 @@ function applyPlan(plan) {
       if ((humanityTo.o & terrain.manufacture.gun) !== 0) {
         theirForces *= 2;
       }
-      if (tileTo.vegetation) {
+      var terrainTileFrom = terrain(tileFrom);
+      var terrainTileTo = terrain(tileTo);
+      if (terrainTileTo.vegetation) {
         theirForces *= 1.5;
+      }
+      if (terrainTileFrom.steepness > terrainTileTo.steepness) {
+        ourForces *= 1.5;
       }
       // Imbalance is > 1 if we win.
       var imbalance = ourForces / theirForces;
@@ -177,7 +182,7 @@ function applyPlan(plan) {
           warTiles.push(plan.to);
         }
         humanityFrom.h -= plan.h;
-        humanityFrom.f -= (maxFood / 4)|0;
+        humanityFrom.f -= 3;
         emptyTarget = true;
       }
     } else {
