@@ -178,6 +178,10 @@ Camp.prototype = {
       this.farm--;
     } else if (b === terrain.tileTypes.lumber) {
       this.lumber--;
+      if (terrain(terrain.tileFromKey(tileKey)).type
+          === terrain.tileTypes.taiga) {
+        this.lumber -= 4;
+      }
     } else if (b === terrain.tileTypes.mine) {
       this.metal--;
     } else if (b === terrain.tileTypes.industry) {
@@ -198,6 +202,10 @@ Camp.prototype = {
       this.farm++;
     } else if (b === terrain.tileTypes.lumber) {
       this.lumber++;
+      if (terrain(terrain.tileFromKey(tileKey)).type
+          === terrain.tileTypes.taiga) {
+        this.lumber += 4;
+      }
     } else if (b === terrain.tileTypes.mine) {
       this.metal++;
     } else if (b === terrain.tileTypes.industry) {
