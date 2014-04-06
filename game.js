@@ -345,7 +345,7 @@ function surrender(tileKey, camp) {
   for (var i = 0; i < 6; i++) {
     var neighbor =
       humanity(terrain.neighborFromTile(terrain.tileFromKey(tileKey), i));
-    if (neighbor && neighbor.c === camp) {
+    if (neighbor && neighbor.c === camp && neighbor.h > 0) {
       surrounded++;
     }
   }
