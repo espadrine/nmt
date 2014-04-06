@@ -1,6 +1,13 @@
 var fs = require('fs');
 var genName = require('./gen-name.js');
+var treasure = require('./treasure.js');
 var worldFile = process.argv[3] || './world.json';
+
+
+
+// Chapter: World Updater.
+//
+
 
 var dirtyWorld = false;
 function saveWorld() {
@@ -19,7 +26,7 @@ function saveWorld() {
 }
 
 var terrain;
-function start(t, findSpawn, findTreasures) {
+function start(t) {
   terrain = t;
   try {
     var world = require(worldFile);
@@ -49,7 +56,7 @@ function start(t, findSpawn, findTreasures) {
       }
     }
   } catch(e) {
-    setSpawn(findSpawn, findTreasures);
+    setSpawn();
   }
   for (var i = 0; i < numberOfCamps; i++) {
     console.log('camp', i + ':', camps[i].spawn);
@@ -136,7 +143,7 @@ function campChange(tileKey, oldTile, newTile) {
 }
 
 
-// Camp management.
+// Chapter: Camp management.
 //
 
 // Population management.
@@ -247,47 +254,51 @@ function winners() {
   return winners;
 }
 
-// findSpawn: function returning a list of {q,r} spawns.
-// findTreasures: function returning {'q:r': {type,name}}
-// with `type` one of `terrain.tileTypes`.
+
+
+// Chapter: Prepare for Spawn.
+//
+
+
 // Modifies `camps`.
-function setSpawn(findSpawn, findTreasures) {
-  var spawns = findSpawn();
-  var treasures = findTreasures(spawns);
+function setSpawn() {
+  spawnCampCursor = 0;
   camps = makeCamps();
   humanityData = {};    // reset humanity.
   places = {};
-  addSpawns(spawns);
-  addTreasures(treasures);
+  var center = findSpawns();
+  findTreasures(center);
 }
 
-function addSpawns(spawns) {
-  for (var i = 0; i < spawns.length; i++) {
-    places[terrain.keyFromTile(spawns[i])] = genName() + ' Town';
-  }
-  var settlements = {};
-  for (var i = 0; i < numberOfCamps; i++) {
-    camps[i].spawn = spawns[i];
-    var humanityTile = makeDefault();
-    humanityTile.h = 3;  // Just enough to survive losing the initial town.
-    humanityTile.f = 3;  // Just enough to have the starving message.
-    humanityTile.b = terrain.tileTypes.residence;
-    humanityTile.c = i;
-    settlements[spawns[i].q + ':' + spawns[i].r] = humanityTile;
-  }
-  humanityChange(settlements);
+
+var spawnCampCursor = 0;
+
+// spawn: {q,r} positioning the spawn point.
+// The camp is determined by spawnCampCursor.
+function addSpawn(spawn) {
+  places[terrain.keyFromTile(spawn)] = genName() + ' Town';
+  var change = {};
+  camps[spawnCampCursor].spawn = spawn;
+  var humanityTile = makeDefault();
+  humanityTile.h = 3;  // Just enough to survive losing the initial town.
+  humanityTile.f = 3;  // Just enough to have the starving message.
+  humanityTile.b = terrain.tileTypes.residence;
+  humanityTile.c = spawnCampCursor;
+  change[spawn.q + ':' + spawn.r] = humanityTile;
+  humanityChange(change);
+  spawnCampCursor++;
 }
 
-function addTreasures(treasures) {
-  var settlements = {};
-  for (var tileKey in treasures) {
-    var humanityTile = makeDefault();
-    var treasure = treasures[tileKey];
-    humanityTile.b = treasure.type;
-    settlements[tileKey] = humanityTile;
-    places[tileKey] = treasure.name;
-  }
-  humanityChange(settlements);
+// tileKey = "q:r", treasure = {type, name} (see treasure.js)
+// type: building type (see terrain.tileTypes),
+// name: treasure name, as a string.
+function addTreasure(tileKey, treasure) {
+  var change = {};
+  var humanityTile = makeDefault();
+  humanityTile.b = treasure.type;
+  change[tileKey] = humanityTile;
+  places[tileKey] = treasure.name;
+  humanityChange(change);
 }
 
 // type: one of `terrain.tileTypes`
@@ -304,6 +315,121 @@ function moveTreasure(type, oldpos, pos, updatedHumanity, name) {
   places[oldpos] = genName() + ' ' + name;
   humanityChange(settlements);
 }
+
+function generateRandomDistance() {
+  return ((Math.random() * 100)|0) + 50;
+}
+
+// Adds the spawns to the map.
+// Returns the game's center, {q,r}.
+function findSpawns() {
+  var distanceFromCenter = generateRandomDistance();
+  var centerSpot = {
+    q: (Math.random() * 10000)|0,
+    r: (Math.random() * 10000)|0,
+  };
+  var angle = 0;
+  for (var i = 0; i < numberOfCamps; i++) {
+    var oneSpot = {
+      q: (centerSpot.q + distanceFromCenter * Math.cos(angle))|0,
+      r: (centerSpot.r + distanceFromCenter * Math.sin(angle))|0,
+    };
+    addSpawn(findNearestTerrain(oneSpot, terrain.tileTypes.steppe));
+    angle += 2 * Math.PI / numberOfCamps;
+  }
+  return centerSpot;
+}
+
+var metallicFormation = [
+  'Orebody',
+  'Cavern',
+  'Lore',
+  'Pit',
+  'Vein',
+  'Reef'
+];
+
+// Takes center, the tile {q,r} at the center of the map.
+// Return a map from tilekeys "q:r" to {type, name}
+// type: treasure type, see terrain.tileTypes
+// name: treasure name.
+function findTreasures(center) {
+  // Black Death.
+  var currentTreasure =
+    new treasure.Treasure(terrain.tileTypes.blackdeath, 'Black Death');
+  addTreasure(findBlackDeath(center), currentTreasure);
+
+  // Metal.
+  var metalFormStart = (metallicFormation.length * Math.random())|0;
+  for (var i = 0; i < 3; i++) {
+    var name = metallicFormation[(metalFormStart+i) % metallicFormation.length];
+    currentTreasure =
+      new treasure.Treasure(terrain.tileTypes.metal, 'Metal ' + name);
+    addTreasure(findBlackDeath(awayFrom(center, generateRandomDistance())),
+        currentTreasure);
+  }
+}
+
+// Return a tile position away from the mid point `midSpot`
+function awayFrom(midSpot, distance) {
+  var angle = Math.random() * 2 * Math.PI;
+  return {
+    q: (midSpot.q + distance * Math.cos(angle))|0,
+    r: (midSpot.r + distance * Math.sin(angle))|0,
+  };
+}
+
+// Return a tileKey of the position of the black death.
+function findBlackDeath(oneSpot) {
+  return terrain.keyFromTile(findNearestEmptyTerrain(oneSpot,
+        terrain.tileTypes.mountain));
+}
+// Return a tileKey of the position of the medicine.
+function findMedicine(oneSpot) {
+  return terrain.keyFromTile(findNearestEmptyTerrain(oneSpot,
+        terrain.tileTypes.forest));
+}
+
+// tile = {q,r}
+// type: see terrain.tileTypes
+function findNearestEmptyTerrain(tile, type) {
+  var distance = 0;  // If needed, how far away from where we wanted to be.
+  for (;;) {
+    var spot = findNearestTerrain(tile, type);
+    if (humanity(spot) !== undefined) {
+      distance += generateRandomDistance();
+      tile = awayFrom(tile, distance);
+    } else { break; }
+  }
+  return spot;
+}
+
+// tile = {q,r}
+// type: see terrain.tileTypes.
+function findNearestTerrain(tile, type) {
+  var k = 1;
+  while (terrain(tile).type !== type) {
+    // Take the bottom left tile.
+    tile = terrain.neighborFromTile(tile, 4);
+    // Go round.
+    for (var i = 0; i < 6; i++) {
+      for (var j = 0; j < k; j++) {
+        tile = terrain.neighborFromTile(tile, i);
+        if (terrain(tile).type === type) {
+          return tile;
+        }
+      }
+    }
+    k++;
+  }
+  return tile;
+}
+
+
+
+
+// Chapter: Population and Resources.
+//
 
 // Return a list of population information for each camp.
 function population() {
@@ -353,6 +479,7 @@ module.exports.numberOfCamps = numberOfCamps;
 module.exports.population = population;
 module.exports.setSpawn = setSpawn;
 module.exports.moveTreasure = moveTreasure;
+module.exports.generateRandomDistance = generateRandomDistance;
 module.exports.winners = winners;
 module.exports.getPlaces = getPlaces;
 module.exports.getResources = getResources;

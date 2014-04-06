@@ -217,14 +217,16 @@ function applyPlan(plan) {
         treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c);
       }
       humanity.moveTreasure(terrain.tileTypes.blackdeath, plan.at,
-        findBlackDeath(awayFrom(tileFrom, generateRandomDistance())),
+        findBlackDeath(awayFrom(tileFrom, humanity.generateRandomDistance())),
         updatedHumanity, 'Airport');
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
     } else if (plan.b === terrain.tileTypes.mine) {
       // It can be a mine construction.
+      var newTreasure =
+        findBlackDeath(awayFrom(tileFrom, humanity.generateRandomDistance()));
       humanity.moveTreasure(terrain.tileTypes.metal, plan.at,
-        findBlackDeath(awayFrom(tileFrom, generateRandomDistance())),
+        newTreasure,
         updatedHumanity, 'Mine');
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
@@ -355,6 +357,7 @@ function surrender(tileKey, camp) {
 // Game turn.
 
 var gameTurnTime = 50;     // Every 50ms.
+var maxMetal = 20;  // Winning amount of metal for an Industrial Victory.
 
 function gameTurn() {
   // Send new humanity to all.
@@ -380,8 +383,9 @@ function gameTurn() {
   // The game ends if one of the camps is empty, or is too high.
   var gameOver = false;
   for (var i = 0; i < humanity.numberOfCamps; i++) {
-    var campPopulation = humanity.campFromId(i).population;
-    if (campPopulation <= 0 || campPopulation > maxPopulation) {
+    var currentCamp = humanity.campFromId(i);
+    var campPopulation = currentCamp.population;
+    if (campPopulation <= 0 || (currentCamp.metal) > maxMetal) {
       gameOver = true;
     }
   }
@@ -438,115 +442,11 @@ function addFolk(homes, index) {
   updatedHumanity[randomHome] = randomHomeTile;
 }
 
-// Possible win: the maximum population authorized in a game.
-var maxPopulation;
-
-function generateRandomDistance() {
-  return ((Math.random() * 100)|0) + 50;
-}
-
-// Returns a list of spawn = {q,r}.
-function findSpawn() {
-  var spawns = new Array(humanity.numberOfCamps);
-  var distanceBetweenPlayers = generateRandomDistance();
-  maxPopulation = distanceBetweenPlayers * distanceBetweenPlayers;
-  var oneSpot = {
-    q:(Math.random() * 10000)|0,
-    r:(Math.random() * 10000)|0,
-  };
-  spawns[0] = findNearestTerrain(oneSpot, terrain.tileTypes.steppe);
-  var angle;
-  for (var i = 1; i < humanity.numberOfCamps; i++) {
-    angle = Math.random() * 2 * Math.PI;
-    oneSpot = {
-      q: (oneSpot.q + distanceBetweenPlayers * Math.cos(angle))|0,
-      r: (oneSpot.r + distanceBetweenPlayers * Math.sin(angle))|0,
-    };
-    spawns[i] = findNearestTerrain(oneSpot, terrain.tileTypes.steppe);
-  }
-  return spawns;
-}
-
-var metallicFormation = [
-  'Orebody',
-  'Cavern',
-  'Lore',
-  'Pit',
-  'Vein',
-  'Reef'
-];
-
-// Return a map from tilekeys "q:r" to {type, name}
-// type: treasure type, see terrain.tileTypes
-// name: treasure name.
-function findTreasures(spawn) {
-  var treasures = {};
-  var firstSpawn = spawn[0];
-  var lastSpawn = spawn[spawn.length - 1];
-  midSpot.q = (((firstSpawn.q + lastSpawn.q) / 2)|0);
-  midSpot.r = (((firstSpawn.r + lastSpawn.r) / 2)|0);
-  // Black Death.
-  treasures[findBlackDeath(awayFrom(midSpot, generateRandomDistance()))] =
-    new treasure.Treasure(terrain.tileTypes.blackdeath, 'Black Death');
-  // Metal.
-  var metalFormStart = (metallicFormation.length * Math.random())|0;
-  for (var i = 0; i < 3; i++) {
-    var name = metallicFormation[(metalFormStart+i) % metallicFormation.length];
-    treasures[findBlackDeath(awayFrom(midSpot, generateRandomDistance()))] =
-      new treasure.Treasure(terrain.tileTypes.metal,
-                            'Metal ' + name);
-  }
-  return treasures;
-}
-
-var midSpot = {q:0, r:0};
-
-// Return a tile position away from the mid point `midSpot`
-function awayFrom(midSpot, distance) {
-  var angle = Math.random() * 2 * Math.PI;
-  return {
-    q: (midSpot.q + distance * Math.cos(angle))|0,
-    r: (midSpot.r + distance * Math.sin(angle))|0,
-  };
-}
-
-// Return a tileKey of the position of the black death.
-function findBlackDeath(oneSpot) {
-  return terrain.keyFromTile(findNearestTerrain(oneSpot,
-        terrain.tileTypes.mountain));
-}
-// Return a tileKey of the position of the medicine.
-function findMedicine(oneSpot) {
-  return terrain.keyFromTile(findNearestTerrain(oneSpot,
-        terrain.tileTypes.forest));
-}
-
-// tile = {q,r}
-// type: see terrain.tileTypes.
-function findNearestTerrain(tile, type) {
-  var k = 1;
-  while (terrain(tile).type !== type) {
-    // Take the bottom left tile.
-    tile = terrain.neighborFromTile(tile, 4);
-    // Go round.
-    for (var i = 0; i < 6; i++) {
-      for (var j = 0; j < k; j++) {
-        tile = terrain.neighborFromTile(tile, i);
-        if (terrain(tile).type === type) {
-          return tile;
-        }
-      }
-    }
-    k++;
-  }
-  return tile;
-}
-
 
 // Starting the game.
 
 function startGame() {
-  humanity.setSpawn(findSpawn, findTreasures);
+  humanity.setSpawn();
   startGameLoop();
 }
 
@@ -557,7 +457,7 @@ function startGameLoop() {
 
 var actChannel;
 function start(camp) {
-  humanity.start(terrain, findSpawn, findTreasures);
+  humanity.start(terrain);
   startGameLoop();
   actChannel = camp.ws('act', actWSStart);
 }
