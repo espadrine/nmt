@@ -182,7 +182,7 @@ function applyPlan(plan) {
           warTiles.push(plan.to);
         }
         humanityFrom.h -= plan.h;
-        humanityFrom.f -= 3;
+        humanityFrom.f -= 5;
         emptyTarget = true;
       }
     } else {
