@@ -216,18 +216,18 @@ function applyPlan(plan) {
       if (humanityFrom.b === terrain.tileTypes.blackdeath) {
         treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c);
       }
+      var spot = humanity.findBlackDeath(
+        humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
       humanity.moveTreasure(terrain.tileTypes.blackdeath, plan.at,
-        findBlackDeath(awayFrom(tileFrom, humanity.generateRandomDistance())),
-        updatedHumanity, 'Airport');
+        spot, updatedHumanity, 'Airport');
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
     } else if (plan.b === terrain.tileTypes.mine) {
       // It can be a mine construction.
-      var newTreasure =
-        findBlackDeath(awayFrom(tileFrom, humanity.generateRandomDistance()));
+      var spot = humanity.findBlackDeath(
+        humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
       humanity.moveTreasure(terrain.tileTypes.metal, plan.at,
-        newTreasure,
-        updatedHumanity, 'Mine');
+        spot, updatedHumanity, 'Mine');
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
     }
