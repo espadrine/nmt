@@ -1,5 +1,5 @@
 // Thaddée Tyl. AGPLv3.
-var terrain = require('./terrain');
+var terrain = require('./terrain-gen');
 var humanity = require('./humanity');
 var treasure = require('./treasure');
 var ai = require('./ai');
@@ -216,7 +216,7 @@ function applyPlan(plan) {
       if (humanityFrom.b === terrain.tileTypes.blackdeath) {
         treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c);
       }
-      var spot = humanity.findBlackDeath(
+      var spot = humanity.findMountain(
         humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
       humanity.moveTreasure(terrain.tileTypes.blackdeath, plan.at,
         spot, updatedHumanity, 'Airport');
@@ -224,7 +224,7 @@ function applyPlan(plan) {
       updatedHumanity.places = humanity.getPlaces();
     } else if (plan.b === terrain.tileTypes.mine) {
       // It can be a mine construction.
-      var spot = humanity.findBlackDeath(
+      var spot = humanity.findMountain(
         humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
       humanity.moveTreasure(terrain.tileTypes.metal, plan.at,
         spot, updatedHumanity, 'Mine');

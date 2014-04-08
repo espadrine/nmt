@@ -349,6 +349,17 @@ var metallicFormation = [
   'Reef'
 ];
 
+var citrusFruits = [
+  'Lemon',
+  'Orange',
+  'Grapefruit',
+  'Clementine',
+  'Tangerine',
+  'Lime',
+  'Kumquat',
+  'Citron'
+];
+
 // Takes center, the tile {q,r} at the center of the map.
 // Return a map from tilekeys "q:r" to {type, name}
 // type: treasure type, see terrain.tileTypes
@@ -357,7 +368,17 @@ function findTreasures(center) {
   // Black Death.
   var currentTreasure =
     new treasure.Treasure(terrain.tileTypes.blackdeath, 'Black Death');
-  addTreasure(findBlackDeath(center), currentTreasure);
+  addTreasure(findMountain(center), currentTreasure);
+
+  // Citrus.
+  var citrusFruitStart = (citrusFruits.length * Math.random())|0;
+  for (var i = 0; i < 2; i++) {
+    var name = citrusFruits[(citrusFruitStart+i) % citrusFruits.length];
+    currentTreasure =
+      new treasure.Treasure(terrain.tileTypes.citrus, name);
+    addTreasure(findMeadow(awayFrom(center, generateRandomDistance())),
+        currentTreasure);
+  }
 
   // Metal.
   var metalFormStart = (metallicFormation.length * Math.random())|0;
@@ -365,7 +386,7 @@ function findTreasures(center) {
     var name = metallicFormation[(metalFormStart+i) % metallicFormation.length];
     currentTreasure =
       new treasure.Treasure(terrain.tileTypes.metal, 'Metal ' + name);
-    addTreasure(findBlackDeath(awayFrom(center, generateRandomDistance())),
+    addTreasure(findMountain(awayFrom(center, generateRandomDistance())),
         currentTreasure);
   }
 }
@@ -380,14 +401,14 @@ function awayFrom(midSpot, distance) {
 }
 
 // Return a tileKey of the position of the black death.
-function findBlackDeath(oneSpot) {
+function findMountain(oneSpot) {
   return terrain.keyFromTile(findNearestEmptyTerrain(oneSpot,
         terrain.tileTypes.mountain));
 }
-// Return a tileKey of the position of the medicine.
-function findMedicine(oneSpot) {
+// Return a tileKey position of the nearest meadow.
+function findMeadow(oneSpot) {
   return terrain.keyFromTile(findNearestEmptyTerrain(oneSpot,
-        terrain.tileTypes.forest));
+        terrain.tileTypes.meadow));
 }
 
 // tile = {q,r}
@@ -480,7 +501,7 @@ module.exports.population = population;
 module.exports.setSpawn = setSpawn;
 module.exports.moveTreasure = moveTreasure;
 module.exports.awayFrom = awayFrom;
-module.exports.findBlackDeath = findBlackDeath;
+module.exports.findMountain = findMountain;
 module.exports.generateRandomDistance = generateRandomDistance;
 module.exports.winners = winners;
 module.exports.getPlaces = getPlaces;

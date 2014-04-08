@@ -42,9 +42,9 @@ function union(lists) {
 }
 
 // Server-side terrain.
-bundle('terrain.js', [
+bundle('terrain-gen.js', [
   'terrain-node-before.js',
-  'terrain-gen.js',
+  'terrain.js',
   'terrain-node-after.js',
 ], true);
 
@@ -52,7 +52,7 @@ bundle('terrain.js', [
 bundle('web/display.js', [
   'web/simplex-noise.js',
   'web/mersenne-twister.js',
-  'terrain-gen.js',
+  'terrain.js',
   'web/input.js',
 ], true);
 
@@ -60,6 +60,6 @@ bundle('web/display.js', [
 bundle('web/render-worker.js', [
   'web/simplex-noise.js',
   'web/mersenne-twister.js',
-  'terrain-gen.js',
+  'terrain.js',
   'web/render.js',
 ], true);
