@@ -230,6 +230,14 @@ function applyPlan(plan) {
         spot, updatedHumanity, 'Mine');
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
+    } else if (plan.b === terrain.tileTypes.university) {
+      // It can be a university construction. Shocker, I know.
+      var spot = humanity.findMeadow(
+        humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
+      humanity.moveTreasure(terrain.tileTypes.citrus, plan.at,
+        spot, updatedHumanity, 'University');
+      // Send the new treasure.
+      updatedHumanity.places = humanity.getPlaces();
     }
     if (plan.b === terrain.tileTypes.farm) {
       // Human cost.
@@ -241,9 +249,13 @@ function applyPlan(plan) {
       // Lumber cost.
       currentCamp.usedLumber++;
     }
-    if (plan.b === terrain.tileTypes.industry) {
+    if (plan.b === terrain.tileTypes.university) {
       // Metal cost.
       currentCamp.usedMetal++;
+    }
+    if (plan.b === terrain.tileTypes.university) {
+      // Farm cost.
+      currentCamp.usedFarm += 20;
     }
     humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;

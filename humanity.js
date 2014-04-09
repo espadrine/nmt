@@ -152,13 +152,13 @@ var homePerHouse = {
   skyscraper: 6
 };
 
-var industryPopulationLimit = 100;
+var universityPopulationLimit = 100;
 
 function Camp(id) {
   this.id = id;
   this.populationCap = 0;   // Max. number of people, based on number of houses.
   this.population = 0;      // Number of people.
-  this.populationLimit = industryPopulationLimit;
+  this.populationLimit = universityPopulationLimit;
   this.farm = {};           // Maps from tileKey to number of homes.
   this.residence = {};
   this.skyscraper = {};
@@ -191,8 +191,8 @@ Camp.prototype = {
       }
     } else if (b === terrain.tileTypes.mine) {
       this.metal--;
-    } else if (b === terrain.tileTypes.industry) {
-      this.populationLimit -= industryPopulationLimit;
+    } else if (b === terrain.tileTypes.university) {
+      this.populationLimit -= universityPopulationLimit;
     }
   },
   winHomes: function(tileKey, b) {
@@ -215,8 +215,8 @@ Camp.prototype = {
       }
     } else if (b === terrain.tileTypes.mine) {
       this.metal++;
-    } else if (b === terrain.tileTypes.industry) {
-      this.populationLimit += industryPopulationLimit;
+    } else if (b === terrain.tileTypes.university) {
+      this.populationLimit += universityPopulationLimit;
     }
   },
   get resources () {
@@ -502,6 +502,7 @@ module.exports.setSpawn = setSpawn;
 module.exports.moveTreasure = moveTreasure;
 module.exports.awayFrom = awayFrom;
 module.exports.findMountain = findMountain;
+module.exports.findMeadow = findMeadow;
 module.exports.generateRandomDistance = generateRandomDistance;
 module.exports.winners = winners;
 module.exports.getPlaces = getPlaces;

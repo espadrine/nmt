@@ -30,9 +30,10 @@ var tileTypes = {
   lumber:       20,
   mine:         21,
   industry:     22,
-  citrus:       23
+  citrus:       23,
+  university:   24
 };
-var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22 ];
+var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24 ];
 
 var resourceTypes = {
   lumber:   -1,
@@ -363,12 +364,15 @@ var buildingDependencies = [,,,,,,,,
     ,
     [[1, tileTypes.residence]],
     [[1, resourceTypes.lumber], [1, tileTypes.factory]],
-    [[1, resourceTypes.metal], [1, tileTypes.dock], [1, tileTypes.meadow], [1, tileTypes.hill]]
+    [[1, resourceTypes.metal], [1, tileTypes.dock], [1, tileTypes.meadow], [1, tileTypes.hill]],
+    ,
+    [[1, resourceTypes.metal], [20, resourceTypes.farm], [2, tileTypes.wall]]
 ];
 // What the current tile must hold to allow a building to be constructed.
 var buildingTileDependency = [,,,,,,,, ,,,,,,,,,,,,
     [tileTypes.forest, tileTypes.taiga],         // Lumber [20]
-    [tileTypes.metal]
+    [tileTypes.metal],,,
+    [tileTypes.citrus]
 ];
 
 // Given a building (see tileTypes) and a tile = {q, r},
