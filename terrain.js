@@ -364,7 +364,7 @@ var buildingDependencies = [,,,,,,,,
     ,
     [[1, tileTypes.residence]],
     [[1, resourceTypes.lumber], [1, tileTypes.factory]],
-    [[1, resourceTypes.metal], [1, tileTypes.dock], [1, tileTypes.meadow], [1, tileTypes.hill]],
+    [[10, resourceTypes.farm], [1, tileTypes.mine], [5, tileTypes.road]],
     ,
     [[1, resourceTypes.metal], [20, resourceTypes.farm], [2, tileTypes.wall]]
 ];
@@ -385,6 +385,7 @@ function validConstruction(building, tile, resources) {
   var tileInfo = terrain(tile);
   var spareLumber = resources.lumber - resources.usedLumber;
   var spareMetal = resources.metal - resources.usedMetal;
+  var spareFarm = resources.farm - resources.usedFarm;
   if (!humanityTile || humanityTile.h <= 0) { return false; }
   // Requirements on the current tile.
   if (tileInfo.type === tileTypes.water &&
@@ -425,6 +426,9 @@ function validConstruction(building, tile, resources) {
               return false;
           } else if (requiredDependencies[j][1] === resourceTypes.metal
               && spareMetal < requiredDependencies[j][0]) {
+              return false;
+          } else if (requiredDependencies[j][1] === resourceTypes.farm
+              && spareFarm < requiredDependencies[j][0]) {
               return false;
           }
           dependencies[j] = requiredDependencies[j][0];

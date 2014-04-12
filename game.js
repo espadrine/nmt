@@ -253,9 +253,11 @@ function applyPlan(plan) {
       // Metal cost.
       currentCamp.usedMetal++;
     }
+    // Farm cost.
     if (plan.b === terrain.tileTypes.university) {
-      // Farm cost.
       currentCamp.usedFarm += 20;
+    } else if (plan.b === terrain.tileTypes.industry) {
+      currentCamp.usedFarm += 10;
     }
     humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;
@@ -397,13 +399,19 @@ function gameTurn() {
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     var currentCamp = humanity.campFromId(i);
     var campPopulation = currentCamp.population;
-    if (campPopulation <= 0 || (currentCamp.metal) > maxMetal) {
+    if (campPopulation <= 0) {
+      var winners = humanity.winners(function(camp) {return camp.population;});
+      gameOver = true;
+    } else if ((currentCamp.metal - currentCamp.usedMetal) > maxMetal) {
+      var winners = humanity.winners(function(camp) {
+        return camp.metal - camp.usedMetal;
+      });
       gameOver = true;
     }
   }
   if (gameOver) {
     actChannel.clients.forEach(function (client) {
-      client.send(JSON.stringify({ winners: humanity.winners() }));
+      client.send(JSON.stringify({ winners: winners }));
     });
     startGame();
   } else {
@@ -416,7 +424,7 @@ function addPopulation(updatedHumanity) {
   var camp;
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     camp = humanity.campFromId(i);
-    // Check for industry limit of population support.
+    // Check for university limit of population support.
     if (camp.population >= camp.populationLimit) { continue; }
     // Check for future increase of population.
     var newPopulation = camp.populationCap - camp.population;

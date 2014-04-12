@@ -189,7 +189,8 @@ Camp.prototype = {
           === terrain.tileTypes.taiga) {
         this.lumber -= 4;
       }
-    } else if (b === terrain.tileTypes.mine) {
+    } else if (b === terrain.tileTypes.mine
+            || b === terrain.tileTypes.industry) {
       this.metal--;
     } else if (b === terrain.tileTypes.university) {
       this.populationLimit -= universityPopulationLimit;
@@ -213,7 +214,8 @@ Camp.prototype = {
           === terrain.tileTypes.taiga) {
         this.lumber += 4;
       }
-    } else if (b === terrain.tileTypes.mine) {
+    } else if (b === terrain.tileTypes.mine
+            || b === terrain.tileTypes.industry) {
       this.metal++;
     } else if (b === terrain.tileTypes.university) {
       this.populationLimit += universityPopulationLimit;
@@ -245,11 +247,12 @@ function makeCamps() {
 }
 
 // List of camp IDs from most population to least.
-function winners() {
+// criterion is a function that takes a camp, returns a number.
+function winners(criterion) {
   var winners = new Array(numberOfCamps);
   for (var i = 0; i < numberOfCamps; i++) { winners[i] = i; }
   winners.sort(function(a, b) {
-    return camps[b].population - camps[a].population;
+    return criterion(camps[b]) - criterion(camps[a]);
   });
   return winners;
 }
