@@ -156,6 +156,7 @@ var universityPopulationLimit = 100;
 
 function Camp(id) {
   this.id = id;
+  this.name = genName();
   this.populationCap = 0;   // Max. number of people, based on number of houses.
   this.population = 0;      // Number of people.
   this.populationLimit = universityPopulationLimit;
@@ -279,7 +280,7 @@ var spawnCampCursor = 0;
 // spawn: {q,r} positioning the spawn point.
 // The camp is determined by spawnCampCursor.
 function addSpawn(spawn) {
-  places[terrain.keyFromTile(spawn)] = genName() + ' Town';
+  places[terrain.keyFromTile(spawn)] = camps[spawnCampCursor].name + ' Town';
   var change = {};
   camps[spawnCampCursor].spawn = spawn;
   var humanityTile = makeDefault();
@@ -466,6 +467,14 @@ function population() {
 
 function getPlaces() { return places; }
 
+function spawnNames() {
+  var list = new Array(camps.length);
+  for (var i = 0; i < camps.length; i++) {
+    list[i] = camps[i].name;
+  }
+  return list;
+}
+
 function getResources() {
   var list = new Array(camps.length);
   for (var i = 0; i < camps.length; i++) {
@@ -509,4 +518,5 @@ module.exports.findMeadow = findMeadow;
 module.exports.generateRandomDistance = generateRandomDistance;
 module.exports.winners = winners;
 module.exports.getPlaces = getPlaces;
+module.exports.spawnNames = spawnNames;
 module.exports.getResources = getResources;

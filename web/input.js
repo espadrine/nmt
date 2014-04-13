@@ -63,6 +63,11 @@ function socketMessage(e) {
       insertPlaces(change.places);
       delete change.places;
     }
+    if (change.spawnNames !== undefined) {
+      // Set the spawn names.
+      spawnNames = change.spawnNames;
+      delete change.spawnNames;
+    }
     populationPanel.value = humanityPopulation? humanityPopulation[playerCamp]: 0;
     addStarveMessages(change);
     changeHumanity(humanityData, change);
@@ -116,6 +121,8 @@ function sendBuild(at, building) {
     }));
   } else { connectSocket(function(){sendBuild(at, building);}); }
 }
+
+var spawnNames;
 
 var defaultPlacesPanelHTML = placesPanel.innerHTML;
 
