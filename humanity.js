@@ -18,6 +18,7 @@ function saveWorld() {
       world[tileKey] = humanityData[tileKey];
     }
     world.places = places;
+    world.campNames = campNames();
     world.usedResources = getUsedResources();
     world.populationLimits = getPopulationLimits();
     fs.writeFile(worldFile, JSON.stringify(world));
@@ -34,8 +35,10 @@ function start(t) {
     places = world.places;
     for (var i = 0; i < numberOfCamps; i++) {
       camps[i].spawn = terrain.tileFromKey(Object.keys(places)[i]);
+      camps[i].name = world.campNames[i];
     }
     delete world.places;
+    delete world.campNames;
     var usedResources = world.usedResources;
     for (var i = 0; i < numberOfCamps; i++) {
       camps[i].usedLumber = usedResources[i].usedLumber;
