@@ -397,13 +397,16 @@ function gameTurn() {
   surrenderTiles = [];
   // The game ends if one of the camps is empty, or is too high.
   var gameOver = false;
+  var winType;
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     var currentCamp = humanity.campFromId(i);
     var campPopulation = currentCamp.population;
     if (campPopulation <= 0) {
+      winType = 'Supremacy';
       var winners = humanity.winners(function(camp) {return camp.population;});
       gameOver = true;
     } else if ((currentCamp.metal - currentCamp.usedMetal) > maxMetal) {
+      winType = 'Industrial';
       var winners = humanity.winners(function(camp) {
         return camp.metal - camp.usedMetal;
       });
@@ -412,7 +415,7 @@ function gameTurn() {
   }
   if (gameOver) {
     actChannel.clients.forEach(function (client) {
-      client.send(JSON.stringify({ winners: winners }));
+      client.send(JSON.stringify({ winners: winners, winType: winType }));
     });
     startGame();
   } else {

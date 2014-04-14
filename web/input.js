@@ -1,6 +1,6 @@
 // Listen to server connection.
 
-var gameOverWinners;
+var gameOver;
 var socket;
 var retries = 0;
 function connectSocket(cb) {
@@ -21,8 +21,10 @@ function socketMessage(e) {
     lockedTiles = change.lockedTiles;
   } else if (change.winners) {
     // The game is over.
-    gameOverWinners = change.winners;
-    if (gameOverWinners[0] === playerCamp) {
+    gameOver = {};
+    gameOver.winners = change.winners;
+    gameOver.winType = change.winType;
+    if (gameOver.winners[0] === playerCamp) {
       // We won!
       if (!localStorage.getItem('gamesWon')) {
         localStorage.setItem('gamesWon', 0);
@@ -1055,15 +1057,16 @@ function paintIntermediateUI(ctx, size, origin) {
   }
   paintTileMessages(ctx, size, origin);
   paintPopulation(ctx);
-  if (gameOverWinners !== undefined) {
+  if (gameOver !== undefined) {
     drawTitle(ctx, [
-        campNames[gameOverWinners[0]] + " won.",
-        (gameOverWinners[0] === playerCamp
+        campNames[gameOver.winners[0]]
+        + " won a " + gameOver.winType + " Victory.",
+        (gameOver.winners[0] === playerCamp
          ? ("YOU WON! (" + nth(localStorage.getItem('gamesWon')) + " win!)")
          : ("YOU NEARLY WON! " +
-            "(" + nth(gameOverWinners.indexOf(playerCamp) + 1) + " place!)")),
+            "(" + nth(gameOver.winners.indexOf(playerCamp) + 1) + " place!)")),
         "You can reload to engage in the next game!"],
-        campHsl(gameOverWinners[0]));
+        campHsl(gameOver.winners[0]));
   }
   if (showTitleScreen) {
     drawTitle(ctx, ["Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
