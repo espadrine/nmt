@@ -467,7 +467,7 @@ function population() {
 
 function getPlaces() { return places; }
 
-function spawnNames() {
+function campNames() {
   var list = new Array(camps.length);
   for (var i = 0; i < camps.length; i++) {
     list[i] = camps[i].name;
@@ -518,5 +518,5 @@ module.exports.findMeadow = findMeadow;
 module.exports.generateRandomDistance = generateRandomDistance;
 module.exports.winners = winners;
 module.exports.getPlaces = getPlaces;
-module.exports.spawnNames = spawnNames;
+module.exports.campNames = campNames;
 module.exports.getResources = getResources;

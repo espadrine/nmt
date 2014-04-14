@@ -31,7 +31,7 @@ function actWSStart(socket) {
     camp: camp,
     goto: playerCamp.spawn,
     places: humanity.getPlaces(),
-    spawnNames: humanity.spawnNames(),
+    campNames: humanity.campNames(),
     resources: humanity.getResources(),
   }));
   socket.send(JSON.stringify({lockedTiles:lockedTiles}));

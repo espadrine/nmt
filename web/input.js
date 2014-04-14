@@ -1,6 +1,6 @@
 // Listen to server connection.
 
-var gameOver;
+var gameOverWinners;
 var socket;
 var retries = 0;
 function connectSocket(cb) {
@@ -21,8 +21,8 @@ function socketMessage(e) {
     lockedTiles = change.lockedTiles;
   } else if (change.winners) {
     // The game is over.
-    gameOver = change.winners[0];
-    if (gameOver === playerCamp) {
+    gameOverWinners = change.winners;
+    if (gameOverWinners[0] === playerCamp) {
       // We won!
       if (!localStorage.getItem('gamesWon')) {
         localStorage.setItem('gamesWon', 0);
@@ -63,10 +63,10 @@ function socketMessage(e) {
       insertPlaces(change.places);
       delete change.places;
     }
-    if (change.spawnNames !== undefined) {
+    if (change.campNames !== undefined) {
       // Set the spawn names.
-      spawnNames = change.spawnNames;
-      delete change.spawnNames;
+      campNames = change.campNames;
+      delete change.campNames;
     }
     populationPanel.value = humanityPopulation? humanityPopulation[playerCamp]: 0;
     addStarveMessages(change);
@@ -122,7 +122,7 @@ function sendBuild(at, building) {
   } else { connectSocket(function(){sendBuild(at, building);}); }
 }
 
-var spawnNames;
+var campNames;
 
 var defaultPlacesPanelHTML = placesPanel.innerHTML;
 
@@ -1055,14 +1055,15 @@ function paintIntermediateUI(ctx, size, origin) {
   }
   paintTileMessages(ctx, size, origin);
   paintPopulation(ctx);
-  if (gameOver !== undefined) {
+  if (gameOverWinners !== undefined) {
     drawTitle(ctx, [
-        "The winner is #" + gameOver + ".",
-        (gameOver === playerCamp
+        campNames[gameOverWinners[0]] + " won.",
+        (gameOverWinners[0] === playerCamp
          ? ("YOU WON! (" + nth(localStorage.getItem('gamesWon')) + " win!)")
-         : "YOU NEARLY WON!"),
+         : ("YOU NEARLY WON! " +
+            "(" + nth(gameOverWinners.indexOf(playerCamp) + 1) + " place!)")),
         "You can reload to engage in the next game!"],
-        campHsl(gameOver));
+        campHsl(gameOverWinners[0]));
   }
   if (showTitleScreen) {
     drawTitle(ctx, ["Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
