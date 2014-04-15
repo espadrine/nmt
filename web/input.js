@@ -70,7 +70,20 @@ function socketMessage(e) {
       campNames = change.campNames;
       delete change.campNames;
     }
-    populationPanel.value = humanityPopulation? humanityPopulation[playerCamp]: 0;
+    if (humanityPopulation) {
+      populationPanel.value = humanityPopulation[playerCamp];
+      var maxPopulationIndex = 0;
+      var maxPopulation = 0;
+      for (var i = 0; i < humanityPopulation.length; i++) {
+        if (humanityPopulation[i] > maxPopulation) {
+          maxPopulationIndex = i;
+          maxPopulation = humanityPopulation[i];
+        }
+      }
+      populationMaxPanel.value = maxPopulation;
+      populationMaxCampPanel.value = campNames[maxPopulationIndex];
+      populationMaxCampPanel.style.color = campHsl(maxPopulationIndex);
+    }
     addStarveMessages(change);
     changeHumanity(humanityData, change);
     updateCurrentTileInformation();
