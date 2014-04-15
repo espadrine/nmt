@@ -489,7 +489,11 @@ function getResources() {
 function getUsedResources() {
   var list = new Array(camps.length);
   for (var i = 0; i < camps.length; i++) {
-    list[i] = {usedLumber: camps[i].usedLumber, usedMetal: camps[i].usedMetal};
+    list[i] = {
+      usedFarm: camps[i].usedFarm,
+      usedLumber: camps[i].usedLumber,
+      usedMetal: camps[i].usedMetal,
+    };
   }
   return list;
 }
