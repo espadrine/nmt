@@ -19,8 +19,7 @@ function saveWorld() {
     }
     world.places = places;
     world.campNames = campNames();
-    world.usedResources = getResources();
-    world.populationLimits = getPopulationLimits();
+    world.usedResources = getUsedResources();
     fs.writeFile(worldFile, JSON.stringify(world));
     dirtyWorld = false;
   }
@@ -46,11 +45,6 @@ function start(t) {
       }
     }
     delete world.usedResources;
-    var populationLimits = world.populationLimits;
-    for (var i = 0; i < numberOfCamps; i++) {
-      camps[i].populationLimit = populationLimits[i];
-    }
-    delete world.populationLimits;
     humanityData = world;
     for (var tileKey in world) {
       var humanityTile = world[tileKey];
@@ -234,6 +228,14 @@ Camp.prototype = {
       lumber: this.lumber,
       usedLumber: this.usedLumber,
       metal: this.metal,
+      usedMetal: this.usedMetal,
+      acquiredUniversitiesMap: this.acquiredUniversitiesMap,
+    };
+  },
+  get usedResources () {
+    return {
+      usedFarm: this.usedFarm,
+      usedLumber: this.usedLumber,
       usedMetal: this.usedMetal,
       acquiredUniversitiesMap: this.acquiredUniversitiesMap,
     };
@@ -489,6 +491,14 @@ function getResources() {
   var list = new Array(camps.length);
   for (var i = 0; i < camps.length; i++) {
     list[i] = camps[i].resources;
+  }
+  return list;
+}
+
+function getUsedResources() {
+  var list = new Array(camps.length);
+  for (var i = 0; i < camps.length; i++) {
+    list[i] = camps[i].usedResources;
   }
   return list;
 }
