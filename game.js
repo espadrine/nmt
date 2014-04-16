@@ -431,7 +431,8 @@ function addPopulation(updatedHumanity) {
     // Check for university limit of population support.
     if (camp.population >= camp.populationLimit) { continue; }
     // Check for future increase of population.
-    var newPopulation = camp.populationCap - camp.population;
+    var targetPopulation = Math.min(camp.populationCap, camp.populationLimit);
+    var newPopulation = targetPopulation - camp.population;
     if (newPopulation > 0) {
       var residenceHomes = Object.keys(camp.residence);
       var nResidenceHomes = residenceHomes.length > 0?
@@ -453,7 +454,7 @@ function addPopulation(updatedHumanity) {
           addFolk(skyscraperHomes, (skyscraperHomes.length * pickedIndex)|0);
         }
       }
-      camp.population = camp.populationCap;
+      camp.population = targetPopulation;
     }
   }
 }
