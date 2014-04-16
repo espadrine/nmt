@@ -143,7 +143,7 @@ function applyPlan(plan) {
     var emptyTarget = humanityTo.h === 0;
     var emptyingOrigin = (humanityFrom.h - plan.h) === 0;
     // Human movement.
-    if (!emptyTarget && humanityTo.c !== humanityFrom.c) {
+    if (humanityTo.c != null && humanityTo.c !== humanityFrom.c) {
       // They're not us. This means war. Because culture difference.
       var ourForces = plan.h;
       if ((humanityFrom.o & terrain.manufacture.gun) !== 0) {
@@ -185,6 +185,10 @@ function applyPlan(plan) {
         humanityFrom.h -= plan.h;
         humanityFrom.f -= 5;
         emptyTarget = true;
+      }
+      // If it is a university, we acquired it.
+      if (humanityTo.b === terrain.tileTypes.university) {
+        currentCamp.acquiredUniversitiesMap[plan.to] = true;
       }
     } else {
       // Joining forces.

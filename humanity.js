@@ -19,7 +19,7 @@ function saveWorld() {
     }
     world.places = places;
     world.campNames = campNames();
-    world.usedResources = getUsedResources();
+    world.usedResources = getResources();
     world.populationLimits = getPopulationLimits();
     fs.writeFile(worldFile, JSON.stringify(world));
     dirtyWorld = false;
@@ -41,8 +41,9 @@ function start(t) {
     delete world.campNames;
     var usedResources = world.usedResources;
     for (var i = 0; i < numberOfCamps; i++) {
-      camps[i].usedLumber = usedResources[i].usedLumber;
-      camps[i].usedMetal = usedResources[i].usedMetal;
+      for (var resourceKey in usedResources[i]) {
+        camps[i][resourceKey] = usedResources[i][resourceKey];
+      }
     }
     delete world.usedResources;
     var populationLimits = world.populationLimits;
@@ -172,6 +173,7 @@ function Camp(id) {
   this.usedLumber = 0;      // Never decreases.
   this.metal = 0;           // Number of lumber spots occupied.
   this.usedMetal = 0;       // Never decreases.
+  this.acquiredUniversitiesMap = {};// From tileKey to truthy value.
   this.spawn = { q:0, r:0 };// Starting spot.
   this.nActions = 0;        // Number of actions.
 }
@@ -233,7 +235,12 @@ Camp.prototype = {
       usedLumber: this.usedLumber,
       metal: this.metal,
       usedMetal: this.usedMetal,
+      acquiredUniversitiesMap: this.acquiredUniversitiesMap,
     };
+  },
+  // Number of universities won from enemies.
+  get acquiredUniversities () {
+    return Object.keys(this.acquiredUniversitiesMap).length;
   },
 };
 
@@ -486,17 +493,6 @@ function getResources() {
   return list;
 }
 
-function getUsedResources() {
-  var list = new Array(camps.length);
-  for (var i = 0; i < camps.length; i++) {
-    list[i] = {
-      usedFarm: camps[i].usedFarm,
-      usedLumber: camps[i].usedLumber,
-      usedMetal: camps[i].usedMetal,
-    };
-  }
-  return list;
-}
 function getPopulationLimits() {
   var list = new Array(camps.length);
   for (var i = 0; i < camps.length; i++) {
