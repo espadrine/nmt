@@ -37,11 +37,9 @@ function socketMessage(e) {
       delete change.camp;
     }
     if (change.resources !== undefined) {
+      campResources = change.resources;
       resources = change.resources[playerCamp];
       delete change.resources;
-      farmPanel.value = resources.farm - resources.usedFarm;
-      woodPanel.value = resources.lumber - resources.usedLumber;
-      metalPanel.value = resources.metal - resources.usedMetal;
     }
     if (change.population !== undefined) {
       humanityPopulation = change.population;
@@ -71,18 +69,17 @@ function socketMessage(e) {
       delete change.campNames;
     }
     if (humanityPopulation) {
-      populationPanel.value = humanityPopulation[playerCamp];
-      var maxPopulationIndex = 0;
-      var maxPopulation = 0;
-      for (var i = 0; i < humanityPopulation.length; i++) {
-        if (humanityPopulation[i] > maxPopulation) {
-          maxPopulationIndex = i;
-          maxPopulation = humanityPopulation[i];
-        }
-      }
-      populationMaxPanel.value = maxPopulation;
-      populationMaxCampPanel.value = campNames[maxPopulationIndex];
-      populationMaxCampPanel.style.color = campHsl(maxPopulationIndex);
+      var humanityFarm = humanityResource(function(a) {return a.farm - a.usedFarm;});
+      var humanityWood = humanityResource(function(a) {return a.lumber - a.usedLumber;});
+      var humanityMetal = humanityResource(function(a) {return a.metal - a.usedMetal;});
+      setResourcePanel(humanityPopulation,
+          populationPanel, populationMaxPanel, populationMaxCampPanel);
+      setResourcePanel(humanityFarm,
+          farmPanel, farmMaxPanel, farmMaxCampPanel);
+      setResourcePanel(humanityWood,
+          woodPanel, woodMaxPanel, woodMaxCampPanel);
+      setResourcePanel(humanityMetal,
+          metalPanel, metalMaxPanel, metalMaxCampPanel);
     }
     addStarveMessages(change);
     changeHumanity(humanityData, change);
@@ -166,6 +163,29 @@ function insertPlaces(places) {
   }
 }
 
+function setResourcePanel(resourceList, panel, maxPanel, maxCampPanel) {
+  panel.value = resourceList[playerCamp];
+  var maxResourceIndex = 0;
+  var maxResource = 0;
+  for (var i = 0; i < resourceList.length; i++) {
+    if (resourceList[i] > maxResource) {
+      maxResourceIndex = i;
+      maxResource = resourceList[i];
+    }
+  }
+  maxPanel.value = maxResource;
+  maxCampPanel.value = campNames[maxResourceIndex];
+  maxCampPanel.style.color = campHsl(maxResourceIndex);
+}
+
+function humanityResource(resource) {
+  var humanityResource = [];
+  for (var i = 0; i < campResources.length; i++) {
+    humanityResource[i] = resource(campResources[i]);
+  }
+  return humanityResource;
+}
+
 // Focus the screen on tile t = {q, r}.
 // Changes `origin`.
 function gotoPlace(t) {
@@ -213,11 +233,14 @@ var humanityData = {};
 var humanityPopulation;
 var playerCamp;
 var resources = {
+  farm: 0,
+  usedFarm: 0,
   lumber: 0,
   usedLumber: 0,
   metal: 0,
   usedMetal: 0
 };
+var campResources;
 
 // Takes a tile = {q, r}, returns the humanity information for that tile.
 // (See above for humanity information.)
