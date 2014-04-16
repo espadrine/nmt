@@ -119,10 +119,10 @@ div#placesPanel > p[data-tilekey] { cursor: pointer; }
 iframe#helpPane {
   display: none;
   position: absolute;
-  top: 20px;
+  top: 50px;
   left: 20px;
   width: calc(100% - 44px);
-  max-height: calc(100% - 44px);
+  max-height: calc(100% - 74px);
   border: 2px solid white;
   border-radius: 2px;
   opacity: 0.9;
