@@ -376,7 +376,8 @@ function surrender(tileKey, camp) {
 // Game turn.
 
 var gameTurnTime = 50;     // Every 50ms.
-var maxMetal = 20;  // Winning amount of metal for an Industrial Victory.
+var maxMetal = 21;  // Winning amount of metal for an Industrial Victory.
+var maxAcquiredUniversities = 3;
 
 function gameTurn() {
   // Send new humanity to all.
@@ -409,10 +410,16 @@ function gameTurn() {
       winType = 'Supremacy';
       var winners = humanity.winners(function(camp) {return camp.population;});
       gameOver = true;
-    } else if ((currentCamp.metal - currentCamp.usedMetal) > maxMetal) {
+    } else if ((currentCamp.metal - currentCamp.usedMetal) >= maxMetal) {
       winType = 'Industrial';
       var winners = humanity.winners(function(camp) {
         return camp.metal - camp.usedMetal;
+      });
+      gameOver = true;
+    } else if (currentCamp.acquiredUniversities >= maxAcquiredUniversities) {
+      winType = 'Intellectual';
+      var winners = humanity.winners(function(camp) {
+        return camp.acquiredUniversities;
       });
       gameOver = true;
     }
