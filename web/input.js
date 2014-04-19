@@ -39,6 +39,7 @@ function socketMessage(e) {
     if (change.resources !== undefined) {
       campResources = change.resources;
       resources = change.resources[playerCamp];
+      console.log(campResources);
       delete change.resources;
     }
     if (change.population !== undefined) {
@@ -72,6 +73,7 @@ function socketMessage(e) {
       var humanityFarm = humanityResource(function(a) {return a.farm - a.usedFarm;});
       var humanityWood = humanityResource(function(a) {return a.lumber - a.usedLumber;});
       var humanityMetal = humanityResource(function(a) {return a.metal - a.usedMetal;});
+      var humanityUniv = humanityResource(function(a) {return Object.keys(a.acquiredUniversitiesMap).length;});
       setResourcePanel(humanityPopulation,
           populationPanel, populationMaxPanel, populationMaxCampPanel);
       setResourcePanel(humanityFarm,
@@ -80,6 +82,8 @@ function socketMessage(e) {
           woodPanel, woodMaxPanel, woodMaxCampPanel);
       setResourcePanel(humanityMetal,
           metalPanel, metalMaxPanel, metalMaxCampPanel);
+      setResourcePanel(humanityUniv,
+          uniPanel, uniMaxPanel, uniMaxCampPanel);
     }
     addStarveMessages(change);
     changeHumanity(humanityData, change);
