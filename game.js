@@ -376,7 +376,7 @@ function surrender(tileKey, camp) {
 // Game turn.
 
 var gameTurnTime = 50;     // Every 50ms.
-var maxMetal = 21;  // Winning amount of metal for an Industrial Victory.
+var maxMetal = 13;  // Winning amount of metal for an Industrial Victory.
 var maxAcquiredUniversities = 3;
 
 function gameTurn() {
