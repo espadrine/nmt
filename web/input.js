@@ -1304,41 +1304,35 @@ function campHueCreator9000(camp) {
 function paintPopulation(ctx) {
   if (!humanityPopulation) { return; }
   var top = 55;
-  var left = 8;
-  var width = 185;
+  var left = 7;
+  var width = 187;
   var height = 10;
+  var svg = '';
   // Paint the border.
-  ctx.beginPath();
-  ctx.moveTo(left, top - 0.5);
-  ctx.lineTo(width + left, top - 0.5);
-  ctx.moveTo(width + left + 0.5, top);
-  ctx.lineTo(width + left + 0.5, top + height);
-  ctx.moveTo(width + left, top + height + 0.5);
-  ctx.lineTo(left, top + height + 0.5);
-  ctx.moveTo(left - 0.5, top + height);
-  ctx.lineTo(left - 0.5, top);
-  ctx.strokeStyle = '#345';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  ctx.lineWidth = 1;
+  svg += '<rect stroke="#345" stroke-width="1" x="0" y="0" rx="3" ry="3" width="'
+    + (width) + '" height="' + (height) + '" />';
   // Paint the population.
   var totalPopulation = 0;
   for (var i = 0; i < humanityPopulation.length; i++) {
     totalPopulation += humanityPopulation[i];
   }
-  var start = left;
+  var start = 1;
+  var innerWidth = width - 2;
   var popWidth;
   var allButLastWidth = 0;
   for (var i = 0; i < humanityPopulation.length - 1; i++) {
-    popWidth = (width * humanityPopulation[i] / totalPopulation)|0;
+    popWidth = (innerWidth * humanityPopulation[i] / totalPopulation)|0;
     allButLastWidth += popWidth;
-    ctx.fillStyle = 'hsl(' + campHueCreator9000(i) + ',80%,50%)';
-    ctx.fillRect(start|0, top, popWidth|0, height);
+    svg += '<rect fill="' + 'hsl(' + campHueCreator9000(i) + ',80%,50%)' + '"'
+        + ' x="' + (start) + '" y="1" width="' + (popWidth) + '"'
+        + ' height="' + (height - 2) + '" />';
     start += popWidth;
   }
-  popWidth = width - allButLastWidth - 1;
-  ctx.fillStyle = 'hsl(' + campHueCreator9000(i) + ',80%,50%)';
-  ctx.fillRect(start|0, top, (popWidth|0)+1, height);
+  popWidth = innerWidth - allButLastWidth;
+  svg += '<rect fill="' + 'hsl(' + campHueCreator9000(i) + ',80%,50%)' + '"'
+      + ' x="' + (start) + '" y="1" width="' + (popWidth) + '"'
+      + ' height="' + (height - 2) + '" />';
+  populationMonitor.innerHTML = svg;
 }
 
 // Tile Messages.

@@ -129,6 +129,15 @@ iframe#helpPane {
   z-index: 1;
 }
 
+#populationMonitor {
+  position: absolute;
+  top: 55px;
+  left: 7px;
+  width: 187px !important;
+  height: 10px !important;
+  z-index: -2;
+}
+
 /* Resources panel */
 #resourcesPanel {
   position: absolute;
