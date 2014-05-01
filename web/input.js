@@ -86,6 +86,7 @@ function socketMessage(e) {
     }
     addStarveMessages(change);
     changeHumanity(humanityData, change);
+    paintPopulation();
     updateCurrentTileInformation();
     // Update paint cache for each building change.
     updateCachedPaint(hexaSize, origin, change);
@@ -1095,7 +1096,6 @@ function paintIntermediateUI(ctx, size, origin) {
         humanTravelTo(registerMoves[to],tileFromKey(to)));
   }
   paintTileMessages(ctx, size, origin);
-  paintPopulation(ctx);
   if (gameOver !== undefined) {
     drawTitle(ctx, [
         campNames[gameOver.winners[0]]
@@ -1301,7 +1301,7 @@ function campHueCreator9000(camp) {
 }
 
 // Paint the relative population of each camp.
-function paintPopulation(ctx) {
+function paintPopulation() {
   if (!humanityPopulation) { return; }
   var top = 55;
   var left = 7;
