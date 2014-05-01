@@ -3,7 +3,7 @@
   src: local("Linux Biolinum O"), url(./LinBiolinum_R.woff);
 }
 body { margin: 0; font-family: "Linux Biolinum", Helvetica, Arial, "Lucida Grande", sans-serif; }
-canvas#canvas {
+canvas.maincanvas {
   position: absolute;
   top: 0;
   bottom: 0;

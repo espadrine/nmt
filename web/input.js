@@ -39,7 +39,6 @@ function socketMessage(e) {
     if (change.resources !== undefined) {
       campResources = change.resources;
       resources = change.resources[playerCamp];
-      console.log(campResources);
       delete change.resources;
     }
     if (change.population !== undefined) {
