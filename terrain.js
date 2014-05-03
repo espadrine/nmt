@@ -63,37 +63,37 @@ var memoizedTiles = [];
 //  - rain: floating point number between -1 and 1, representing how heavy the
 //  rainfall is.
 function terrain(coord) {
-  var q = coord.q;
-  var r = coord.r;
-  if (memoizedTiles[q] != null && memoizedTiles[q][r] != null) {
-    return memoizedTiles[q][r];
+  var x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
+  var y = (3/2 * coord.r);
+  if (memoizedTiles[x] != null && memoizedTiles[x][y] != null) {
+    return memoizedTiles[x][y];
   }
-  var size = simplex2.noise2D(r/500, q/500) * 5;
+  var size = simplex2.noise2D(y/500, x/500);
   var riverNoise = 1-Math.abs((
-      + 4 * (simplex1.noise2D(q/4/factor, r/4/factor))
-      + 2 * (simplex1.noise2D(q/2/factor, r/2/factor))
-      + 1 * (simplex1.noise2D(q/1/factor, r/1/factor))
-      + 1/2 * (simplex1.noise2D(q*2/factor, r*2/factor))
+      + 4 * (simplex1.noise2D(x/4/factor, y/4/factor))
+      + 2 * (simplex1.noise2D(x/2/factor, y/2/factor))
+      + 1 * (simplex1.noise2D(x/1/factor, y/1/factor))
+      + 1/2 * (simplex1.noise2D(x*2/factor, y*2/factor))
       )/(1/2+1+2+4));
   var heightNoise = Math.sin(
       // Abs gives valleys.
-      - (size) * Math.abs(simplex1.noise2D(1/4*q/factor, 1/4*r/factor))
-      + simplex1.noise2D(q/factor, r/factor)
-      - 1/2 * simplex1.noise2D(2*q/factor, 2*r/factor)
-      + 1/4 * simplex1.noise2D(4*q/factor, 4*r/factor)
-      - 1/8 * simplex1.noise2D(8*q/factor, 8*r/factor)
-      + 1/16 * simplex1.noise2D(16*q/factor, 16*r/factor));
-  var seaNoise = -simplex2.noise2D(r/factor/8, q/factor/8)
-      + simplex2.noise2D(r/factor/4, q/factor/4)
+      - (size * 5) * Math.abs(simplex1.noise2D(1/4*x/factor, 1/4*y/factor))
+      + simplex1.noise2D(x/factor, y/factor)
+      - 1/2 * simplex1.noise2D(2*x/factor, 2*y/factor)
+      + 1/4 * simplex1.noise2D(4*x/factor, 4*y/factor)
+      - 1/8 * simplex1.noise2D(8*x/factor, 8*y/factor)
+      + 1/16 * simplex1.noise2D(16*x/factor, 16*y/factor));
+  var seaNoise = -simplex2.noise2D(y/factor/8, x/factor/8)
+      + simplex2.noise2D(y/factor/4, x/factor/4)
       + heightNoise/2;
-  var vegetationNoise = (size / 5) * simplex2.noise2D(q/factor, r/factor)
-      + 1/2 * simplex2.noise2D(2*q/factor, 2*r/factor)
-      + 1/4 * simplex2.noise2D(4*q/factor, 4*r/factor)
-      + 1/8 * simplex2.noise2D(8*q/factor, 8*r/factor)
-      + 1/16 * simplex2.noise2D(16*q/factor, 16*r/factor);
+  var vegetationNoise = (size) * simplex2.noise2D(x/factor, y/factor)
+      + 1/2 * simplex2.noise2D(2*x/factor, 2*y/factor)
+      + 1/4 * simplex2.noise2D(4*x/factor, 4*y/factor)
+      + 1/8 * simplex2.noise2D(8*x/factor, 8*y/factor)
+      + 1/16 * simplex2.noise2D(16*x/factor, 16*y/factor);
   var steepness = (
     // Rivers are thinner in mountains.
-    (riverNoise - (heightNoise > 0? heightNoise/42: 0) > 0.98
+    (riverNoise - (heightNoise > 0.6? riverNoise: 0) > 0.98
     // Seas are smaller in mountains.
     || seaNoise*3/4 + heightNoise/4 < -0.7) ?
         tileTypes.water:
@@ -114,10 +114,10 @@ function terrain(coord) {
     type: tileType(steepness, vegetation),
     rain: -vegetationNoise / 2
   };
-  if (memoizedTiles[q] == null) {
-    memoizedTiles[q] = [];
+  if (memoizedTiles[x] == null) {
+    memoizedTiles[x] = [];
   }
-  memoizedTiles[q][r] = tile;
+  memoizedTiles[x][y] = tile;
   return tile;
 }
 
