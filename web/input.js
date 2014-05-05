@@ -156,7 +156,7 @@ function insertPlaces(places) {
     // Add the place block.
     var tile = tileFromKey(place);
     aPlace.setAttribute('data-tilekey', place);
-    aPlace.innerHTML = '<div>→</div> ' + places[place];
+    aPlace.innerHTML = '<div style="position:absolute;">→</div> <br>' + places[place];
     aPlace.addEventListener('click', (function(t) {
       return function() {
         gotoPlace(t);
@@ -203,13 +203,18 @@ function orientPlacesArrow() {
   for (var i = 1; i < placesPanel.childNodes.length; i++) {
     var block = placesPanel.childNodes[i];
     if (block.getAttribute && block.getAttribute('data-tilekey') != null) {
-      var angle = -orientation({
-          x: origin.x0 + ((canvas.width / 2)|0),
-          y: origin.y0 + ((canvas.height / 2)|0)
-        }, pixelFromTile(tileFromKey(block.getAttribute('data-tilekey')),
-          {x0:0,y0:0}, hexaSize));
-      block.firstChild.style.transform = 'rotate(' + angle + 'rad)';
-      block.firstChild.style.WebkitTransform = 'rotate(' + angle + 'rad)';
+      var screenCenter = {
+        x: origin.x0 + ((canvas.width / 2)|0),
+        y: origin.y0 + ((canvas.height / 2)|0)
+      };
+      var tileCenter = pixelFromTile(tileFromKey(block.getAttribute('data-tilekey')),
+          {x0:0,y0:0}, hexaSize);
+      var angle = -orientation(screenCenter, tileCenter);
+      var arrow = block.firstChild;
+      arrow.style.transform = 'rotate(' + angle + 'rad)';
+      arrow.style.WebkitTransform = 'rotate(' + angle + 'rad)';
+      arrow.nextSibling.textContent =
+        kmDistance(screenCenter, tileCenter).toFixed(2) + 'km';
     }
   }
 }
@@ -220,6 +225,19 @@ function orientation(p1, p2) {
   var res = Math.atan((p1.y - p2.y) / Math.abs(p2.x - p1.x));
   if (p2.x < p1.x) { res = Math.PI - res; }
   return res;
+}
+
+// Distance in pixels between two pixels {x, y}.
+function pixelDistance(p1, p2) {
+  var horiz = Math.abs(p1.x - p2.x);
+  var vert = Math.abs(p1.y - p2.y);
+  return Math.sqrt(horiz * horiz + vert * vert);
+}
+
+// Distance in kilometers between two pixels {x, y}.
+// Each tile is about 50 meters from top to bottom.
+function kmDistance(p1, p2) {
+  return pixelDistance(p1, p2) / hexaSize * 0.025;
 }
 
 
