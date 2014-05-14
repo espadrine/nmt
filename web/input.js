@@ -959,14 +959,23 @@ function paintTiles(ctx, size, origin, cb) {
 // Cached paint reference is centered on the map origin.
 var cachedPaint = {};
 var cachePending = {};  // map from 'x:y' to truthy values.
+// Note: the callback `cb(canvas)` may be called several times.
 function getCachedPaint(size, origin, cacheX, cacheY, cb) {
   var pos = cacheX + ':' + cacheY;
   var cache = cachedPaint[pos];
-  if (cache === undefined) {
+  if (cache == null) {
     var canvasBuffer = document.createElement('canvas');
     canvasBuffer.width = canvas.width;
     canvasBuffer.height = canvas.height;
     var ctxBuffer = canvasBuffer.getContext('2d');
+    if (cache === undefined) {
+      // The cache was never there; it wasn't invalidated.
+      // Paint it black immediately.
+      ctxBuffer.fillStyle = 'black';
+      ctxBuffer.fillRect(0, 0, canvas.width, canvas.height);
+      cb(canvasBuffer);
+    }
+    // Deferred actual painting.
     if (cachePending[pos] === undefined) {
       cachePending[pos] = cb;
       paintTiles(ctxBuffer, size, { x0: cacheX, y0: cacheY }, function() {
@@ -978,10 +987,9 @@ function getCachedPaint(size, origin, cacheX, cacheY, cb) {
   } else { cb(cache); }
 }
 
-// Given a pixel relative to the center of the map, find the cache.
+// Given a pixel relative to the center of the map, find the region index.
 // Requires the cache's width and height.
-// Note: this relies on you calling getCachedPaint().
-function updateCachedRegion(width, height, cx, cy) {
+function regionFromPixel(width, height, cx, cy) {
   var x, y;  // Coordinates related to the nearest rectangle cache.
   var x = (cx % width);
   if (x < 0) { x += width; }    // x must be the distance from the right.
@@ -989,7 +997,13 @@ function updateCachedRegion(width, height, cx, cy) {
   if (y < 0) { y += height; }
   var cacheX = cx - x;
   var cacheY = cy - y;
-  delete cachedPaint[cacheX + ':' + cacheY];
+  return cacheX + ':' + cacheY;
+}
+
+// Force an update to the region paint (buildings and terrain).
+// Note: this relies on you calling getCachedPaint().
+function updateCachedRegion(width, height, cx, cy) {
+  cachedPaint[regionFromPixel(width, height, cx, cy)] = null;
 }
 
 // Given tiles = {tileKey:something}, update the cache. Mainly, buildings.
@@ -1033,16 +1047,14 @@ function paintTilesFromCache(ctx, size, origin, cb) {
   var top    = origin.y0 - y;
   var bottom = origin.y0 + height - y;
   var countDone = 0;
-  function makeDraw(x, y) {
+  var makeDraw = function makeDraw(x, y) {
     return function draw(cache) {
       ctx.drawImage(cache, x, y);
       // We have four jobs to make in total.
       countDone++;
       if (countDone >= 4) { cb(); }
     }
-  }
-  ctx.fillStyle = 'black';
-  ctx.fillRect(0, 0, width, height);
+  };
   getCachedPaint(size, origin, left, top, makeDraw(-x, -y));
   getCachedPaint(size, origin, right, top, makeDraw(width-x, -y));
   getCachedPaint(size, origin, left, bottom, makeDraw(-x, height-y));
