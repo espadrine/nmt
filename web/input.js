@@ -443,6 +443,26 @@ function paintAlongTiles(ctx, size, origin, tiles) {
 
 // Given a set of tiles {q, r} representing hexagon coordinates,
 // construct the path around those hexagons.
+function straightPathFromTiles(ctx, size, origin, tiles,
+                       hexHorizDistance, hexVertDistance) {
+  ctx.beginPath();
+  for (var tileKey in tiles) {
+    var tile = tileFromKey(tileKey);
+    var cp = pixelFromTile(tile, origin, size);
+    var cx = cp.x;
+    var cy = cp.y;
+    var mask = 0|0;
+    for (var f = 0; f < 6; f++) {
+      // For each, face, set the mask.
+      var neighbor = neighborFromTile(tile, f);
+      mask |= (((tiles[keyFromTile(neighbor)] !== undefined)|0) << f);
+    }
+    partialPathFromHex(ctx, size, cp, mask, hexHorizDistance, hexVertDistance);
+  }
+}
+
+// Given a set of tiles {q, r} representing hexagon coordinates,
+// construct the path around those hexagons.
 function pathFromTiles(ctx, size, origin, tiles,
                        hexHorizDistance, hexVertDistance) {
   ctx.beginPath();
@@ -460,6 +480,29 @@ function pathFromTiles(ctx, size, origin, tiles,
   }
   pathFromPolygons(ctx,
       polygonFromVertices(vertices, origin, size, hexHorizDistance));
+}
+
+// Just like `pathFromTiles` above, but with polygonally-drawn paths.
+function straightPolygonPathFromTiles(ctx, size, origin, tiles) {
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+  ctx.beginPath();
+  var vertices = [];
+  for (var tileKey in tiles) {
+    var tile = tileFromKey(tileKey);
+    var cp = pixelFromTile(tile, origin, size);
+    for (var f = 0; f < 6; f++) {
+      // For each face, add the vertices.
+      var neighbor = neighborFromTile(tile, f);
+      if (tiles[keyFromTile(neighbor)] === undefined) {
+        vertices = vertices.concat(vertexFromFace(tileKey, f));
+      }
+    }
+  }
+  var polygons = polygonFromVertices(vertices, origin, size, hexHorizDistance);
+  for (var i = 0; i < polygons.length; i++) {
+    partialPathFromPolygon(ctx, polygons[i]);
+  }
 }
 
 // Given a face 0…5 (0 = right, 1 = top right…), return the two vertices
@@ -683,6 +726,15 @@ function paintAroundTiles(ctx, size, origin, tiles, color) {
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   pathFromTiles(ctx, size, origin, tiles, hexHorizDistance, hexVertDistance);
+  ctx.strokeStyle = color || 'white';
+  ctx.stroke();
+}
+
+// Same as above, with the straight line algorithm.
+function paintStraightAroundTiles(ctx, size, origin, tiles, color) {
+  var hexHorizDistance = size * Math.sqrt(3);
+  var hexVertDistance = size * 3/2;
+  straightPathFromTiles(ctx, size, origin, tiles, hexHorizDistance, hexVertDistance);
   ctx.strokeStyle = color || 'white';
   ctx.stroke();
 }
@@ -1083,8 +1135,6 @@ function paint(ctx, size, origin) {
   paintTilesFromCache(ctx, size, origin, function() { paintIntermediateUI(ctx, size, origin); });
 }
 
-var humanTravelCache;
-
 // previousTile is a map from tileKey to the previous tileKey.
 function humanTravelToCache(currentTile, targetTile, previousTile) {
   var trajectory = [];
@@ -1307,12 +1357,22 @@ function paintCamps(ctx, size, origin) {
     visibleCamps[humans.c][visibleHumans[i]] = true;
   }
   for (var i = 0; i < numberOfCamps; i++) {
-    ctx.lineWidth = 4;
-    paintAroundTiles(ctx, size, origin, visibleCamps[i], '#777');
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = campHsl(i);
-    ctx.stroke();
-    ctx.lineWidth = 1;
+    if (size < 5) {
+      // We're too far above.
+      ctx.fillStyle = campHsl(i);
+      var visibleCamp = visibleCamps[i];
+      for (var key in visibleCamp) {
+        var px = pixelFromTile(tileFromKey(key), origin, size);
+        ctx.fillRect(px.x - size, px.y - size, 2 * size, 2 * size);
+      }
+    } else {
+      ctx.lineWidth = 4;
+      paintAroundTiles(ctx, size, origin, visibleCamps[i], '#777');
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = campHsl(i);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+    }
   }
 }
 
