@@ -1473,7 +1473,7 @@ function paintPopulation() {
   var left = 7;
   var width = 187;
   var height = 10;
-  var svg = '';
+  var svg = '<svg id=populationMonitor>';
   // Paint the border.
   svg += '<rect stroke="#345" stroke-width="1" x="0" y="0" rx="3" ry="3" width="'
     + (width) + '" height="' + (height) + '" />';
@@ -1497,8 +1497,9 @@ function paintPopulation() {
   popWidth = innerWidth - allButLastWidth;
   svg += '<rect fill="' + 'hsl(' + campHueCreator9000(i) + ',80%,50%)' + '"'
       + ' x="' + (start) + '" y="1" width="' + (popWidth) + '"'
-      + ' height="' + (height - 2) + '" />';
-  populationMonitor.innerHTML = svg;
+      + ' height="' + (height - 2) + '" /></svg>';
+  // Using outerHTML to avoid this bug: <https://bugzilla.mozilla.org/show_bug.cgi?id=886390>
+  populationMonitor.outerHTML = svg;
 }
 
 // Tile Messages.
