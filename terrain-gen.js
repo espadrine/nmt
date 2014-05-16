@@ -1,1 +1,486 @@
-function tileType(e,r){return r?tileVegetationTypeFromSteepness[e]:e}function terrain(e){var r=Math.sqrt(3)*(e.q+e.r/2)|0,i=1.5*e.r;if(null!=memoizedTiles[r]&&null!=memoizedTiles[r][i])return memoizedTiles[r][i];var t=simplex2.noise2D(i/500,r/500),s=1-Math.abs((4*simplex1.noise2D(r/4/factor,i/4/factor)+2*simplex1.noise2D(r/2/factor,i/2/factor)+1*simplex1.noise2D(r/1/factor,i/1/factor)+.5*simplex1.noise2D(2*r/factor,2*i/factor))/7.5),a=Math.sin(-(5*t)*Math.abs(simplex1.noise2D(.25*r/factor,.25*i/factor))+simplex1.noise2D(r/factor,i/factor)-.5*simplex1.noise2D(2*r/factor,2*i/factor)+.25*simplex1.noise2D(4*r/factor,4*i/factor)-1/8*simplex1.noise2D(8*r/factor,8*i/factor)+1/16*simplex1.noise2D(16*r/factor,16*i/factor)),n=-simplex2.noise2D(i/factor/8,r/factor/8)+simplex2.noise2D(i/factor/4,r/factor/4)+a/2,l=t*simplex2.noise2D(r/factor,i/factor)+.5*simplex2.noise2D(2*r/factor,2*i/factor)+.25*simplex2.noise2D(4*r/factor,4*i/factor)+1/8*simplex2.noise2D(8*r/factor,8*i/factor)+1/16*simplex2.noise2D(16*r/factor,16*i/factor),o=s-(a>.6?s:0)>.98||-.7>3*n/4+a/4?tileTypes.water:.1>a-s/2?tileTypes.steppe:.2>a-s?tileTypes.hill:tileTypes.mountain,p=l-(o===tileTypes.water?2*n:0)+Math.abs(a+.15)<0,m={steepness:o,vegetation:p,type:tileType(o,p),rain:-l/2};return null==memoizedTiles[r]&&(memoizedTiles[r]=[]),memoizedTiles[r][i]=m,m}function distance(e){var r=terrain(e),i=humanity(e),t=distances[i&&i.b?i.b:r.type];return void 0===t&&(t=distances[r.type]),t}function neighborFromTile(e,r){return 0===r?{q:e.q+1,r:e.r}:1===r?{q:e.q+1,r:e.r-1}:2===r?{q:e.q,r:e.r-1}:3===r?{q:e.q-1,r:e.r}:4===r?{q:e.q-1,r:e.r+1}:5===r?{q:e.q,r:e.r+1}:void 0}function keyFromTile(e){return e.q+":"+e.r}function tileFromKey(e){var r=e.split(":");return{q:+r[0],r:+r[1]}}function travelFrom(e,r){var i=humanity(e).c,t={},s=keyFromTile(e);t[s]=s;var a={};a[s]=0;var n=[];for(n.push(s);n.length>0;){s=n.shift();var l=humanity(tileFromKey(s));if(!l||null==l.c||l.c===i)for(var o=0;6>o;o++){var p=neighborFromTile(tileFromKey(s),o),m=a[s]+distance(p);if(r>=m){var u=keyFromTile(p);if(void 0!==a[u]&&m<a[u]&&delete a[u],void 0===a[u]&&void 0===t[u]){a[u]=m,t[u]=s;for(var c=-1,y=0;y<n.length;y++)if(void 0!==a[n[y]]){if(a[u]<=a[n[y]]){c=y;break}}else n.splice(y,1),y--;-1===c?n.push(u):n.splice(c,0,u)}}}}return t}function travelTo(e,r,i){var t=humanity(e).c,s=keyFromTile(r),a={},n={},l={},o=[],p={},m=keyFromTile(e);for(n[m]=0,o.push(m);o.length>0&&s!==m;){m=o.shift(),a[m]=!0;var u=humanity(tileFromKey(m));if(!u||null==u.c||u.c===t)for(var c=0;6>c;c++){var y=neighborFromTile(tileFromKey(m),c),d=n[m]+distance(y);if(i>=d){var T=keyFromTile(y);if(void 0!==n[T]&&d<n[T]&&delete n[T],void 0===n[T]&&void 0===a[T]){n[T]=d,l[T]=d+(Math.abs(r.q-y.q)+Math.abs(r.r-y.r)+Math.abs(r.q+r.r-y.q-y.r))/2;for(var f=-1,v=0;v<o.length;v++)if(void 0!==l[o[v]]){if(l[T]<=l[o[v]]){f=v;break}}else o.splice(v,1),v--;-1===f?o.push(T):o.splice(f,0,T),p[T]=m}}}}var h=[];if(s!==m)return h;for(;void 0!==p[s];)h.push(s),s=p[s];return h.push(keyFromTile(e)),h.reverse()}function setDistancesForHuman(e){0!==(e.o&manufacture.boat)?(distances[tileTypes.water]=1,distances[tileTypes.swamp]=1):0!==(e.o&manufacture.plane)&&(distances[tileTypes.water]=2,distances[tileTypes.swamp]=2)}function unsetDistancesForHuman(){distances[tileTypes.water]=normalWater,distances[tileTypes.swamp]=normalSwamp}function humanTravel(e){var r=humanity(e);if(!r||r.h<=0)return{};setDistancesForHuman(r);var i=travelFrom(e,speedFromHuman(r));return unsetDistancesForHuman(r),i}function humanTravelTo(e,r){var i=humanity(e);if(!i||i.h<=0)return[];setDistancesForHuman(i);var t=travelTo(e,r,speedFromHuman(i));return unsetDistancesForHuman(i),t}function speedFromHuman(e){return 0!==(e.o&manufacture.plane)?32:0!==(e.o&manufacture.car)?16:8}function validConstruction(e,r,i){if(null==e)return!0;var t=humanity(r),s=terrain(r),a=i.lumber-i.usedLumber,n=i.metal-i.usedMetal,l=i.farm-i.usedFarm;if(!t||t.h<=0)return!1;if(s.type===tileTypes.water&&(e===tileTypes.farm||e===tileTypes.residence||e===tileTypes.skyscraper||e===tileTypes.factory||e===tileTypes.airland||e===tileTypes.airport||e===tileTypes.gunsmith))return!1;if(void 0!==buildingTileDependency[e]){for(var o=!1,p=0;p<buildingTileDependency[e].length;p++)(buildingTileDependency[e][p]===s.type||buildingTileDependency[e][p]===t.b)&&(o=!0);if(!o)return!1}if(void 0!==buildingDependencies[e]){for(var m=buildingDependencies[e],u=new Array(m.length),p=0;p<u.length;p++)u[p]=0;for(var p=0;6>p;p++)for(var c=neighborFromTile(r,p),y=humanity(c),d=terrain(c),T=0;T<m.length;T++)if(m[T][1]>=0&&y&&y.b===m[T][1]||d.type===m[T][1])u[T]++;else if(m[T][1]<0){if(m[T][1]===resourceTypes.lumber&&a<m[T][0])return!1;if(m[T][1]===resourceTypes.metal&&n<m[T][0])return!1;if(m[T][1]===resourceTypes.farm&&l<m[T][0])return!1;u[T]=m[T][0]}for(var T=0;T<u.length;T++)if(u[T]<m[T][0])return!1;return!0}return!0}function addPlan(e){plans[e.at]=e}function eachPlan(e){for(var r in plans)e(plans[r])}function clearPlans(){plans={}}var SimplexNoise=require("simplex-noise"),MersenneTwister=require("./mersenne-twister"),humanity=require("./humanity"),prng=new MersenneTwister(0),simplex1=new SimplexNoise(prng.random.bind(prng)),simplex2=new SimplexNoise(prng.random.bind(prng)),factor=50,tileTypes={water:0,steppe:1,hill:2,mountain:3,swamp:4,meadow:5,forest:6,taiga:7,farm:8,residence:9,skyscraper:10,factory:11,dock:12,airland:13,airport:14,gunsmith:15,road:16,wall:17,blackdeath:18,metal:19,lumber:20,mine:21,industry:22,citrus:23,university:24},buildingTypes=[8,9,10,11,12,13,14,15,16,17,20,21,22,24],resourceTypes={lumber:-1,metal:-2,farm:-3},tileVegetationTypeFromSteepness=[];tileVegetationTypeFromSteepness[tileTypes.water]=tileTypes.swamp,tileVegetationTypeFromSteepness[tileTypes.steppe]=tileTypes.meadow,tileVegetationTypeFromSteepness[tileTypes.hill]=tileTypes.forest,tileVegetationTypeFromSteepness[tileTypes.mountain]=tileTypes.taiga;var memoizedTiles=[],distances=[];distances[tileTypes.water]=2989,distances[tileTypes.steppe]=2,distances[tileTypes.hill]=4,distances[tileTypes.mountain]=16,distances[tileTypes.swamp]=8,distances[tileTypes.meadow]=3,distances[tileTypes.forest]=8,distances[tileTypes.taiga]=24,distances[tileTypes.road]=1,distances[tileTypes.wall]=32;var normalWater=distances[tileTypes.water],normalSwamp=distances[tileTypes.swamp],manufacture={boat:1,car:2,plane:4,gun:8},buildingDependencies=[,,,,,,,,,[[2,tileTypes.farm]],[[6,tileTypes.residence]],[[3,tileTypes.residence],[2,tileTypes.road]],[[1,tileTypes.residence],[1,tileTypes.water],[1,resourceTypes.lumber]],[[2,tileTypes.road]],[[1,tileTypes.gunsmith],[3,tileTypes.airland],[1,resourceTypes.lumber]],[[1,tileTypes.skyscraper],[1,tileTypes.factory]],,,,,[[1,tileTypes.residence]],[[1,resourceTypes.lumber],[1,tileTypes.factory]],[[10,resourceTypes.farm],[1,tileTypes.mine],[5,tileTypes.road]],,[[1,resourceTypes.metal],[20,resourceTypes.farm],[2,tileTypes.wall]]],buildingTileDependency=[,,,,,,,,,,,,,,,,,,,,[tileTypes.forest,tileTypes.taiga],[tileTypes.metal],,,[tileTypes.citrus]],planTypes={move:1,build:2},plans={};module.exports=terrain,module.exports.travel=humanTravelTo,module.exports.humanTravel=humanTravel,module.exports.tileTypes=tileTypes,module.exports.buildingTypes=buildingTypes,module.exports.buildingDependencies=buildingDependencies,module.exports.manufacture=manufacture,module.exports.validConstruction=validConstruction,module.exports.neighborFromTile=neighborFromTile,module.exports.tileFromKey=tileFromKey,module.exports.keyFromTile=keyFromTile,module.exports.planTypes=planTypes,module.exports.addPlan=addPlan,module.exports.eachPlan=eachPlan,module.exports.clearPlans=clearPlans;
+var SimplexNoise = require('simplex-noise');
+var MersenneTwister = require('./mersenne-twister');
+var humanity = require('./humanity');
+
+var prng = new MersenneTwister(0);
+var simplex1 = new SimplexNoise(prng.random.bind(prng));
+var simplex2 = new SimplexNoise(prng.random.bind(prng));
+
+// Parameter to how stretched the map is.
+var factor = 50;
+
+// The following are actually constants.
+var tileTypes = {
+  water:        0,
+  steppe:       1,
+  hill:         2,
+  mountain:     3,
+  swamp:        4,
+  meadow:       5,
+  forest:       6,
+  taiga:        7,
+  farm:         8,
+  residence:    9,
+  skyscraper:   10,
+  factory:      11,
+  dock:         12,
+  airland:      13,
+  airport:      14,
+  gunsmith:     15,
+  road:         16,
+  wall:         17,
+  blackdeath:   18,
+  metal:        19,
+  lumber:       20,
+  mine:         21,
+  industry:     22,
+  citrus:       23,
+  university:   24
+};
+var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24 ];
+
+var resourceTypes = {
+  lumber:   -1,
+  metal:    -2,
+  farm:     -3
+};
+
+var tileVegetationTypeFromSteepness = [];
+tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
+tileVegetationTypeFromSteepness[tileTypes.steppe]   = tileTypes.meadow;
+tileVegetationTypeFromSteepness[tileTypes.hill]     = tileTypes.forest;
+tileVegetationTypeFromSteepness[tileTypes.mountain] = tileTypes.taiga;
+
+function tileType(steepness, vegetation) {
+  if (vegetation) { return tileVegetationTypeFromSteepness[steepness]; }
+  else { return steepness; }
+}
+
+// (Sparse) Array of array of tiles.
+var memoizedTiles = [];
+
+// Get information about the tile at hexagonal coordinates `coord` {q, r}.
+// Returns
+//  - steepness: altitude level. See `tileTypes`.
+//  - vegetation: boolean; whether there is vegetation.
+//  - type: tile type. See `tileTypes`.
+//  - rain: floating point number between -1 and 1, representing how heavy the
+//  rainfall is.
+function terrain(coord) {
+  var x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
+  var y = (3/2 * coord.r);
+  if (memoizedTiles[x] != null && memoizedTiles[x][y] != null) {
+    return memoizedTiles[x][y];
+  }
+  var size = simplex2.noise2D(y/500, x/500);
+  var riverNoise = 1-Math.abs((
+      + 4 * (simplex1.noise2D(x/4/factor, y/4/factor))
+      + 2 * (simplex1.noise2D(x/2/factor, y/2/factor))
+      + 1 * (simplex1.noise2D(x/1/factor, y/1/factor))
+      + 1/2 * (simplex1.noise2D(x*2/factor, y*2/factor))
+      )/(1/2+1+2+4));
+  var heightNoise = Math.sin(
+      // Abs gives valleys.
+      - (size * 5) * Math.abs(simplex1.noise2D(1/4*x/factor, 1/4*y/factor))
+      + simplex1.noise2D(x/factor, y/factor)
+      - 1/2 * simplex1.noise2D(2*x/factor, 2*y/factor)
+      + 1/4 * simplex1.noise2D(4*x/factor, 4*y/factor)
+      - 1/8 * simplex1.noise2D(8*x/factor, 8*y/factor)
+      + 1/16 * simplex1.noise2D(16*x/factor, 16*y/factor));
+  var seaNoise = -simplex2.noise2D(y/factor/8, x/factor/8)
+      + simplex2.noise2D(y/factor/4, x/factor/4)
+      + heightNoise/2;
+  var vegetationNoise = (size) * simplex2.noise2D(x/factor, y/factor)
+      + 1/2 * simplex2.noise2D(2*x/factor, 2*y/factor)
+      + 1/4 * simplex2.noise2D(4*x/factor, 4*y/factor)
+      + 1/8 * simplex2.noise2D(8*x/factor, 8*y/factor)
+      + 1/16 * simplex2.noise2D(16*x/factor, 16*y/factor);
+  var steepness = (
+    // Rivers are thinner in mountains.
+    (riverNoise - (heightNoise > 0.6? riverNoise: 0) > 0.98
+    // Seas are smaller in mountains.
+    || seaNoise*3/4 + heightNoise/4 < -0.7) ?
+        tileTypes.water:
+    (heightNoise - riverNoise/2 < 0.1) ?
+        tileTypes.steppe:
+    // Mountains are cut off (by hills) to avoid circular mountain formations.
+    (heightNoise - riverNoise < 0.2) ?
+        tileTypes.hill:
+        tileTypes.mountain);
+  var vegetation = (vegetationNoise
+      // Less vegetation on water.
+      - (steepness === tileTypes.water? 2 * seaNoise: 0)
+      + Math.abs(heightNoise + 0.15)) < 0;
+
+  var tile = {
+    steepness: steepness,
+    vegetation: vegetation,
+    type: tileType(steepness, vegetation),
+    rain: -vegetationNoise / 2
+  };
+  if (memoizedTiles[x] == null) {
+    memoizedTiles[x] = [];
+  }
+  memoizedTiles[x][y] = tile;
+  return tile;
+}
+
+// Movements.
+var distances = [];
+distances[tileTypes.water]    = 0xbad;
+distances[tileTypes.steppe]   = 2;
+distances[tileTypes.hill]     = 4;
+distances[tileTypes.mountain] = 16;
+distances[tileTypes.swamp]    = 8;
+distances[tileTypes.meadow]   = 3;
+distances[tileTypes.forest]   = 8;
+distances[tileTypes.taiga]    = 24;
+distances[tileTypes.road]     = 1;
+distances[tileTypes.wall]     = 32;
+
+function distance(tpos) {
+  var t = terrain(tpos);
+  var h = humanity(tpos);
+  var d = distances[(h && h.b)? h.b: t.type];
+  if (d === undefined) { d = distances[t.type]; }
+  return d;
+}
+
+// Find a neighboring tile.
+// `tile` is {q, r}.
+// `orientation` is 0 for right, 1 for top right, and
+// so on counter-clockwise until 5 for bottom right.
+function neighborFromTile(tile, orientation) {
+  if (orientation === 0) { return { q: tile.q + 1, r: tile.r };
+  } else if (orientation === 1) { return { q: tile.q + 1, r: tile.r - 1 };
+  } else if (orientation === 2) { return { q: tile.q, r: tile.r - 1};
+  } else if (orientation === 3) { return { q: tile.q - 1, r: tile.r };
+  } else if (orientation === 4) { return { q: tile.q - 1, r: tile.r + 1 };
+  } else if (orientation === 5) { return { q: tile.q, r: tile.r + 1 };
+  }
+}
+
+// Return a string key unique to the tile.
+function keyFromTile(tile) { return tile.q + ':' + tile.r; }
+function tileFromKey(key) {
+  var values = key.split(':');
+  return { q: +values[0], r: +values[1] };
+}
+
+// Find the set of tiles one can move to, from a starter tile.
+// Requires humans to be on that tile.
+// `tstart` is a {q, r} tile position. (It's Dijkstra.)
+// Returns a map from tileKey (see keyFromTile) to the tile key whence we come.
+function travelFrom(tstart, speed) {
+  var camp = humanity(tstart).c;    // Camp which wants to travel.
+  var walkedTiles = {};     // Valid accessible tiles.
+  var current = keyFromTile(tstart);
+  walkedTiles[current] = current;
+  var consideredTiles = {}; // Map from tile keys to distance walked.
+  consideredTiles[current] = 0;
+  var fastest = [];         // List of tile keys from fastest to slowest.
+  fastest.push(current);
+  // Going through each considered tile.
+  while (fastest.length > 0) {
+    current = fastest.shift();
+    // Check the camp. Is there a potential battle?
+    var humanityNeighbor = humanity(tileFromKey(current));
+    if (humanityNeighbor && humanityNeighbor.c != null
+        && humanityNeighbor.c !== camp) {
+      continue;
+    }
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tileFromKey(current), i);
+      var newDistance = consideredTiles[current] + distance(neighbor);
+      if (newDistance <= speed) {
+        // Update data.
+        var neighborKey = keyFromTile(neighbor);
+        if (consideredTiles[neighborKey] !== undefined &&
+            newDistance < consideredTiles[neighborKey]) {
+          // We have a better path to this tile.
+          delete consideredTiles[neighborKey];
+        }
+        if (consideredTiles[neighborKey] === undefined &&
+            walkedTiles[neighborKey] === undefined) {
+          consideredTiles[neighborKey] = newDistance;
+          walkedTiles[neighborKey] = current;
+          // Where should we insert it in `fastest`?
+          var insertionIndex = -1;
+          for (var k = 0; k < fastest.length; k++) {
+            if (consideredTiles[fastest[k]] === undefined) {
+              fastest.splice(k, 1);  // Has been removed before.
+              k--;
+              continue;
+            }
+            if (consideredTiles[neighborKey] <= consideredTiles[fastest[k]]) {
+              insertionIndex = k;
+              break;
+            }
+          }
+          if (insertionIndex === -1) { fastest.push(neighborKey); }
+          else { fastest.splice(insertionIndex, 0, neighborKey); }
+        }
+      }
+    }
+  }
+  return walkedTiles;
+}
+
+// Find the path from tstart = {q, r} to tend = {q, r}
+// with a minimal distance, at a certain speed. (It's A*.)
+// Requires humans to be on that tile.
+// Returns a list of tiles = "q:r" through the trajectory.
+function travelTo(tstart, tend, speed) {
+  var camp = humanity(tstart).c;    // Camp which wants to travel.
+  var endKey = keyFromTile(tend);
+  var walkedTiles = {};     // Valid accessed tiles.
+  var consideredTiles = {}; // Map from tile keys to distance walked.
+  var heuristic = {};       // Just like consideredTiles, with heuristic.
+  var fastest = [];         // List of tile keys from fastest to slowest.
+  var parents = {};         // Map from tile keys to parent tile keys.
+  var current = keyFromTile(tstart);
+  consideredTiles[current] = 0;
+  fastest.push(current);
+  // Going through each considered tile.
+  while (fastest.length > 0 && endKey !== current) {
+    current = fastest.shift();
+    walkedTiles[current] = true;
+    // Check the camp. Is there a potential battle?
+    var humanityNeighbor = humanity(tileFromKey(current));
+    if (humanityNeighbor && humanityNeighbor.c != null
+        && humanityNeighbor.c !== camp) {
+      continue;
+    }
+    for (var i = 0; i < 6; i++) {
+      var neighbor = neighborFromTile(tileFromKey(current), i);
+      var newDistance = consideredTiles[current] + distance(neighbor);
+      if (newDistance <= speed) {
+        var neighborKey = keyFromTile(neighbor);
+        if (consideredTiles[neighborKey] !== undefined &&
+            newDistance < consideredTiles[neighborKey]) {
+          // We have a better path to this tile.
+          delete consideredTiles[neighborKey];
+        }
+        if (consideredTiles[neighborKey] === undefined &&
+            walkedTiles[neighborKey] === undefined) {
+          consideredTiles[neighborKey] = newDistance;
+          heuristic[neighborKey] = newDistance + (
+              Math.abs(tend.q - neighbor.q) +
+              Math.abs(tend.r - neighbor.r) +
+              Math.abs(tend.q + tend.r - neighbor.q - neighbor.r)) / 2;
+          // Where should we insert it in `fastest`?
+          var insertionIndex = -1;
+          for (var k = 0; k < fastest.length; k++) {
+            if (heuristic[fastest[k]] === undefined) {
+              fastest.splice(k, 1);  // Has been removed before.
+              k--;
+              continue;
+            }
+            if (heuristic[neighborKey] <= heuristic[fastest[k]]) {
+              insertionIndex = k;
+              break;
+            }
+          }
+          if (insertionIndex === -1) { fastest.push(neighborKey); }
+          else { fastest.splice(insertionIndex, 0, neighborKey); }
+          parents[neighborKey] = current;
+        }
+      }
+    }
+  }
+  var path = [];
+  if (endKey !== current) { return path; }  // No dice. ☹
+  while (parents[endKey] !== undefined) {
+    path.push(endKey);
+    endKey = parents[endKey];
+  }
+  path.push(keyFromTile(tstart));
+  return path.reverse();
+}
+
+var normalWater = distances[tileTypes.water];
+var normalSwamp = distances[tileTypes.swamp];
+function setDistancesForHuman(h) {
+  if ((h.o & manufacture.boat) !== 0) {
+    distances[tileTypes.water] = 1;
+    distances[tileTypes.swamp] = 1;
+  } else if ((h.o & manufacture.plane) !== 0) {
+    distances[tileTypes.water] = 2;
+    distances[tileTypes.swamp] = 2;
+  }
+}
+function unsetDistancesForHuman(h) {
+  distances[tileTypes.water] = normalWater;
+  distances[tileTypes.swamp] = normalSwamp;
+}
+function humanTravel(tpos) {
+  var h = humanity(tpos);
+  if (!h || h.h <= 0) { return {}; }
+  setDistancesForHuman(h);
+  var tiles = travelFrom(tpos, speedFromHuman(h));
+  unsetDistancesForHuman(h);
+  return tiles;
+}
+
+function humanTravelTo(tpos, tend) {
+  var h = humanity(tpos);
+  if (!h || h.h <= 0) { return []; }
+  setDistancesForHuman(h);
+  var tiles = travelTo(tpos, tend, speedFromHuman(h));
+  unsetDistancesForHuman(h);
+  return tiles;
+}
+
+
+
+// Humanity
+
+var manufacture = {
+  boat: 1,
+  car: 2,
+  plane: 4,
+  gun: 8
+};
+
+function speedFromHuman(human) {
+  if ((human.o & manufacture.plane) !== 0) {
+    return 32;
+  } else if ((human.o & manufacture.car) !== 0) {
+    return 16;
+  } else { return 8; }
+}
+
+// The index is the tileTypes id.
+// It is a list of [number, tileType] requirements to build something.
+// This is for tiles around the building.
+var buildingDependencies = [,,,,,,,,
+    ,
+    [[2, tileTypes.farm]],      // residence [9].
+    [[6, tileTypes.residence]],
+    [[3, tileTypes.residence], [2, tileTypes.road]],
+    [[1, tileTypes.residence], [1, tileTypes.water], [1, resourceTypes.lumber]],
+    [[2, tileTypes.road]],
+    [[1, tileTypes.gunsmith], [3, tileTypes.airland], [1, resourceTypes.lumber]],
+    [[1, tileTypes.skyscraper], [1, tileTypes.factory]],
+    ,
+    ,
+    ,
+    ,
+    [[1, tileTypes.residence]],
+    [[1, resourceTypes.lumber], [1, tileTypes.factory]],
+    [[10, resourceTypes.farm], [1, tileTypes.mine], [5, tileTypes.road]],
+    ,
+    [[1, resourceTypes.metal], [20, resourceTypes.farm], [2, tileTypes.wall]]
+];
+// What the current tile must hold to allow a building to be constructed.
+var buildingTileDependency = [,,,,,,,, ,,,,,,,,,,,,
+    [tileTypes.forest, tileTypes.taiga],         // Lumber [20]
+    [tileTypes.metal],,,
+    [tileTypes.citrus]
+];
+
+// Given a building (see tileTypes) and a tile = {q, r},
+// check whether the building can be built there.
+// resources = {lumber, usedLumber, metal, usedMetal} is the resources available
+// for use in the current camp.
+function validConstruction(building, tile, resources) {
+  if (building == null) { return true; }   // Destruction is always valid.
+  var humanityTile = humanity(tile);
+  var tileInfo = terrain(tile);
+  var spareLumber = resources.lumber - resources.usedLumber;
+  var spareMetal = resources.metal - resources.usedMetal;
+  var spareFarm = resources.farm - resources.usedFarm;
+  if (!humanityTile || humanityTile.h <= 0) { return false; }
+  // Requirements on the current tile.
+  if (tileInfo.type === tileTypes.water &&
+      (building === tileTypes.farm || building === tileTypes.residence ||
+       building === tileTypes.skyscraper || building === tileTypes.factory ||
+       building === tileTypes.airland || building === tileTypes.airport ||
+       building === tileTypes.gunsmith)) { return false; }
+  if (buildingTileDependency[building] !== undefined) {
+    var validCurrentTile = false;
+    for (var i = 0; i < buildingTileDependency[building].length; i++) {
+      if (buildingTileDependency[building][i] === tileInfo.type ||
+          buildingTileDependency[building][i] === humanityTile.b) {
+        validCurrentTile = true;
+      }
+    }
+    if (!validCurrentTile) { return false; }
+  }
+  // Requirements on the surrounding tiles.
+  if (buildingDependencies[building] !== undefined) {
+    // There are dependency requirements.
+    var requiredDependencies = buildingDependencies[building];
+    var dependencies = new Array(requiredDependencies.length);
+    for (var i = 0; i < dependencies.length; i++) { dependencies[i] = 0; }
+    for (var i = 0; i < 6; i++) {
+      // Check all neighbors for dependencies.
+      var neighbor = neighborFromTile(tile, i);
+      var humanityNeighbor = humanity(neighbor);
+      var terrainNeighbor = terrain(neighbor);
+      for (var j = 0; j < requiredDependencies.length; j++) {
+        if (requiredDependencies[j][1] >= 0 && (humanityNeighbor
+             && humanityNeighbor.b === requiredDependencies[j][1]) ||
+            terrainNeighbor.type === requiredDependencies[j][1]) {
+          dependencies[j]++;
+        } else if (requiredDependencies[j][1] < 0) {
+          // Resources.
+          if (requiredDependencies[j][1] === resourceTypes.lumber
+              && spareLumber < requiredDependencies[j][0]) {
+              return false;
+          } else if (requiredDependencies[j][1] === resourceTypes.metal
+              && spareMetal < requiredDependencies[j][0]) {
+              return false;
+          } else if (requiredDependencies[j][1] === resourceTypes.farm
+              && spareFarm < requiredDependencies[j][0]) {
+              return false;
+          }
+          dependencies[j] = requiredDependencies[j][0];
+        }
+      }
+    }
+    // Check that we have the correct number of buildings around.
+    for (var j = 0; j < dependencies.length; j++) {
+      if (dependencies[j] < requiredDependencies[j][0]) {
+        return false;
+      }
+    }
+    return true;
+  } else { return true; }
+  return false;
+}
+
+
+// Remote connection.
+//
+
+var planTypes = {
+  move: 1,
+  build: 2
+};
+
+var plans = {};
+function addPlan(plan) { plans[plan.at] = plan; }
+function eachPlan(f) {
+  for (var tileKey in plans) { f(plans[tileKey]); }
+}
+function clearPlans() { plans = {}; }
+
+
+module.exports = terrain;
+module.exports.travel = humanTravelTo;
+module.exports.humanTravel = humanTravel;
+module.exports.tileTypes = tileTypes;
+module.exports.buildingTypes = buildingTypes;
+module.exports.buildingDependencies = buildingDependencies;
+module.exports.manufacture = manufacture;
+module.exports.validConstruction = validConstruction;
+module.exports.neighborFromTile = neighborFromTile;
+
+module.exports.tileFromKey = tileFromKey;
+module.exports.keyFromTile = keyFromTile;
+
+module.exports.planTypes = planTypes;
+module.exports.addPlan = addPlan;
+module.exports.eachPlan = eachPlan;
+module.exports.clearPlans = clearPlans;

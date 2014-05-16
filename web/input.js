@@ -89,10 +89,10 @@ function socketMessage(e) {
     paintPopulation();
     updateCurrentTileInformation();
     // Update paint cache for each building change.
-    updateCachedPaint(hexaSize, origin, change);
+    updateCachedPaint(gs, change);
   }
-  paint(ctx, hexaSize, origin);
-  paintHumans(ctx, hexaSize, origin, humanityData);
+  paint(gs);
+  paintHumans(gs, humanityData);
 }
 function socketError(e) {
   retries++;
@@ -138,6 +138,7 @@ function sendBuild(at, building) {
   } else { connectSocket(function(){sendBuild(at, building);}); }
 }
 
+// List of camp names, indexed by the camp ID.
 var campNames;
 
 var defaultPlacesPanelHTML = placesPanel.innerHTML;
@@ -160,7 +161,7 @@ function insertPlaces(places) {
     aPlace.addEventListener('click', (function(t) {
       return function() {
         gotoPlace(t);
-        paint(ctx, hexaSize, origin);
+        paint(gs);
       };
     }(tile)));
     placesPanel.appendChild(aPlace);
@@ -193,9 +194,9 @@ function humanityResource(resource) {
 // Focus the screen on tile t = {q, r}.
 // Changes `origin`.
 function gotoPlace(t) {
-  var placePixel = pixelFromTile(t, { x0:0, y0:0 }, hexaSize);
-  origin.x0 = placePixel.x - ((canvas.width / 2)|0);
-  origin.y0 = placePixel.y - ((canvas.height / 2)|0);
+  var placePixel = pixelFromTile(t, { x0:0, y0:0 }, gs.hexSize);
+  gs.origin.x0 = placePixel.x - ((gs.width / 2)|0);
+  gs.origin.y0 = placePixel.y - ((gs.height / 2)|0);
 }
 
 // Orient the arrows in the Places panel.
@@ -204,11 +205,11 @@ function orientPlacesArrow() {
     var block = placesPanel.childNodes[i];
     if (block.getAttribute && block.getAttribute('data-tilekey') != null) {
       var screenCenter = {
-        x: origin.x0 + ((canvas.width / 2)|0),
-        y: origin.y0 + ((canvas.height / 2)|0)
+        x: gs.origin.x0 + ((gs.width / 2)|0),
+        y: gs.origin.y0 + ((gs.height / 2)|0)
       };
       var tileCenter = pixelFromTile(tileFromKey(block.getAttribute('data-tilekey')),
-          {x0:0,y0:0}, hexaSize);
+          {x0:0,y0:0}, gs.hexSize);
       var angle = -orientation(screenCenter, tileCenter);
       var arrow = block.firstChild;
       arrow.style.transform = 'rotate(' + angle + 'rad)';
@@ -237,7 +238,7 @@ function pixelDistance(p1, p2) {
 // Distance in kilometers between two pixels {x, y}.
 // Each tile is about 50 meters from top to bottom.
 function kmDistance(p1, p2) {
-  return pixelDistance(p1, p2) / hexaSize * 0.025;
+  return pixelDistance(p1, p2) / gs.hexSize * 0.025;
 }
 
 
@@ -278,6 +279,42 @@ function changeHumanity(humanityData, change) {
 }
 
 
+
+// User Interface Heads-Up Display functions.
+
+var helpPane = document.getElementById('helpPane');
+addEventListener('load', function showIntro() {
+  if (!localStorage.getItem('firstRun')) {
+    localStorage.setItem('firstRun', 'no');
+  } else if (Math.random() < 0.5 &&
+    localStorage.getItem('paid') !== ''+(new Date()).getFullYear()) {
+    showHelp('intro');
+  }
+});
+
+// theme is a String.
+function showHelp(theme) {
+  helpPane.src = 'help/' + theme + '.html';
+  helpPane.onload = function() {
+    helpPane.style.display = 'block';
+    helpPane.style.height =
+      (helpPane.contentWindow.document.body.clientHeight + 40) + 'px';
+    addEventListener('click', hideHelp);
+  };
+}
+
+function hideHelp() {
+  helpPane.style.display = 'none';
+  removeEventListener('click', hideHelp);
+}
+
+// Some links to help.
+travelPanel.onclick = function() { showHelp('welcome'); };
+buildPanel.firstElementChild.onclick = function() { showHelp('build'); };
+
+
+
+// Graphic State functions.
 // Painting primitives.
 //
 
@@ -332,6 +369,22 @@ function pixelFromTile(p, px0, size) {
   };
 }
 
+// Sprites.
+
+function loadSprites() {
+  var img = new Image();
+  img.src = 'sprites.png';
+  return img;
+}
+var sprites = loadSprites();
+// Canvas with the sprites on it. Set when loaded.
+var spritesLoaded = false;
+sprites.onload = function loadingSprites() {
+  spritesLoaded = true;
+  paint(gs);
+};
+
+
 // Size of radius of the smallest disk containing the hexagon.
 var hexaSize = 20;
 // Pixel position of the top left screen pixel,
@@ -348,56 +401,35 @@ canvas.height = document.documentElement.clientHeight;
 document.styleSheets[0].insertRule('div.controlPanel { max-height:' +
   (canvas.height - 16 - 58) + 'px; }', 0);
 
-var helpPane = document.getElementById('helpPane');
-addEventListener('load', function showIntro() {
-  if (!localStorage.getItem('firstRun')) {
-    localStorage.setItem('firstRun', 'no');
-  } else if (Math.random() < 0.5 &&
-    localStorage.getItem('paid') !== ''+(new Date()).getFullYear()) {
-    showHelp('intro');
-  }
-});
-
-// theme is a String.
-function showHelp(theme) {
-  helpPane.src = 'help/' + theme + '.html';
-  helpPane.onload = function() {
-    helpPane.style.display = 'block';
-    helpPane.style.height =
-      (helpPane.contentWindow.document.body.clientHeight + 40) + 'px';
-    addEventListener('click', hideHelp);
+// Include all information pertaining to the state of the canvas.
+// canvas: a DOM HTML canvas.
+// sprites: a DOM Image of the sprites.
+function makeGraphicState(canvas, sprites) {
+  var ctx = canvas.getContext('2d');
+  // Size of radius of the smallest disk containing the hexagon.
+  var hexSize = 20;
+  var spritesWidth = hexSize * 2;  // Each element of the sprite is 2x20px.
+  return {
+    hexSize: hexSize,
+    // Pixel position of the top left screen pixel,
+    // compared to the origin (pixel (0, 0)) of the map.
+    origin: { x0: 0, y0: 0 },
+    canvas: canvas,
+    ctx: ctx,
+    width: canvas.width,
+    height: canvas.height,
+    sprites: sprites,
+    spritesWidth: spritesWidth
   };
 }
-
-function hideHelp() {
-  helpPane.style.display = 'none';
-  removeEventListener('click', hideHelp);
-}
-
-// Some links to help.
-travelPanel.onclick = function() { showHelp('welcome'); };
-buildPanel.firstElementChild.onclick = function() { showHelp('build'); };
-
-
-function loadSprites() {
-  var img = new Image();
-  img.src = 'sprites.png';
-  return img;
-}
-var sprites = loadSprites();
-// Canvas with the sprites on it. Set when loaded.
-var spritesWidth = hexaSize * 2;  // Each element of the sprite is 2x20px.
-var spritesLoaded = false;
-sprites.onload = function loadingSprites() {
-  spritesLoaded = true;
-  paint(ctx, hexaSize, origin);
-};
+var gs = makeGraphicState(document.getElementById('canvas'), sprites);
 
 
 // Given a list of tile key "q:r" representing hexagon coordinates,
 // construct the path along each hexagon's center.
-function pathAlongTiles(ctx, size, origin, tiles,
-                       hexHorizDistance, hexVertDistance) {
+// gs is the GraphicState.
+function pathAlongTiles(gs, tiles) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   ctx.beginPath();
   if (tiles.length < 2) { return; }
   var penultimate;
@@ -427,10 +459,10 @@ function pathAlongTiles(ctx, size, origin, tiles,
 
 // Given a list of tile key "q:r" representing hexagon coordinates,
 // draw the path along each hexagon's center.
-function paintAlongTiles(ctx, size, origin, tiles) {
-  var hexHorizDistance = size * Math.sqrt(3);
-  var hexVertDistance = size * 3/2;
-  pathAlongTiles(ctx, size, origin, tiles, hexHorizDistance, hexVertDistance);
+// gs is the GraphicState.
+function paintAlongTiles(gs, tiles) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
+  pathAlongTiles(gs, tiles);
   ctx.strokeStyle = '#ccf';
   ctx.lineWidth = '5';
   ctx.stroke();
@@ -443,8 +475,9 @@ function paintAlongTiles(ctx, size, origin, tiles) {
 
 // Given a set of tiles {q, r} representing hexagon coordinates,
 // construct the path around those hexagons.
-function straightPathFromTiles(ctx, size, origin, tiles,
-                       hexHorizDistance, hexVertDistance) {
+// gs is the GraphicState.
+function straightPathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   ctx.beginPath();
   for (var tileKey in tiles) {
     var tile = tileFromKey(tileKey);
@@ -457,14 +490,16 @@ function straightPathFromTiles(ctx, size, origin, tiles,
       var neighbor = neighborFromTile(tile, f);
       mask |= (((tiles[keyFromTile(neighbor)] !== undefined)|0) << f);
     }
-    partialPathFromHex(ctx, size, cp, mask, hexHorizDistance, hexVertDistance);
+    partialPathFromHex(gs, cp, mask, hexHorizDistance, hexVertDistance);
   }
 }
 
 // Given a set of tiles {q, r} representing hexagon coordinates,
 // construct the path around those hexagons.
-function pathFromTiles(ctx, size, origin, tiles,
-                       hexHorizDistance, hexVertDistance) {
+// gs is the GraphicState.
+// gs is the GraphicState.
+function pathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   ctx.beginPath();
   var vertices = [];
   for (var tileKey in tiles) {
@@ -478,12 +513,14 @@ function pathFromTiles(ctx, size, origin, tiles,
       }
     }
   }
-  pathFromPolygons(ctx,
-      polygonFromVertices(vertices, origin, size, hexHorizDistance));
+  pathFromPolygons(gs,
+      polygonFromVertices(gs, vertices, hexHorizDistance));
 }
 
 // Just like `pathFromTiles` above, but with polygonally-drawn paths.
-function straightPolygonPathFromTiles(ctx, size, origin, tiles) {
+// gs is the GraphicState.
+function straightPolygonPathFromTiles(gs, tiles) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   ctx.beginPath();
@@ -499,9 +536,9 @@ function straightPolygonPathFromTiles(ctx, size, origin, tiles) {
       }
     }
   }
-  var polygons = polygonFromVertices(vertices, origin, size, hexHorizDistance);
+  var polygons = polygonFromVertices(gs, vertices, hexHorizDistance);
   for (var i = 0; i < polygons.length; i++) {
-    partialPathFromPolygon(ctx, polygons[i]);
+    partialPathFromPolygon(gs, polygons[i]);
   }
 }
 
@@ -537,7 +574,9 @@ function vertexFromTileKey(tileKey, vertex) {
 }
 
 // Take a vertex key, return the {x,y} point in the screen's coordinate.
-function pointFromVertex(vertex, origin, size, hexHorizDistance) {
+// gs is the GraphicState.
+function pointFromVertex(gs, vertex, hexHorizDistance) {
+  var size = gs.hexSize; var origin = gs.origin;
   var vertexSide = +vertex.slice(-1);
   var tileKey = vertex.slice(0, -2);
   var tile = tileFromKey(tileKey);
@@ -555,7 +594,9 @@ function pointFromVertex(vertex, origin, size, hexHorizDistance) {
 
 // Given a list of vertices "q:r:0" containing from / to line information,
 // return a list of polygons [{x,y}] with no duplicate point.
-function polygonFromVertices(vertices, origin, size, hexHorizDistance) {
+// gs is the GraphicState.
+function polygonFromVertices(gs, vertices, hexHorizDistance) {
+  var size = gs.hexSize; var origin = gs.origin;
   var verticesLeft = new Array(vertices.length);
   for (var i = 0; i < vertices.length; i++) {
     verticesLeft[i] = vertices[i];
@@ -565,21 +606,19 @@ function polygonFromVertices(vertices, origin, size, hexHorizDistance) {
     var startVertex = verticesLeft.shift();
     var currentVertex = verticesLeft.shift();
     var polygon = [
-      pointFromVertex(startVertex, origin, size, hexHorizDistance),
-      pointFromVertex(currentVertex, origin, size, hexHorizDistance)
+      pointFromVertex(gs, startVertex, hexHorizDistance),
+      pointFromVertex(gs, currentVertex, hexHorizDistance)
     ];
     var infiniteLoopCut = 10000;
     while (currentVertex !== startVertex && (infiniteLoopCut--) > 0) {
       for (var i = 0; i < verticesLeft.length; i += 2) {
         if (verticesLeft[i] === currentVertex) {
-          polygon.push(pointFromVertex(verticesLeft[i+1],
-                origin, size, hexHorizDistance));
+          polygon.push(pointFromVertex(gs, verticesLeft[i+1],hexHorizDistance));
           currentVertex = verticesLeft[i+1];
           verticesLeft.splice(i, 2);
           break;
         } else if (verticesLeft[i+1] === currentVertex) {
-          polygon.push(pointFromVertex(verticesLeft[i],
-                origin, size, hexHorizDistance));
+          polygon.push(gs, pointFromVertex(verticesLeft[i], hexHorizDistance));
           currentVertex = verticesLeft[i];
           verticesLeft.splice(i, 2);
           break;
@@ -593,7 +632,9 @@ function polygonFromVertices(vertices, origin, size, hexHorizDistance) {
 }
 
 // Continue the path of a polygon [{x,y}].
-function partialPathFromPolygon(ctx, polygon) {
+// gs is the GraphicState.
+function partialPathFromPolygon(gs, polygon) {
+  var ctx = gs.ctx;
   ctx.moveTo(polygon[0].x, polygon[0].y);
   for (var i = 1; i < polygon.length; i++) {
     ctx.lineTo(polygon[i].x, polygon[i].y);
@@ -602,10 +643,12 @@ function partialPathFromPolygon(ctx, polygon) {
 }
 
 // Construct the path of list of polygons [{x,y}].
-function pathFromPolygons(ctx, polygons) {
+// gs is the GraphicState.
+function pathFromPolygons(gs, polygons) {
+  var ctx = gs.ctx;
   ctx.beginPath();
   for (var i = 0; i < polygons.length; i++) {
-    partialPathForSmoothPolygon(ctx, polygons[i]);
+    partialPathForSmoothPolygon(gs, polygons[i]);
   }
 }
 
@@ -623,8 +666,10 @@ function extremizePoint(a, b, c) {
 
 // Given a canvas context and a polygon [{x,y}],
 // construct the path that draws a smoother version of the polygon.
-function partialPathForSmoothPolygon(ctx, oldPolygon) {
-  if (oldPolygon.length < 3) { return partialPathFromPolygon(oldPolygon); }
+// gs is the GraphicState.
+function partialPathForSmoothPolygon(gs, oldPolygon) {
+  var ctx = gs.ctx;
+  if (oldPolygon.length < 3) { return partialPathFromPolygon(gs, oldPolygon); }
   // This polygon's vertices are the middle of each edge.
   var polygon = new Array(oldPolygon.length);
   var avgPoint;
@@ -650,9 +695,11 @@ function partialPathForSmoothPolygon(ctx, oldPolygon) {
 // on the canvas context ctx.
 // The mask is a sequence of six bits, each representing a hexagon edge,
 // that are set to 1 in order to hide that edge.
+// gs is the GraphicState.
 // Returns a list of all points {x,y} gone through.
-function partialPathFromHex(ctx, size, cp, mask,
+function partialPathFromHex(gs, cp, mask,
                             hexHorizDistance, hexVertDistance) {
+  var ctx = gs.ctx; var size = gs.hexSize;
   mask = mask|0;
   var cx = cp.x|0;
   var cy = cp.y|0;
@@ -711,10 +758,12 @@ function partialPathFromHex(ctx, size, cp, mask,
 
 // Draw a hexagon of size given, from the center point cp = {x, y},
 // on the canvas context ctx.
-function pathFromHex(ctx, size, cp,
+// gs is the GraphicState.
+function pathFromHex(gs, cp,
                      hexHorizDistance, hexVertDistance) {
+  var ctx = gs.ctx; var size = gs.hexSize;
   ctx.beginPath();
-  partialPathFromHex(ctx, size, cp, 0, hexHorizDistance, hexVertDistance);
+  partialPathFromHex(gs, cp, 0, hexHorizDistance, hexVertDistance);
 }
 
 // Paint a white line around `tiles`
@@ -722,24 +771,30 @@ function pathFromHex(ctx, size, cp,
 // hexagon, to a truthy value).
 // Requires a canvas context `ctx` and the size of a hexagon
 // (ie, the radius of the smallest disk containing the hexagon).
-function paintAroundTiles(ctx, size, origin, tiles, color) {
+// gs is the GraphicState.
+function paintAroundTiles(gs, tiles, color) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
-  pathFromTiles(ctx, size, origin, tiles, hexHorizDistance, hexVertDistance);
+  pathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance);
   ctx.strokeStyle = color || 'white';
   ctx.stroke();
 }
 
 // Same as above, with the straight line algorithm.
-function paintStraightAroundTiles(ctx, size, origin, tiles, color) {
+// gs is the GraphicState.
+function paintStraightAroundTiles(gs, tiles, color) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
-  straightPathFromTiles(ctx, size, origin, tiles, hexHorizDistance, hexVertDistance);
+  straightPathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance);
   ctx.strokeStyle = color || 'white';
   ctx.stroke();
 }
 
-function paintTileHexagon(ctx, size, origin, tile, color, lineWidth) {
+// gs is the GraphicState.
+function paintTileHexagon(gs, tile, color, lineWidth) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
   var cp = pixelFromTile(tile, origin, size);
@@ -755,10 +810,13 @@ function paintTileHexagon(ctx, size, origin, tile, color, lineWidth) {
 
 var mπd3 = - Math.PI / 3;   // Minus PI divided by 3.
 
-// tilePos = {q, r} is the tile's hexagonal coordinates,
+// gs is the GraphicState.
 // cx and cy are the hexagon's center pixel coordinates on the screen,
 // rotation = {0…5} is the orientation where to orient the sprite.
-function paintSprite(ctx, size, cx, cy, sprite, rotation) {
+// gs is the GraphicState.
+function paintSprite(gs, cx, cy, sprite, rotation) {
+  var ctx = gs.ctx; var size = gs.hexSize;
+  var spritesWidth = gs.spritesWidth;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(rotation * mπd3);
@@ -771,7 +829,9 @@ function paintSprite(ctx, size, cx, cy, sprite, rotation) {
 // tilePos = {q, r} is the tile's hexagonal coordinates,
 // cx and cy are the hexagon's center pixel coordinates on the screen,
 // rotation = {0…5} is the orientation where to orient the building.
-function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
+// gs is the GraphicState.
+function paintBuilding(gs, cx, cy, tilePos, rotation) {
+  var ctx = gs.ctx; var size = gs.hexSize;
   var human = humanity(tilePos);
   if (human != null && human.b != null) {
     if (human.b === tileTypes.road || human.b === tileTypes.wall
@@ -787,27 +847,26 @@ function paintBuilding(ctx, size, cx, cy, tilePos, rotation) {
             // Orient airlands towards airports.
           || (human.b === tileTypes.airland
               && neighbor.b === tileTypes.airport))) {
-          paintSprite(ctx, size, cx, cy, human.b, i);
+          paintSprite(gs, cx, cy, human.b, i);
           oriented = true;
         }
       }
-      if (!oriented) { paintSprite(ctx, size, cx, cy, human.b, 0); }
+      if (!oriented) { paintSprite(gs, cx, cy, human.b, 0); }
     } else if (human.b === tileTypes.airport || human.b === tileTypes.factory
         || human.b > tileTypes.wall) {
-      paintSprite(ctx, size, cx, cy, human.b, 0);
+      paintSprite(gs, cx, cy, human.b, 0);
     } else {
-      paintSprite(ctx, size, cx, cy, human.b, rotation);
+      paintSprite(gs, cx, cy, human.b, rotation);
     }
   }
 }
 
-// Paint on a canvas with hexagonal tiles with `size` being the radius of the
-// smallest disk containing the hexagon.
-// The `origin` {x0, y0} is the position of the top left pixel on the screen,
-// compared to the pixel (0, 0) on the map.
-function paintBuildingsSprited(ctx, size, origin) {
-  var width = ctx.canvas.width;
-  var height = ctx.canvas.height;
+// gs is the GraphicState.
+// Paint on a canvas with hexagonal tiles.
+function paintBuildingsSprited(gs) {
+  var width = gs.width;
+  var height = gs.height;
+  var ctx = gs.ctx; var origin = gs.origin; var size = gs.hexSize;
   // This is a jigsaw. We want the corner tiles of the screen.
   var tilePos = tileFromPixel({ x:0, y:0 }, origin, size);
   var centerPixel = pixelFromTile({ q: tilePos.q, r: tilePos.r-1 },
@@ -820,11 +879,11 @@ function paintBuildingsSprited(ctx, size, origin) {
   var offLeft = true;     // Each row is offset from the row above.
   while (cy - hexVertDistance < height) {
     while (cx - hexHorizDistance < width) {
-      tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
+      tilePos = tileFromPixel({ x:cx, y:cy }, gs.origin, size);
       // Draw building.
       var t = terrain(tilePos);
       var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
-      paintBuilding(ctx, size, cx, cy, tilePos, rotation);
+      paintBuilding(gs, cx, cy, tilePos, rotation);
       cx += hexHorizDistance;
     }
     cy += hexVertDistance;
@@ -842,14 +901,15 @@ function paintBuildingsSprited(ctx, size, origin) {
 
 // tilePos = {q, r} is the tile's hexagonal coordinates,
 // cx and cy are the hexagon's center pixel coordinates on the screen.
-function paintTerrain(ctx, size, cx, cy,
-    hexHorizDistance, hexVertDistance, tilePos) {
+// gs is the GraphicState.
+function paintTerrain(gs, cx, cy, hexHorizDistance, hexVertDistance, tilePos) {
+  var ctx = gs.ctx; var size = gs.hexSize;
   var t = terrain(tilePos);
   // Draw terrain.
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
-  paintSprite(ctx, size, cx, cy, t.type, rotation);
+  paintSprite(gs, cx, cy, t.type, rotation);
   // Heavy rain makes it darker.
-  pathFromHex(ctx, size, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
+  pathFromHex(gs, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
   var grey = Math.floor((1 - t.rain) / 2 * 127)|0;
   if (t.type === tileTypes.water) {
     // If it's next to something, make a beach.
@@ -884,13 +944,14 @@ function paintTerrain(ctx, size, cx, cy,
 // From 'size:x:y' to cached terrain, centered on the map origin.
 var cachedTerrainPaint = {};
 
-// Paint on a canvas with hexagonal tiles with `size` being the radius of the
-// smallest disk containing the hexagon.
-// The `origin` {x0, y0} is the position of the top left pixel on the screen,
-// compared to the pixel (0, 0) on the map.
-function paintTilesSprited(ctx, size, origin) {
-  var width = ctx.canvas.width;
-  var height = ctx.canvas.height;
+// gs is the GraphicState.
+// Paint on a canvas with hexagonal tiles.
+function paintTilesSprited(gs) {
+  var width = gs.width;
+  var height = gs.height;
+  // The `origin` {x0, y0} is the position of the top left pixel on the screen,
+  // compared to the pixel (0, 0) on the map.
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   // This is a jigsaw. We want the corner tiles of the screen.
   var tilePos = tileFromPixel({ x:0, y:0 }, origin, size);
   var centerPixel = pixelFromTile({ q: tilePos.q, r: tilePos.r-1 },
@@ -907,14 +968,15 @@ function paintTilesSprited(ctx, size, origin) {
     var canvasBuffer = document.createElement('canvas');
     canvasBuffer.width = canvas.width;
     canvasBuffer.height = canvas.height;
-    var ctxBuffer = canvasBuffer.getContext('2d');
+    var gsBuffer = makeGraphicState(canvasBuffer, sprites);
+    gsBuffer.hexSize = gs.hexSize;
 
     var offLeft = true;     // Each row is offset from the row above.
     while (cy - hexVertDistance < height) {
       while (cx - hexHorizDistance < width) {
         tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
         // Draw terrain.
-        paintTerrain(ctxBuffer, size, cx, cy,
+        paintTerrain(gsBuffer, cx, cy,
             hexHorizDistance, hexVertDistance, tilePos);
         cx += hexHorizDistance;
       }
@@ -937,13 +999,14 @@ function paintTilesSprited(ctx, size, origin) {
 }
 
 
-// Paint on a canvas with hexagonal tiles with `size` being the radius of the
-// smallest disk containing the hexagon.
-// The `origin` {x0, y0} is the position of the top left pixel on the screen,
-// compared to the pixel (0, 0) on the map.
-function paintTilesRaw(ctx, size, origin) {
+// Paint on a canvas with hexagonal tiles.
+// gs is the GraphicState.
+function paintTilesRaw(gs) {
   var width = ctx.canvas.width;
   var height = ctx.canvas.height;
+  // The `origin` {x0, y0} is the position of the top left pixel on the screen,
+  // compared to the pixel (0, 0) on the map.
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   var imgdata = ctx.getImageData(0, 0, width, height);
   var data = imgdata.data;
   for (var y = 0; y < height; y++) {
@@ -980,13 +1043,15 @@ function paintTilesRaw(ctx, size, origin) {
 }
 
 var canvasBuffer = document.createElement('canvas');
-canvasBuffer.width = canvas.width;
-canvasBuffer.height = canvas.height;
+canvasBuffer.width = gs.width;
+canvasBuffer.height = gs.height;
 var imageBuffer =
-  canvasBuffer.getContext('2d').getImageData(0,0,canvas.width,canvas.height);
-var workerMessage = { image: null, size: hexaSize, origin: origin };
+  canvasBuffer.getContext('2d').getImageData(0, 0, gs.width, gs.height);
+var workerMessage = { image: null, size: gs.hexSize, origin: origin };
 var renderWorker = new Worker('render-worker.js');
-function paintTiles(ctx, size, origin, cb) {
+// gs is the GraphicState.
+function paintTiles(gs, cb) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   if (size < 5) {
     // Special case: we're from too far above, use direct pixel manipulation.
     renderWorker.addEventListener('message', function workerRecv(e) {
@@ -1002,8 +1067,8 @@ function paintTiles(ctx, size, origin, cb) {
     workerMessage.origin = origin;
     renderWorker.postMessage(workerMessage);
   } else {
-    paintTilesSprited(ctx, size, origin);
-    paintBuildingsSprited(ctx, size, origin);
+    paintTilesSprited(gs);
+    paintBuildingsSprited(gs);
     cb();
   }
 }
@@ -1011,18 +1076,20 @@ function paintTiles(ctx, size, origin, cb) {
 // Cached paint reference is centered on the map origin.
 var cachedPaint = {};
 var cachePending = {};  // map from 'x:y' to truthy values.
+// gs is the GraphicState.
 // Note: the callback `cb(canvas)` may be called several times.
-function getCachedPaint(size, origin, cacheX, cacheY, cb) {
+function getCachedPaint(gs, cacheX, cacheY, cb) {
+  var size = gs.hexSize; var origin = gs.origin;
   var pos = cacheX + ':' + cacheY;
   var cache = cachedPaint[pos];
   if (cache == null) {
     var canvasBuffer = document.createElement('canvas');
-    canvasBuffer.width = canvas.width;
-    canvasBuffer.height = canvas.height;
-    var ctxBuffer = canvasBuffer.getContext('2d');
+    canvasBuffer.width = gs.width;
+    canvasBuffer.height = gs.height;
     if (cache === undefined) {
       // The cache was never there; it wasn't invalidated.
       // Paint it black immediately.
+      var ctxBuffer = canvasBuffer.getContext('2d');
       ctxBuffer.fillStyle = 'black';
       ctxBuffer.fillRect(0, 0, canvas.width, canvas.height);
       cb(canvasBuffer);
@@ -1030,7 +1097,10 @@ function getCachedPaint(size, origin, cacheX, cacheY, cb) {
     // Deferred actual painting.
     if (cachePending[pos] === undefined) {
       cachePending[pos] = cb;
-      paintTiles(ctxBuffer, size, { x0: cacheX, y0: cacheY }, function() {
+      var gsBuffer = makeGraphicState(canvasBuffer, sprites);
+      gsBuffer.hexSize = gs.hexSize;
+      gsBuffer.origin = { x0: cacheX, y0: cacheY };
+      paintTiles(gsBuffer, function() {
         cache = cachedPaint[cacheX + ':' + cacheY] = canvasBuffer;
         cachePending[pos](cache);
         delete cachePending[pos];
@@ -1041,7 +1111,7 @@ function getCachedPaint(size, origin, cacheX, cacheY, cb) {
 
 // Given a pixel relative to the center of the map, find the region index.
 // Requires the cache's width and height.
-function regionFromPixel(width, height, cx, cy) {
+function regionFromPixel(cx, cy, width, height) {
   var x, y;  // Coordinates related to the nearest rectangle cache.
   var x = (cx % width);
   if (x < 0) { x += width; }    // x must be the distance from the right.
@@ -1054,41 +1124,44 @@ function regionFromPixel(width, height, cx, cy) {
 
 // Force an update to the region paint (buildings and terrain).
 // Note: this relies on you calling getCachedPaint().
-function updateCachedRegion(width, height, cx, cy) {
-  cachedPaint[regionFromPixel(width, height, cx, cy)] = null;
+function updateCachedRegion(cx, cy, width, height) {
+  cachedPaint[regionFromPixel(cx, cy, width, height)] = null;
 }
 
+// gs is the GraphicState.
 // Given tiles = {tileKey:something}, update the cache. Mainly, buildings.
-function updateCachedPaint(size, origin, tiles, cb) {
-  var hexHorizDistance = size * Math.sqrt(3);
-  var hexVertDistance = size * 3/2;
+function updateCachedPaint(gs, tiles) {
+  var size = gs.hexSize;
+  var origin = gs.origin;
   for (var changedTile in tiles) {
     var tile = tileFromKey(changedTile);
     var centerPixel = pixelFromTile(tile, origin, size);
     // We consider the size of the tile.
     // We can have up to 4 caches to draw.
-    var width = canvas.width;
-    var height = canvas.height;
+    var width = gs.width;
+    var height = gs.height;
     // Coordinates of corner of squared hexagon pixel in top left buffer,
     // related to the origin pixel of the map.
     var cx = centerPixel.x + origin.x0 - size/2;  // Top left pixel of hexagon.
     var cy = centerPixel.y + origin.y0 - size/2;
     // top left
-    updateCachedRegion(width, height, cx, cy, cb);
+    updateCachedRegion(cx, cy, width, height);
     // top right
-    updateCachedRegion(width, height, cx + size, cy, cb);
+    updateCachedRegion(cx + size, cy, width, height);
     // bottom left
-    updateCachedRegion(width, height, cx, cy + size, cb);
+    updateCachedRegion(cx, cy + size, width, height);
     // bottom right
-    updateCachedRegion(width, height, cx + size, cy + size, cb);
+    updateCachedRegion(cx + size, cy + size, width, height);
   }
 }
 
-function paintTilesFromCache(ctx, size, origin, cb) {
+// gs is the GraphicState.
+function paintTilesFromCache(gs, cb) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   // We assume that the window width does not change.
   // We can have up to 4 caches to draw.
-  var width = canvas.width;
-  var height = canvas.height;
+  var width = gs.width;
+  var height = gs.height;
   // Coordinates of top left screen pixel in top left buffer.
   var x = (origin.x0 % width);
   if (x < 0) { x += width; }    // x must be the distance from the right.
@@ -1107,10 +1180,10 @@ function paintTilesFromCache(ctx, size, origin, cb) {
       if (countDone >= 4) { cb(); }
     }
   };
-  getCachedPaint(size, origin, left, top, makeDraw(-x, -y));
-  getCachedPaint(size, origin, right, top, makeDraw(width-x, -y));
-  getCachedPaint(size, origin, left, bottom, makeDraw(-x, height-y));
-  getCachedPaint(size, origin, right, bottom, makeDraw(width-x, height-y));
+  getCachedPaint(gs, left, top, makeDraw(-x, -y));
+  getCachedPaint(gs, right, top, makeDraw(width-x, -y));
+  getCachedPaint(gs, left, bottom, makeDraw(-x, height-y));
+  getCachedPaint(gs, right, bottom, makeDraw(width-x, height-y));
 }
 
 // Pixels currently on display. Useful for smooth animations.
@@ -1122,17 +1195,16 @@ var displayedPaintContext = displayedPaint.getContext('2d');
 var showTitleScreen = true;
 setTimeout(function() { showTitleScreen = false; }, 2000);
 
-// Paint on a canvas with hexagonal tiles with `size` being the radius of the
-// smallest disk containing the hexagon.
-// The `origin` {x0, y0} is the position of the top left pixel on the screen,
-// compared to the pixel (0, 0) on the map.
-function paint(ctx, size, origin) {
+// Paint on a canvas.
+// gs is the GraphicState.
+function paint(gs) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   if (selectionMode === selectionModes.places) {
     // Show the direction of the places.
     orientPlacesArrow();
   }
   if (!spritesLoaded) { return; }
-  paintTilesFromCache(ctx, size, origin, function() { paintIntermediateUI(ctx, size, origin); });
+  paintTilesFromCache(gs, function() { paintIntermediateUI(gs); });
 }
 
 // previousTile is a map from tileKey to the previous tileKey.
@@ -1149,35 +1221,36 @@ function humanTravelToCache(currentTile, targetTile, previousTile) {
 }
 
 // Paint the UI for population, winner information, etc.
-function paintIntermediateUI(ctx, size, origin) {
+// gs is the GraphicState.
+function paintIntermediateUI(gs) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   // Show tiles controlled by a player.
   for (var tileKey in lockedTiles) {
-    paintTileHexagon(ctx, size, origin, tileFromKey(tileKey),
+    paintTileHexagon(gs, tileFromKey(tileKey),
         campHsl(lockedTiles[tileKey]), 1);
   }
   if (currentTile != null && playerCamp != null) {
-    paintTileHexagon(ctx, size, origin, currentTile, campHsl(playerCamp));
+    paintTileHexagon(gs, currentTile, campHsl(playerCamp));
   }
-  paintCamps(ctx, size, origin);
+  paintCamps(gs);
   // Paint the set of accessible tiles.
   ctx.lineWidth = 1.5;
-  paintAroundTiles(ctx, size, origin, accessibleTiles);
+  paintAroundTiles(gs, accessibleTiles);
   ctx.lineWidth = 1;
   if (currentTile != null && targetTile != null &&
       (selectionMode === selectionModes.travel ||
        selectionMode === selectionModes.split)) {
     // Paint the path that the selected folks would take.
-    paintAlongTiles(ctx, size, origin,
+    paintAlongTiles(gs,
         humanTravelToCache(currentTile, targetTile, accessibleTiles));
   }
   // Paint the path that folks will take.
   for (var to in registerMoves) {
-    paintAlongTiles(ctx, size, origin,
-        humanTravelTo(registerMoves[to],tileFromKey(to)));
+    paintAlongTiles(gs, humanTravelTo(registerMoves[to], tileFromKey(to)));
   }
-  paintTileMessages(ctx, size, origin);
+  paintTileMessages(gs);
   if (gameOver !== undefined) {
-    drawTitle(ctx, [
+    drawTitle(gs, [
         campNames[gameOver.winners[0]]
         + " won a " + gameOver.winType + " Victory.",
         (gameOver.winners[0] === playerCamp
@@ -1188,7 +1261,7 @@ function paintIntermediateUI(ctx, size, origin) {
         campHsl(gameOver.winners[0]));
   }
   if (showTitleScreen) {
-    drawTitle(ctx, ["Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
+    drawTitle(gs, ["Welcome to Thaddée Tyl's…", "NOT MY TERRITORY", "(YET)"]);
   }
   displayedPaintContext.drawImage(canvas, 0, 0);
 }
@@ -1206,9 +1279,11 @@ function nth(n) {
 }
 
 // Draw three lines of text from a list of strings on the screen.
-function drawTitle(ctx, lines, color) {
-  var width = canvas.width;
-  var height = canvas.height;
+// gs is the GraphicState.
+function drawTitle(gs, lines, color) {
+  var ctx = gs.ctx;
+  var width = gs.width;
+  var height = gs.height;
   var line1 = lines[0];
   var line2 = lines[1];
   var line3 = lines[2];
@@ -1268,14 +1343,11 @@ function updateHumans() {
 }
 
 // Paint the animation of people moving around.
-// ctx is the canvas context, size is the hexagon's outer radius,
-// origin = {x0, y0} is the top left screen pixel position to the map's origin,
-// humanityData is a map from 'q:r' hexagonal coordinates to humanity data.
-function paintHumans(ctx, size, origin, humanityData) {
+// gs is the GraphicState.
+function paintHumans(gs, humanityData) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   if (size < 20) { return; }
   ctx.drawImage(displayedPaint, 0, 0);
-  var hexHorizDistance = size * Math.sqrt(3);
-  var hexVertDistance = size * 3/2;
   for (var tileKey in humanityData) {
     var tileKeyCoord = tileKey.split(':');
     var q = +tileKeyCoord[0];
@@ -1317,22 +1389,24 @@ function paintHumans(ctx, size, origin, humanityData) {
 }
 
 function animateHumans() {
-  paintHumans(ctx, hexaSize, origin, humanityData);
+  paintHumans(gs, humanityData);
   updateHumans();
 }
 var humanAnimationTimeout = setInterval(animateHumans, 100);
 
 
 // Return a list of tileKeys for each tile with a visible human.
-function listVisibleHumans(ctx, size, origin) {
+// gs is the GraphicState.
+function listVisibleHumans(gs) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   var maxQ, minQ, maxR, minR, tilePos;
   // This is a jigsaw. We want the corner tiles of the screen.
   // bottom left pixel of the screen.
-  tilePos = tileFromPixel({ x:0, y:ctx.canvas.height }, origin, size);
+  tilePos = tileFromPixel({ x:0, y:gs.height }, origin, size);
   minQ = tilePos.q - 1;     // Adding 1 to include half-tiles.
   maxR = tilePos.r + 1;
   // top right pixel of the screen.
-  tilePos = tileFromPixel({ x:ctx.canvas.width, y:0 }, origin, size);
+  tilePos = tileFromPixel({ x:gs.width, y:0 }, origin, size);
   maxQ = tilePos.q + 1;
   minR = tilePos.r - 1;
   // Go through all of humanity. Pick the ones we can see.
@@ -1348,8 +1422,10 @@ function listVisibleHumans(ctx, size, origin) {
 }
 
 var numberOfCamps = 3;
-function paintCamps(ctx, size, origin) {
-  var visibleHumans = listVisibleHumans(ctx, size, origin);
+// gs is the GraphicState.
+function paintCamps(gs) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
+  var visibleHumans = listVisibleHumans(gs);
   var visibleCamps = new Array(numberOfCamps);
   for (var i = 0; i < numberOfCamps; i++) { visibleCamps[i] = {}; }
   for (var i = 0; i < visibleHumans.length; i++) {
@@ -1367,7 +1443,7 @@ function paintCamps(ctx, size, origin) {
       }
     } else {
       ctx.lineWidth = 4;
-      paintAroundTiles(ctx, size, origin, visibleCamps[i], '#777');
+      paintAroundTiles(gs, visibleCamps[i], '#777');
       ctx.lineWidth = 2;
       ctx.strokeStyle = campHsl(i);
       ctx.stroke();
@@ -1488,7 +1564,7 @@ function addHumanMessages(tileMessages, tileKeys, messages) {
       timeout: setTimeout((function (tileKey) {
         return function removeTimeout() {
           delete tileMessages[tileKey];
-          paint(ctx, hexaSize, origin);
+          paint(gs);
         };
       }(tileKey)), 2000)
     };
@@ -1508,7 +1584,9 @@ function addStarveMessages(change) {
 }
 
 // Given a tileKey = "q:r" and a message, show a textual bubble.
-function paintMessage(ctx, size, origin, tileKey, msg) {
+// gs is the GraphicState.
+function paintMessage(gs, tileKey, msg) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   ctx.font = '14px "Linux Biolinum", sans-serif';
   var msgSize = ctx.measureText(msg).width;
   // Find the pixel to start from.
@@ -1531,15 +1609,17 @@ function paintMessage(ctx, size, origin, tileKey, msg) {
 }
 
 // Paints messages from warTiles and starvedTiles.
-function paintTileMessages(ctx, size, origin) {
+// gs is the GraphicState.
+function paintTileMessages(gs) {
+  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   for (var tileKey in warTiles) {
-    paintMessage(ctx, size, origin, tileKey, warTiles[tileKey].message);
+    paintMessage(gs, tileKey, warTiles[tileKey].message);
   }
   for (var tileKey in surrenderTiles) {
-    paintMessage(ctx, size, origin, tileKey, surrenderTiles[tileKey].message);
+    paintMessage(gs, tileKey, surrenderTiles[tileKey].message);
   }
   for (var tileKey in starvedTiles) {
-    paintMessage(ctx, size, origin, tileKey, starvedTiles[tileKey].message);
+    paintMessage(gs, tileKey, starvedTiles[tileKey].message);
   }
 }
 
@@ -1701,7 +1781,7 @@ function enterMode(newMode) {
     showPath({ clientX: mousePosition.x, clientY: mousePosition.y });
   }
   if (newMode === selectionModes.normal) {
-    paint(ctx, hexaSize, origin);
+    paint(gs);
   }
 }
 
@@ -1752,32 +1832,32 @@ window.onkeydown = function keyInputManagement(event) {
   var voidCache = false;
   var redraw = false;
   if (event.keyCode === 39 || event.keyCode === 68) {           // → D
-    origin.x0 += (canvas.width / 2)|0;
+    gs.origin.x0 += (gs.width / 2)|0;
     redraw = true;
   } else if (event.keyCode === 38 || event.keyCode === 87) {    // ↑ W
-    origin.y0 -= (canvas.height / 2)|0;
+    gs.origin.y0 -= (gs.height / 2)|0;
     redraw = true;
   } else if (event.keyCode === 37 || event.keyCode === 65) {    // ← A
-    origin.x0 -= (canvas.width / 2)|0;
+    gs.origin.x0 -= (gs.width / 2)|0;
     redraw = true;
   } else if (event.keyCode === 40 || event.keyCode === 83) {    // ↓ S
-    origin.y0 += (canvas.height / 2)|0;
+    gs.origin.y0 += (gs.height / 2)|0;
     redraw = true;
   } else if (event.keyCode === 187 || event.keyCode === 61) {  // +=
     // Zoom.
-    hexaSize *= 2;
-    origin.x0 = origin.x0 * 2 + (canvas.width / 2)|0;
-    origin.y0 = origin.y0 * 2 + (canvas.height / 2)|0;
+    gs.hexSize *= 2;
+    gs.origin.x0 = gs.origin.x0 * 2 + (gs.width / 2)|0;
+    gs.origin.y0 = gs.origin.y0 * 2 + (gs.height / 2)|0;
     voidCache = true;
     redraw = true;
   } else if (event.keyCode === 173 || event.keyCode === 189
           || event.keyCode === 109 || event.keyCode === 219
           || event.keyCode === 169) {   // -
     // Unzoom.
-    if (hexaSize > 2) {
-      hexaSize = hexaSize / 2;
-      origin.x0 = (origin.x0 / 2 - canvas.width / 4)|0;
-      origin.y0 = (origin.y0 / 2 - canvas.height / 4)|0;
+    if (gs.hexSize > 2) {
+      gs.hexSize = gs.hexSize / 2;
+      gs.origin.x0 = (gs.origin.x0 / 2 - gs.width / 4)|0;
+      gs.origin.y0 = (gs.origin.y0 / 2 - gs.height / 4)|0;
       voidCache = true;
       redraw = true;
     }
@@ -1800,7 +1880,7 @@ window.onkeydown = function keyInputManagement(event) {
     cachedPaint = {};
   }
   if (redraw) {
-    paint(ctx, hexaSize, origin);
+    paint(gs);
   }
 };
 
@@ -1809,10 +1889,10 @@ window.onkeydown = function keyInputManagement(event) {
 
 
 function mouseSelection(event) {
-  canvas.removeEventListener('mousemove', mouseDrag);
-  canvas.removeEventListener('mouseup', mouseSelection);
+  gs.canvas.removeEventListener('mousemove', mouseDrag);
+  gs.canvas.removeEventListener('mouseup', mouseSelection);
   var posTile = tileFromPixel({ x: event.clientX, y: event.clientY },
-        origin, hexaSize);
+        gs.origin, gs.hexSize);
 
   if ((selectionMode === selectionModes.travel
     || selectionMode === selectionModes.split)
@@ -1840,7 +1920,7 @@ function mouseSelection(event) {
   // Move there.
   currentTile = posTile;
   updateCurrentTileInformation();
-  paint(ctx, hexaSize, origin);
+  paint(gs);
 };
 
 var mousePosition;
@@ -1850,9 +1930,9 @@ function showPath(event) {
   if (currentTile &&
       (selectionMode === selectionModes.travel ||
        selectionMode === selectionModes.split)) {
-    targetTile = tileFromPixel(mousePosition, origin, hexaSize);
-    paint(ctx, hexaSize, origin);
-    paintHumans(ctx, hexaSize, origin, humanityData);
+    targetTile = tileFromPixel(mousePosition, gs.origin, gs.hexSize);
+    paint(gs);
+    paintHumans(gs, humanityData);
   }
 }
 canvas.addEventListener('mousemove', showPath);
@@ -1861,11 +1941,11 @@ canvas.addEventListener('mousemove', showPath);
 // Map dragging.
 
 function mouseDrag(event) {
-  canvas.style.cursor = 'move';
-  canvas.removeEventListener('mousemove', mouseDrag);
-  canvas.removeEventListener('mouseup', mouseSelection);
-  canvas.addEventListener('mouseup', mouseEndDrag);
-  canvas.addEventListener('mousemove', dragMap);
+  gs.canvas.style.cursor = 'move';
+  gs.canvas.removeEventListener('mousemove', mouseDrag);
+  gs.canvas.removeEventListener('mouseup', mouseSelection);
+  gs.canvas.addEventListener('mouseup', mouseEndDrag);
+  gs.canvas.addEventListener('mousemove', dragMap);
   clearInterval(humanAnimationTimeout);
   currentlyDragging = true;
   resetDragVector();
@@ -1873,21 +1953,21 @@ function mouseDrag(event) {
 }
 
 function mouseEndDrag(event) {
-  canvas.style.cursor = '';
-  canvas.removeEventListener('mousemove', dragMap);
-  canvas.removeEventListener('mouseup', mouseEndDrag);
+  gs.canvas.style.cursor = '';
+  gs.canvas.removeEventListener('mousemove', dragMap);
+  gs.canvas.removeEventListener('mouseup', mouseEndDrag);
   humanAnimationTimeout = setInterval(animateHumans, 100);
   currentlyDragging = false;
-  paint(ctx, hexaSize, origin);
+  paint(gs);
   clearInterval(dragVelTo);
   computeDragVelocity();
   inertiaDragMap();
 }
 
-canvas.onmousedown = function mouseInputManagement(event) {
+gs.canvas.onmousedown = function mouseInputManagement(event) {
   if (event.button === 0) {
-    canvas.addEventListener('mouseup', mouseSelection);
-    canvas.addEventListener('mousemove', mouseDrag);
+    gs.canvas.addEventListener('mouseup', mouseSelection);
+    gs.canvas.addEventListener('mousemove', mouseDrag);
     lastMousePosition.clientX = event.clientX;
     lastMousePosition.clientY = event.clientY;
   } else if (event.button === 2) {
@@ -1896,7 +1976,7 @@ canvas.onmousedown = function mouseInputManagement(event) {
     enterNormalMode();
   }
 };
-canvas.oncontextmenu = function(e) { e.preventDefault(); };
+gs.canvas.oncontextmenu = function(e) { e.preventDefault(); };
 
 (function() {
   var requestAnimationFrame = window.requestAnimationFrame ||
@@ -1913,12 +1993,12 @@ function dragMap(event) {
   drawingWhileDragging = true;
   var velocityX = (lastMousePosition.clientX - event.clientX);
   var velocityY = (lastMousePosition.clientY - event.clientY);
-  origin.x0 += velocityX;
-  origin.y0 += velocityY;
+  gs.origin.x0 += velocityX;
+  gs.origin.y0 += velocityY;
   // Save the last mouse position.
   lastMousePosition.clientX = event.clientX;
   lastMousePosition.clientY = event.clientY;
-  paint(ctx, hexaSize, origin);
+  paint(gs);
   requestAnimationFrame(function() {
     drawingWhileDragging = false;
   });
@@ -1938,25 +2018,25 @@ var dragVelInterval = 200; // 200ms.
 
 function resetDragVector() {
   dragTime = Date.now();
-  dragVector[0] = origin.x0;
-  dragVector[1] = origin.y0;
+  dragVector[0] = gs.origin.x0;
+  dragVector[1] = gs.origin.y0;
 }
 
 function computeDragVelocity() {
   dragTime = Date.now() - dragTime;
-  dragVector[0] = origin.x0 - dragVector[0];
-  dragVector[1] = origin.y0 - dragVector[1];
+  dragVector[0] = gs.origin.x0 - dragVector[0];
+  dragVector[1] = gs.origin.y0 - dragVector[1];
   var nbFrames = dragTime * 0.03;  // 0.03 frames/ms
   dragVelocity[0] = (dragVector[0] / nbFrames)|0;
   dragVelocity[1] = (dragVector[1] / nbFrames)|0;
 }
 
 function inertiaDragMap() {
-  origin.x0 += dragVelocity[0];
-  origin.y0 += dragVelocity[1];
+  gs.origin.x0 += dragVelocity[0];
+  gs.origin.y0 += dragVelocity[1];
   dragVelocity[0] = (dragVelocity[0] / 1.1)|0;
   dragVelocity[1] = (dragVelocity[1] / 1.1)|0;
-  paint(ctx, hexaSize, origin);
+  paint(gs);
   requestAnimationFrame(function() {
     if (dragVelocity[0] !== 0 || dragVelocity[1] !== 0) {
       inertiaDragMap();
