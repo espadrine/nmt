@@ -385,22 +385,6 @@ sprites.onload = function loadingSprites() {
 };
 
 
-// Size of radius of the smallest disk containing the hexagon.
-var hexaSize = 20;
-// Pixel position of the top left screen pixel,
-// compared to the origin of the map.
-var origin = { x0: 0, y0: 0 };
-// Canvas.
-var canvas = document.getElementById('canvas');
-var ctx = canvas.getContext('2d');
-canvas.width = document.documentElement.clientWidth;
-canvas.height = document.documentElement.clientHeight;
-// Blink and Webkit get the following wrong.
-// Remove without worry
-// when https://code.google.com/p/chromium/issues/detail?id=168840 is fixed.
-document.styleSheets[0].insertRule('div.controlPanel { max-height:' +
-  (canvas.height - 16 - 58) + 'px; }', 0);
-
 // Include all information pertaining to the state of the canvas.
 // canvas: a DOM HTML canvas.
 // sprites: a DOM Image of the sprites.
@@ -422,8 +406,16 @@ function makeGraphicState(canvas, sprites) {
     spritesWidth: spritesWidth
   };
 }
-var gs = makeGraphicState(document.getElementById('canvas'), sprites);
 
+var canvas = document.getElementById('canvas');
+canvas.width = document.documentElement.clientWidth;
+canvas.height = document.documentElement.clientHeight;
+var gs = makeGraphicState(canvas, sprites);
+// Blink and Webkit get the following wrong.
+// Remove without worry
+// when https://code.google.com/p/chromium/issues/detail?id=168840 is fixed.
+document.styleSheets[0].insertRule('div.controlPanel { max-height:' +
+  (gs.height - 16 - 58) + 'px; }', 0);
 
 // Given a list of tile key "q:r" representing hexagon coordinates,
 // construct the path along each hexagon's center.
@@ -1047,7 +1039,7 @@ canvasBuffer.width = gs.width;
 canvasBuffer.height = gs.height;
 var imageBuffer =
   canvasBuffer.getContext('2d').getImageData(0, 0, gs.width, gs.height);
-var workerMessage = { image: null, size: gs.hexSize, origin: origin };
+var workerMessage = { image: null, size: gs.hexSize, origin: gs.origin };
 var renderWorker = new Worker('render-worker.js');
 // gs is the GraphicState.
 function paintTiles(gs, cb) {
@@ -1188,8 +1180,8 @@ function paintTilesFromCache(gs, cb) {
 
 // Pixels currently on display. Useful for smooth animations.
 var displayedPaint = document.createElement('canvas');
-displayedPaint.width = canvas.width;
-displayedPaint.height = canvas.height;
+displayedPaint.width = gs.width;
+displayedPaint.height = gs.height;
 var displayedPaintContext = displayedPaint.getContext('2d');
 
 var showTitleScreen = true;
