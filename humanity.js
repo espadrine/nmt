@@ -444,21 +444,33 @@ function findNearestEmptyTerrain(tile, type) {
 // tile = {q,r}
 // type: see terrain.tileTypes.
 function findNearestTerrain(tile, type) {
+  return findNearest(tile, function(tile) {
+    return terrain(tile).type === type;
+  });
+}
+
+var MAX_INT = 9007199254740992;
+
+// tile = {q,r}
+// valid = function(tile = {q,r})
+// limit: number of tiles away from `tile` after which we stop.
+// Returns the first tile which is valid.
+function findNearest(tile, valid, limit) {
+  limit = limit || (MAX_INT - 1);
   var k = 1;
-  while (terrain(tile).type !== type) {
+  while (!valid(tile) && k <= limit) {
     // Take the bottom left tile.
     tile = terrain.neighborFromTile(tile, 4);
     // Go round.
     for (var i = 0; i < 6; i++) {
       for (var j = 0; j < k; j++) {
         tile = terrain.neighborFromTile(tile, i);
-        if (terrain(tile).type === type) {
-          return tile;
-        }
+        if (valid(tile)) { return tile; }
       }
     }
     k++;
   }
+  if (k >= limit) { return null; }
   return tile;
 }
 
@@ -528,6 +540,7 @@ module.exports.moveTreasure = moveTreasure;
 module.exports.awayFrom = awayFrom;
 module.exports.findMountain = findMountain;
 module.exports.findMeadow = findMeadow;
+module.exports.findNearest = findNearest;
 module.exports.generateRandomDistance = generateRandomDistance;
 module.exports.winners = winners;
 module.exports.getPlaces = getPlaces;
