@@ -8,12 +8,11 @@ var startWithVowel = graphs.filter(function(e) {
 var startWithConsonant = graphs.filter(function(e) {
   if (vowels.indexOf(e[0]) < 0) return e; });
 
-
 function pick(l) {
   return l[(Math.random() * l.length)|0];
 }
 
-function genName() {
+function letterBasedName() {
   var len = (Math.random() * 4)|0 + 2;
   var name = '';
   var vowel = true;
@@ -26,6 +25,22 @@ function genName() {
   name = String.fromCharCode(name.charCodeAt(0) - 32)
        + name.slice(1);
   return name;
+}
+
+// Approach using combination of words.
+
+var words = ['back', 'bag', 'baker', 'bad', 'bar', 'bat', 'bath', 'beau', 'bec', 'bel', 'ben', 'bin', 'bir', 'black', 'boro', 'bos', 'brad', 'bridge', 'berg', 'burg', 'burn', 'camp', 'carol', 'casa', 'castle', 'cent', 'cester', 'char', 'cław', 'dam', 'dart', 'day', 'fast', 'field', 'ford', 'for', 'fré', 'gate', 'gham', 'grad', 'ham', 'hart', 'head', 'hiro', 'ita', 'jala', 'jiao', 'kan', 'king', 'land', 'las', 'lei', 'lings', 'long', 'mara', 'may', 'milli', 'mont', 'more', 'mouth', 'naga', 'new', 'novo', 'nurem', 'pan', 'pez', 'pit', 'pool', 'port', 'ports', 'pur', 'qing', 'que', 'rack', 'rest', 'richt', 'roch', 'salem', 'san', 'son', 'shiro', 'shima', 'shore', 'smith', 'sor', 'stock', 'tai', 'tela', 'tiago', 'tla', 'to', 'ton', 'vais', 'val', 'viva', 'water', 'wood', 'wor', 'win', 'wind', 'xia', 'yi', 'yoko', 'zaki', 'zao', 'zen'];
+
+function wordBasedName() {
+  var name = pick(words) + pick(words);
+  name = String.fromCharCode(name.charCodeAt(0) - 32)
+       + name.slice(1);
+  return name;
+}
+
+
+function genName() {
+  return wordBasedName();
 }
 
 module.exports = genName;
