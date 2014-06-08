@@ -377,8 +377,8 @@ var buildingTileDependency = [,,,,,,,, ,,,,,,,,,,,,
 
 // Given a building (see tileTypes) and a tile = {q, r},
 // check whether the building can be built there.
-// resources = {lumber, usedLumber, metal, usedMetal} is the resources available
-// for use in the current camp.
+// resources = {lumber, usedLumber, metal, usedMetal, farm, usedFarm}
+// is the resources available for use in the current camp.
 function validConstruction(building, tile, resources) {
   if (building == null) { return true; }   // Destruction is always valid.
   var humanityTile = humanity(tile);

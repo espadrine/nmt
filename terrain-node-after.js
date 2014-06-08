@@ -5,6 +5,7 @@ module.exports.humanTravel = humanTravel;
 module.exports.tileTypes = tileTypes;
 module.exports.buildingTypes = buildingTypes;
 module.exports.buildingDependencies = buildingDependencies;
+module.exports.buildingTileDependency = buildingTileDependency;
 module.exports.manufacture = manufacture;
 module.exports.validConstruction = validConstruction;
 module.exports.neighborFromTile = neighborFromTile;
