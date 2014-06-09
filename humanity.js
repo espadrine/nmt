@@ -244,6 +244,17 @@ Camp.prototype = {
   get acquiredUniversities () {
     return Object.keys(this.acquiredUniversitiesMap).length;
   },
+  get tiles () {
+    var ourTiles = [];
+    for (var tileKey in humanityData) {
+      var humanityTile = humanityData[tileKey];
+      if (humanityTile.c === this.id) {
+        // This is our nationality.
+        ourTiles.push(tileKey);
+      }
+    }
+    return ourTiles;
+  },
 };
 
 var camps = [];
