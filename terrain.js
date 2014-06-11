@@ -52,9 +52,6 @@ function tileType(steepness, vegetation) {
   else { return steepness; }
 }
 
-// (Sparse) Array of array of tiles.
-var memoizedTiles = [];
-
 // Get information about the tile at hexagonal coordinates `coord` {q, r}.
 // Returns
 //  - steepness: altitude level. See `tileTypes`.
@@ -63,11 +60,11 @@ var memoizedTiles = [];
 //  - rain: floating point number between -1 and 1, representing how heavy the
 //  rainfall is.
 function terrain(coord) {
-  var x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
-  var y = (3/2 * coord.r);
-  if (memoizedTiles[x] != null && memoizedTiles[x][y] != null) {
-    return memoizedTiles[x][y];
-  }
+  var x, y;
+  if (coord.x === undefined) {
+    x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
+    y = (3/2 * coord.r);
+  } else { x = coord.x; y = coord.y; }
   var size = simplex2.noise2D(y/500, x/500);
   var riverNoise = 1-Math.abs((
       + 4 * (simplex1.noise2D(x/4/factor, y/4/factor))
@@ -114,10 +111,6 @@ function terrain(coord) {
     type: tileType(steepness, vegetation),
     rain: -vegetationNoise / 2
   };
-  if (memoizedTiles[x] == null) {
-    memoizedTiles[x] = [];
-  }
-  memoizedTiles[x][y] = tile;
   return tile;
 }
 

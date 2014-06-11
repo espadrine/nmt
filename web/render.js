@@ -61,8 +61,7 @@ function paintTilesRaw(imgdata, size, origin) {
     var data = new Uint8ClampedArray(arraySize);
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
-        var tilePos = tileFromPixel({ x:x, y:y }, origin, size);
-        var t = terrain(tilePos);
+        var t = terrain({ x: (x + origin.x0)/size , y: (y + origin.y0)/size });
         var color = [180, 0, 0];
         if (t.steepness == tileTypes.water) {
           color = [50, 50, 180];
