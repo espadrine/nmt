@@ -94,9 +94,11 @@ function terrain(coord) {
     // Seas are smaller in mountains.
     || seaNoise*3/4 + heightNoise/4 < -0.7) ?
         tileTypes.water:
+    (vegetationNoise < -1.0)?
+        tileTypes.hill:
     (heightNoise - riverNoise/2 < 0.1) ?
         tileTypes.steppe:
-    // Mountains are cut off (by hills) to avoid circular mountain formations.
+    // Mountains are cut off (by river) to avoid circular mountain formations.
     (heightNoise - riverNoise < 0.2) ?
         tileTypes.hill:
         tileTypes.mountain);
