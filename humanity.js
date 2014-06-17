@@ -255,6 +255,28 @@ Camp.prototype = {
     }
     return ourTiles;
   },
+  get builtTiles () {
+    var ourTiles = [];
+    for (var tileKey in humanityData) {
+      var humanityTile = humanityData[tileKey];
+      if (humanityTile.c === this.id && humanityTile.b != null) {
+        // This is our nationality.
+        ourTiles.push(tileKey);
+      }
+    }
+    return ourTiles;
+  },
+  get inhabitedTiles () {
+    var ourTiles = [];
+    for (var tileKey in humanityData) {
+      var humanityTile = humanityData[tileKey];
+      if (humanityTile.c === this.id && humanityTile.h > 0) {
+        // This is our nationality.
+        ourTiles.push(tileKey);
+      }
+    }
+    return ourTiles;
+  },
 };
 
 var camps = [];

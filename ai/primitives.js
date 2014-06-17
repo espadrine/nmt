@@ -79,6 +79,8 @@ function isOneOf(b, buildings) {
 // forbiddenTiles: [{q,r}]
 // Returns a list of {tile: {q,r}, building: type} that needs to be
 // constructed, in the correct order (see terrain.tileTypes).
+// FIXME: take unwalkable tiles (water, …) into account.
+// FIXME: don't destroy buildings which cost resources.
 function dependencyBuilds(b, tile, forbiddenTiles) {
   forbiddenTiles = forbiddenTiles || [];
   // List of {tile: {q,r}, building: type}.
@@ -122,6 +124,305 @@ function dependencyBuilds(b, tile, forbiddenTiles) {
   return buildings;
 }
 
+// Check whether the tile contains buildings.
+function builtTerrain(tile) {
+  var human = humanity(tile);
+  if (human === undefined) { return false; }
+  if (human.b == null) { return false; }
+  return true;
+}
+
+// Find nearest terrain where nothing is built.
+// size: number of layers that must be empty around the tile.
+function findNearestEmpty(tile, size) {
+  return humanity.findNearest(tile, function(tile) {
+    // If it finds no built terrain, we're good to go.
+    return !humanity.findNearest(tile, builtTerrain, size);
+  });
+}
+
+
+
+// Managing projects.
+// Each plan corresponds to a group of folks that must accomplish it.
+
+// A group corresponds to a camp. It has a project list. It is on a unique tile.
+function Group(tile) {
+  this.tile = tile;
+  this.camp = humanity(tile).c;
+}
+
+
+function Strategy(camp) {
+  this.camp = camp;
+  // Active projects.
+  // Each project is {type, groups, target, builds, camp}.
+  this.projects = [];  // Ordered by priority.
+  // Active groups.
+  this.groups = [];
+  this.groupFromKey = Object.create(null);
+}
+
+// Strategy gives primitives for elementary projects
+// that an AI can choose to do.
+
+// Projects are {type, groups, target, builds, camp}.
+// - type: see `projectType`.
+// - groups: a list of `Group`.
+// - target: tile {q,r} around which that project takes place.
+// - builds: list of {tile:{q,r}, building:tileTypes} to make
+//   before completing the project.
+// - camp: campId towards which the project is targeted.
+
+var projectType = {
+  build: 0,
+  conquer: 1,
+  war: 2,
+};
+
+Strategy.prototype = {
+
+  // Create a building.
+  // FIXME: notice lack of resources needed for building.
+  buildProject: function(buildingType) {
+    // List of tileKeys
+    var tiles = this.camp.inhabitedTiles;
+    // Pick a random tile we occupy.
+    var tile = terrain.tileFromKey(tiles[(tiles.length * Math.random())|0]);
+    // Find an unoccupied tile close by.
+    var size = 1;  // FIXME: choose a size depending on the building type.
+    tile = findNearestEmpty(tile, size);
+    // Find a tile where this can be constructed.
+    tile = findConstructionLocation(tile, buildingType);
+    var builds = dependencyBuilds(buildingType, tile);
+    // Find the nearest group around that tile.
+    var groups = [];
+    groups.push(this.addGroup(tile));
+    this.projects.push({
+      type: projectType.build,
+      groups: groups,
+      target: tile,
+      builds: builds,
+    });
+  },
+
+  // Obtain control over a type of tile.
+  // Includes an optional camp from which to take it, if it has it.
+  conquerProject: function(tileType, campId) {
+    // Find a tile where this tile type is.
+    var tile;
+    var campTiles = humanity.campFromId(campId).builtTiles;
+    for (var i = 0; i < campTiles.length; i++) {
+      if (humanity(campTiles[i]).b === tileType) {
+        tile = campTiles[i];
+        break;
+      }
+    }
+    if (tile === undefined) { return; }
+    // Find the nearest group around that tile.
+    var groups = [];
+    groups.push(this.addGroup(tile));
+    this.projects.push({
+      type: projectType.conquer,
+      groups: groups,
+      target: tile,
+      camp: campId,
+    });
+  },
+
+  // Harm a specific adversary.
+  // Targets residential buildings and buildings around them.
+  warProject: function(tile, campId) {
+    // Find the nearest group around that tile.
+    var groups = [];
+    groups.push(this.addGroup(tile));
+    this.projects.push({
+      type: projectType.war,
+      groups: groups,
+      target: tile,
+      camp: campId,
+    });
+  },
+
+  // Find a group. If the tile = {q,r} is given,
+  // find the group closest to that tile.
+  // Returns the group.
+  addGroup: function(tile) {
+    // It needs to be a group we don't currently count.
+    var tiles = this.camp.inhabitedTiles;
+    var chosenTile;
+    var closest = MAX_INT;
+    for (var i = 0; i < tiles.length; i++) {
+      // Skip groups we already control.
+      if (this.groupFromKey[tiles[i]] !== undefined) {
+        continue;
+      }
+      var aTile = terrain.tileFromKey(tiles[i]);
+      // FIXME: don't include tiles used by other players.
+      // Locate the closest group to the target tile.
+      var distance = distanceBetweenTiles(tile, aTile);
+      if (distance < closest) {
+        closest = distance;
+        chosenTile = tiles[i];
+      }
+    }
+    var group = new Group(terrain.tileFromKey(chosenTile));
+    this.groups.push(group);
+    this.groupFromKey[chosenTile] = group;
+    return group;
+  },
+
+  // Stop controlling group at that index (see `this.groups`).
+  removeGroup: function(index) {
+    delete this.groupFromKey[terrain.keyFromTile(this.groups[index].tile)];
+    this.groups.splice(index, 1);
+  },
+
+  // FIXME: add methods to improve the group for a particular project.
+
+  // Add a random project.
+  randomProject: function() {
+    var projectTypes = Object.keys(projectType);
+    var type = projectType[(projectTypes.length * Math.random())|0];
+    if (type === projectType.build) {
+      // Random building.
+      var buildingType = terrain.buildingTypes[
+        (terrain.buildingTypes.length * Math.random())|0];
+      this.buildProject(buildingType);
+    } else if (type === projectType.conquer) {
+      // Random camp, find a tile type it owns.
+      var campId = (humanity.numberOfCamps * Math.random())|0;
+      if (campId === this.camp.id) {
+        campId = (campId + 1) % humanity.numberOfCamps;
+      }
+      var campTiles = humanity.campFromId(campId).builtTiles;
+      var tileType = humanity(campTiles[(campTiles.length*Math.random())|0]).b;
+      this.conquerProject(tileType, campId);
+    } else if (type === projectType.war) {
+      // Random camp, find a tile it owns.
+      var campId = (humanity.numberOfCamps * Math.random())|0;
+      if (campId === this.camp.id) {
+        campId = (campId + 1) % humanity.numberOfCamps;
+      }
+      var campTiles = humanity.campFromId(campId).tiles;
+      var tile = campTiles[(campTiles.length * Math.random())|0];
+      this.warProject(tile, campId);
+    }
+  },
+
+  // Return true if the project is done.
+  isProjectComplete: function(project) {
+    var campTiles = this.camp
+    if (project.type === projectType.build) {
+      return project.builds.length === 0;
+    } else if (project.type === projectType.conquer
+            || project.type === projectType.war) {
+      var humanityTile = humanity(project.target);
+      if (humanityTile == null) { return false; }
+      return humanityTile.c === this.camp.id;
+    }
+  },
+
+  runProject: function() {
+    // Find a project to use.
+    if (this.projects.length === 0) {
+      // We need to create a project.
+      this.randomProject();
+    }
+    // Complete the first project we have.
+    var project = this.projects[0];
+    if (isProjectComplete(project)) {
+      this.projects.shift();
+      return runProject();
+    }
+    // FIXME: what if there is nobody on the group's tile?
+    // First, you need to perform all the builds.
+    if (project.builds && project.builds.length > 0) {
+      var build = project.builds[0];
+      // If we're on the tile, build it and be done with it.
+      var groupIsOnTile = false;
+      for (var i = 0; i < project.groups.length; i++) {
+        if (sameTile(project.groups[i].tile, build.tile)) {
+          groupIsOnTile = true;
+        }
+      }
+      if (groupIsOnTile) {
+        project.builds.shift();
+        // Send the construction information.
+        return {
+          at: terrain.keyFromTile(build.tile),
+          do: terrain.planTypes.build,
+          b: build.building
+        };
+      }
+      // We need to go towards this building tile.
+      var group = project.groups[(project.groups.length * Math.random())|0];
+      var groupTile = terrain.keyFromTile(group.tile);
+      var buildTile = terrain.keyFromTile(build.tile);
+      var toTile = closestTowards(groupTile, buildTile);
+      // FIXME: what if toTile is the same as the current tile?
+      var fromHumanityTile = humanity(group.tile);
+      group.tile = terrain.tileFromKey(toTile);
+      return {
+        at: groupTile,
+        do: terrain.planTypes.move,
+        to: toTile,
+        h: fromHumanityTile.h
+      };
+    }
+    // Go to the target.
+    // FIXME: give availability to choose between groups to move forward.
+    var group = project.groups[(project.groups.length * Math.random())|0];
+    var groupTile = terrain.keyFromTile(group.tile);
+    var targetTile = terrain.keyFromTile(project.target);
+    var toTile = closestTowards(groupTile, targetTile);
+    var fromHumanityTile = humanity(group.tile);
+    group.tile = terrain.tileFromKey(toTile);
+    return {
+      at: groupTile,
+      do: terrain.planTypes.move,
+      to: toTile,
+      h: fromHumanityTile.h
+    };
+  },
+
+};
+
+
+// Movement primitives.
+
+var MAX_INT = 9007199254740992;
+
+// Tiles a and b = {q,r} correspond to the same tile.
+function sameTile(a, b) {
+  return a.q === b.q && a.r === b.r;
+}
+
+// a and b are tiles = {q,r}.
+function distanceBetweenTiles(a, b) {
+  return (Math.abs(a.q - b.q) +
+          Math.abs(a.r - b.r) +
+          Math.abs(a.q + a.r - b.q - b.r)) / 2;
+}
+
+// Return the closest tileKey we can go to from atTileKey
+// in order to go to the target toTileKey.
+function closestTowards(atTileKey, toTileKey) {
+  var accessibleTiles = terrain.humanTravel(terrain.tileFromKey(atTileKey));
+  var toTile = terrain.tileFromKey(toTileKey);
+  var closest;
+  var shortestDistanceYet = Infinity;
+  for (var tileKey in accessibleTiles) {
+    if (closest === undefined) { closest = tileKey; continue; }
+    var tile = terrain.tileFromKey(tileKey);
+    var thisDistance = distance(tile, toTile);
+    if (thisDistance < shortestDistanceYet) {
+      shortestDistanceYet = thisDistance;
+      closest = tileKey;
+    }
+  }
+  return closest;
+}
 
 
 exports.init = init;
