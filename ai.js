@@ -1,5 +1,7 @@
 // Welcome to dumbai.
 
+var terrain = require('../terrain-gen');
+
 // List from campId to map from building to tileKeys where we perform the
 // project.
 var constructionProjects;
@@ -267,7 +269,7 @@ function orderBuildings(terrain) {
 }
 
 // Return a plan. Or undefined.
-function run(terrain, humanity) {
+function run(humanity) {
   var leastCamp = humanity.campFromId(0);
   for (var i = 1; i < humanity.numberOfCamps; i++) {
     var camp = humanity.campFromId(i);

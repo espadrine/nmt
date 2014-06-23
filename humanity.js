@@ -250,7 +250,7 @@ Camp.prototype = {
       var humanityTile = humanityData[tileKey];
       if (humanityTile.c === this.id) {
         // This is our nationality.
-        ourTiles.push(tileKey);
+        ourTiles.push(terrain.tileFromKey(tileKey));
       }
     }
     return ourTiles;
@@ -261,7 +261,7 @@ Camp.prototype = {
       var humanityTile = humanityData[tileKey];
       if (humanityTile.c === this.id && humanityTile.b != null) {
         // This is our nationality.
-        ourTiles.push(tileKey);
+        ourTiles.push(terrain.tileFromKey(tileKey));
       }
     }
     return ourTiles;
@@ -272,7 +272,7 @@ Camp.prototype = {
       var humanityTile = humanityData[tileKey];
       if (humanityTile.c === this.id && humanityTile.h > 0) {
         // This is our nationality.
-        ourTiles.push(tileKey);
+        ourTiles.push(terrain.tileFromKey(tileKey));
       }
     }
     return ourTiles;

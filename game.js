@@ -2,7 +2,8 @@
 var terrain = require('./terrain-gen');
 var humanity = require('./humanity');
 var treasure = require('./treasure');
-var ai = require('./ai');
+var AI = require('./ai/ai');
+var ai;
 
 var cheatMode = false;
 
@@ -296,7 +297,7 @@ function applyPlan(plan) {
 // Run the AI algorithm `n` times. May span multiple ticks.
 function runAiNTimes(n) {
   if (n <= 0) { return; }
-  var aiPlan = ai(terrain, humanity);
+  var aiPlan = ai.run(humanity);
   if (aiPlan != null && lockedTiles[aiPlan.at] === undefined) {
     // The plan exists and doesn't bother users.
     aiPlan.ai = true;
@@ -306,7 +307,7 @@ function runAiNTimes(n) {
 
 // Uncomment the following to make the AI play constantly.
 //setInterval(function () {
-//  var aiPlan = ai(terrain, humanity);
+//  var aiPlan = ai.run(humanity);
 //  console.log('ai plan:', aiPlan);
 //  if (aiPlan != null) { aiPlan.ai = true; judgePlan(0, aiPlan, true); }
 //}, 1000);
@@ -487,7 +488,7 @@ function startGame() {
 }
 
 function startGameLoop() {
-  ai.clear(terrain, humanity);
+  ai = new AI(humanity);
   setTimeout(gameTurn, gameTurnTime);
 }
 
