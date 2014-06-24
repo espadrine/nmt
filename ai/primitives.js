@@ -99,7 +99,7 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
       // Is this neighbor authorized?
       if (isOneOf(neighbor, forbiddenTiles)) { continue; }
       var neighborBuildings =
-        dependencyBuilds(buildingType, neighbor, forbiddenTiles);
+        dependencyBuilds(humanity, buildingType, neighbor, forbiddenTiles);
       if (neighborBuildings != null) {
         // We can build that.
         buildings = buildings.concat(neighborBuildings);
@@ -150,6 +150,63 @@ function Group(tile, camp) {
   this.camp = camp;
 }
 
+Group.prototype = {
+
+  // Advance in the direction of target = {q,r}.
+  moveTowards: function(humanity, target) {
+    var fromTile = this.tile;
+    var fromHumanityTile = humanity(fromTile);
+    var terrainType = terrain(fromTile);
+    var toTile = closestTowards(fromTile, target) || fromTile;
+    // Are we too hungry to go forward?
+    if (fromHumanityTile.f <= 0
+        // If we're on water, we can die.
+        && terrainType.type === terrain.tileTypes.water) {
+      return {
+        at: terrain.keyFromTile(fromTile),
+        do: terrain.planTypes.build,
+        b: terrain.tileTypes.farm,
+      };
+    }
+    // Are we cut off by something?
+    if (sameTile(toTile, fromTile)) {
+      // What by?
+      // Construct tiles map directly around the current tile.
+      var around = Object.create(null);
+      around[terrain.keyFromTile(fromTile)] = true;
+      for (var i = 0; i < 6; i++) {
+        var neighbor = terrain.neighborFromTile(fromTile, i);
+        around[terrain.keyFromTile(neighbor)] = true;
+      }
+      var blockingTile = closestTowardsAmong(around, target);
+      var nextTerrain = terrain(blockingTile);
+      var nextHumanityTile = humanity(blockingTile);
+      if (nextTerrain.type === terrain.tileTypes.water
+        && (fromHumanityTile.o & terrain.manufacture.boat)) {
+        // FIXME: We need to go to a dock, if there is one close by,
+        // or we need to build one.
+        console.log('need a dock');
+      } else if (nextHumanityTile.b === terrain.tileTypes.wall) {
+        // FIXME: We need to go to an airport or build one.
+        console.log('need an airport');
+      } else if (nextTerrain.steepness > terrain.tileTypes.hill) {
+        // FIXME: We need to go to a factory or build one.
+        console.log('need a factory');
+      }
+      return null;
+    }
+    // Go there.
+    this.tile = toTile;
+    return {
+      at: terrain.keyFromTile(fromTile),
+      do: terrain.planTypes.move,
+      to: terrain.keyFromTile(toTile),
+      h: fromHumanityTile.h
+    };
+  },
+
+};
+
 
 // camp: a camp object. See humanity.js.
 function Strategy(camp, humanity) {
@@ -158,9 +215,6 @@ function Strategy(camp, humanity) {
   // Active projects.
   // Each project is {type, groups, target, builds, camp}.
   this.projects = [];  // Ordered by priority.
-  // Active groups.
-  this.groups = [];
-  this.groupFromKey = Object.create(null);
 }
 
 // Strategy gives primitives for elementary projects
@@ -197,6 +251,19 @@ Strategy.prototype = {
   // Group creation below.
   //
 
+  // Return a map from "q:r" tiles where we own groups.
+  controlledGroups: function() {
+    var groupFromKey = Object.create(null);
+    for (var i = 0; i < this.projects.length; i++) {
+      var project = this.projects[i];
+      for (var j = 0; j < project.groups.length; j++) {
+        var group = project.groups[j];
+        groupFromKey[terrain.keyFromTile(group.tile)] = group;
+      }
+    }
+    return groupFromKey;
+  },
+
   // Find a group. If the tile = {q,r} is given,
   // find the group closest to that tile.
   // Returns the group.
@@ -204,13 +271,12 @@ Strategy.prototype = {
     // It needs to be a group we don't currently count.
     var tiles = this.camp.inhabitedTiles;
     var chosenTile;
+    var groupFromKey = this.controlledGroups();
     var closest = MAX_INT;
     for (var i = 0; i < tiles.length; i++) {
       var tileKey = terrain.keyFromTile(tiles[i]);
       // Skip groups we already control.
-      if (this.groupFromKey[tileKey] !== undefined) {
-        continue;
-      }
+      if (groupFromKey[tileKey] !== undefined) { continue; }
       // FIXME: don't include tiles controlled by players.
       // Locate the closest group to the target tile.
       var distance = distanceBetweenTiles(tile, tiles[i]);
@@ -219,16 +285,22 @@ Strategy.prototype = {
         chosenTile = tiles[i];
       }
     }
+    if (chosenTile == null) {
+      debugger;
+      return null;
+    }
     var group = new Group(chosenTile, this.camp);
-    this.groups.push(group);
-    this.groupFromKey[terrain.keyFromTile(chosenTile)] = group;
     return group;
   },
 
-  // Stop controlling group at that index (see `this.groups`).
-  removeGroup: function(index) {
-    delete this.groupFromKey[terrain.keyFromTile(this.groups[index].tile)];
-    this.groups.splice(index, 1);
+  // Remove empty groups from a project.
+  cleanGroups: function(project) {
+    for (var i = 0; i < project.groups.length; i++) {
+      var humanityTile = this.humanity(project.groups[i].tile);
+      if (humanityTile == null || humanityTile.h <= 0) {
+        project.groups.splice(i, 1);
+      }
+    }
   },
 
   // FIXME: add methods to improve the group for a particular project.
@@ -301,6 +373,12 @@ Strategy.prototype = {
     console.log('war project');
   },
 
+  // Remove the main project.
+  removeProject: function() {
+    if (this.projects.length <= 0) { return; }
+    this.projects.shift();
+  },
+
   // Add a random project.
   randomProject: function() {
     var projectTypes = Object.keys(projectType);
@@ -334,6 +412,9 @@ Strategy.prototype = {
 
   // Return true if the project is done.
   isProjectComplete: function(project) {
+    // If there is nobody left for the job, abandon it.
+    if (project.groups.length <= 0) { return true; }
+    // There are people left on the job.
     if (project.type === projectType.build) {
       return project.builds.length === 0;
     } else if (project.type === projectType.conquer
@@ -353,11 +434,13 @@ Strategy.prototype = {
       // We need to create a project.
       this.randomProject();
     }
-    console.log('projects:', JSON.stringify(this.projects, null, 2));
+    ///console.log('projects:', JSON.stringify(this.projects, null, 2));
     // Complete the first project we have.
     var project = this.projects[0];
+    // Remove empty groups.
+    this.cleanGroups(project);
     if (this.isProjectComplete(project)) {
-      this.projects.shift();
+      this.removeProject();
       return this.runProject();
     }
     // FIXME: what if there is nobody on the group's tile?
@@ -382,29 +465,16 @@ Strategy.prototype = {
       }
       // We need to go towards this building tile.
       var group = project.groups[(project.groups.length * Math.random())|0];
-      var toTile = closestTowards(group.tile, build.tile);
-      // FIXME: what if toTile is the same as the current tile?
-      var fromHumanityTile = this.humanity(group.tile);
-      group.tile = toTile;
-      return {
-        at: terrain.keyFromTile(group.tile),
-        do: terrain.planTypes.move,
-        to: terrain.keyFromTile(toTile),
-        h: fromHumanityTile.h
-      };
+      var plan = group.moveTowards(this.humanity, build.tile);
+      if (plan == null) { debugger; }
+      return plan;
     }
     // Go to the target.
     // FIXME: give availability to choose between groups to move forward.
     var group = project.groups[(project.groups.length * Math.random())|0];
-    var toTile = closestTowards(group.tile, project.target);
-    var fromHumanityTile = this.humanity(group.tile);
-    group.tile = toTile;
-    return {
-      at: terrain.keyFromTile(groupTile),
-      do: terrain.planTypes.move,
-      to: terrain.keyFromTile(toTile),
-      h: fromHumanityTile.h
-    };
+    var plan = group.moveTowards(this.humanity, project.target);
+    if (plan == null) { debugger; }
+    return plan;
   },
 
 };
@@ -426,14 +496,19 @@ function distanceBetweenTiles(a, b) {
           Math.abs(a.q + a.r - b.q - b.r)) / 2;
 }
 
-// Return the closest tileKey we can go to from atTileKey
-// in order to go to the target toTileKey.
-function closestTowards(atTileKey, toTileKey) {
-  var accessibleTiles = terrain.humanTravel(terrain.tileFromKey(atTileKey));
-  var toTile = terrain.tileFromKey(toTileKey);
+// Return the closest tile we can go to from atTile {q,r}
+// in order to go to the target toTile {q,r}.
+function closestTowards(atTile, toTile) {
+  var accessibleTiles = terrain.humanTravel(atTile);
+  return closestTowardsAmong(accessibleTiles, toTile);
+}
+
+// Given a target location {q,r}, and a map from "q:r" to truthy values,
+// return the closest tile {q,r} to the target.
+function closestTowardsAmong(tiles, toTile) {
   var closest;
   var shortestDistanceYet = Infinity;
-  for (var tileKey in accessibleTiles) {
+  for (var tileKey in tiles) {
     if (closest === undefined) { closest = tileKey; continue; }
     var tile = terrain.tileFromKey(tileKey);
     var thisDistance = distanceBetweenTiles(tile, toTile);
@@ -442,7 +517,8 @@ function closestTowards(atTileKey, toTileKey) {
       closest = tileKey;
     }
   }
-  return closest;
+  if (closest === undefined) { debugger; return null; }
+  return terrain.tileFromKey(closest);
 }
 
 
