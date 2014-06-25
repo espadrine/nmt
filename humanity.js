@@ -503,7 +503,7 @@ function findNearest(tile, valid, limit) {
     }
     k++;
   }
-  if (k >= limit) { return null; }
+  if (k > limit) { return null; }
   return tile;
 }
 

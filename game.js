@@ -307,8 +307,9 @@ function runAiNTimes(n) {
 
 // Uncomment the following to make the AI play constantly.
 //setInterval(function () {
-//  var aiPlan = ai.run(humanity);
+//  var aiPlan = ai.runCamp(humanity, humanity.campFromId(0));
 //  console.log('ai plan:', aiPlan);
+//  //debugger;
 //  if (aiPlan != null) { aiPlan.ai = true; judgePlan(0, aiPlan, true); }
 //}, 1000);
 

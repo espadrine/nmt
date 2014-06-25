@@ -68,6 +68,16 @@ function isOneOf(b, buildings) {
   return buildings.indexOf(b) >= 0;
 }
 
+// tile: {q,r}
+// tiles: [{q,r}]
+// Returns true if `tile` is one of the tiles in `tiles`.
+function tileIsOneOf(tile, tiles) {
+  for (var i = 0; i < tiles.length; i++) {
+    if (sameTile(tile, tiles[i])) { return true; }
+  }
+  return false;
+}
+
 // Compute the set of buildings to build, in order, to be able to build
 // something specific, on a tile.
 // b: terrain.tileTypes
@@ -91,23 +101,44 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
     // Ignore terrain requirements…
     if (!isBuilding(buildingType)) { continue; }
     var dependencySatisfied = false;
+
+    // Is what we are looking for already built there?
+    for (var j = 0; j < 6; j++) {
+      var neighbor = terrain.neighborFromTile(tile, j);
+      var neighborHumanity = humanity(neighbor);
+      if (neighborHumanity && neighborHumanity.b === buildingType) {
+        forbiddenTiles = forbiddenTiles.concat(neighbor);
+        number -= 1;
+        if (number <= 0) {
+          // We have built everything of this type of building.
+          dependencySatisfied = true;
+          break;
+        }
+      }
+    }
+    if (number <= 0) { break; }
+
     // Choose a random starting neighbor, check all neighbors.
     var startingNeighbor = (Math.random() * 6)|0;
     for (var j = 0; j < 6; j++) {
       var n = (j + startingNeighbor) % 6;
       var neighbor = terrain.neighborFromTile(tile, n);
       // Is this neighbor authorized?
-      if (isOneOf(neighbor, forbiddenTiles)) { continue; }
+      if (tileIsOneOf(neighbor, forbiddenTiles)) { continue; }
       var neighborBuildings =
         dependencyBuilds(humanity, buildingType, neighbor, forbiddenTiles);
       if (neighborBuildings != null) {
         // We can build that.
         buildings = buildings.concat(neighborBuildings);
+        console.log('new buildings:', neighborBuildings);
+        var lastNeighborBuilding =
+          neighborBuildings[neighborBuildings.length - 1];
         // We mustn't destroy this tile, it is needed to build `b`.
-        forbiddenTiles = forbiddenTiles.concat(tile);
+        forbiddenTiles = forbiddenTiles.concat(lastNeighborBuilding.tile);
+        console.log('forbiddenTiles:', forbiddenTiles);
         number -= 1;
         if (number <= 0) {
-          // We have build everything of this type of building.
+          // We have built everything of this type of building.
           dependencySatisfied = true;
           break;
         }
@@ -161,7 +192,7 @@ Group.prototype = {
     // Are we too hungry to go forward?
     if (fromHumanityTile.f <= 0
         // If we're on water, we can die.
-        && terrainType.type === terrain.tileTypes.water) {
+        && terrainType.type !== terrain.tileTypes.water) {
       return {
         at: terrain.keyFromTile(fromTile),
         do: terrain.planTypes.build,
@@ -186,7 +217,8 @@ Group.prototype = {
         // FIXME: We need to go to a dock, if there is one close by,
         // or we need to build one.
         console.log('need a dock');
-      } else if (nextHumanityTile.b === terrain.tileTypes.wall) {
+      } else if (nextHumanityTile
+        && nextHumanityTile.b === terrain.tileTypes.wall) {
         // FIXME: We need to go to an airport or build one.
         console.log('need an airport');
       } else if (nextTerrain.steepness > terrain.tileTypes.hill) {
@@ -318,9 +350,12 @@ Strategy.prototype = {
     // Find an unoccupied tile close by.
     var size = 1;  // FIXME: choose a size depending on the building type.
     tile = this.findNearestEmpty(tile, size);
+    console.log('nearest empty:', tile);
     // Find a tile where this can be constructed.
     tile = this.findConstructionLocation(tile, buildingType);
+    console.log('construction location:', tile);
     var builds = this.dependencyBuilds(buildingType, tile);
+    console.log('builds:', builds);
     // Find the nearest group around that tile.
     var groups = [];
     groups.push(this.addGroup(tile));
@@ -329,6 +364,7 @@ Strategy.prototype = {
       groups: groups,
       target: tile,
       builds: builds,
+      ttl: 50,
     });
     console.log('build project');
   },
@@ -354,6 +390,7 @@ Strategy.prototype = {
       groups: groups,
       target: tile,
       camp: campId,
+      ttl: 50,
     });
     console.log('conquer project');
   },
@@ -369,6 +406,7 @@ Strategy.prototype = {
       groups: groups,
       target: tile,
       camp: campId,
+      ttl: 50,
     });
     console.log('war project');
   },
@@ -383,10 +421,14 @@ Strategy.prototype = {
   randomProject: function() {
     var projectTypes = Object.keys(projectType);
     var type = (projectTypeList.length * Math.random())|0;
+    /// TODO: remove the next line.
+    type = projectType.build;
     if (type === projectType.build) {
       // Random building.
       var buildingType = terrain.buildingTypes[
         (terrain.buildingTypes.length * Math.random())|0];
+      // TODO: remove next line.
+      buildingType = terrain.tileTypes.skyscraper;
       this.buildProject(buildingType);
     } else if (type === projectType.conquer) {
       // Random camp, find a tile type it owns.
@@ -411,9 +453,16 @@ Strategy.prototype = {
   },
 
   // Return true if the project is done.
+  // FIXME: add an incremental timeout to projects.
   isProjectComplete: function(project) {
-    // If there is nobody left for the job, abandon it.
-    if (project.groups.length <= 0) { return true; }
+    project.ttl--;
+    // If the project's time to live has sunk to 0, kill it.
+    if (project.ttl <= 0) { return true; }
+    console.log('TTL:', project.ttl);
+    // If there is nobody left for the job, find new ones.
+    if (project.groups.length <= 0) {
+      project.groups.push(this.addGroup(project.target));
+    }
     // There are people left on the job.
     if (project.type === projectType.build) {
       return project.builds.length === 0;
@@ -429,6 +478,8 @@ Strategy.prototype = {
 
   // Return an atomic operation to send to the server.
   runProject: function() {
+    // Are we still there?
+    if (this.camp.population <= 0) { return null; }
     // Find a project to use.
     if (this.projects.length === 0) {
       // We need to create a project.
@@ -443,7 +494,6 @@ Strategy.prototype = {
       this.removeProject();
       return this.runProject();
     }
-    // FIXME: what if there is nobody on the group's tile?
     // First, you need to perform all the builds.
     if (project.builds && project.builds.length > 0) {
       var build = project.builds[0];
@@ -456,6 +506,11 @@ Strategy.prototype = {
       }
       if (groupIsOnTile) {
         project.builds.shift();
+        // Don't build something that is already there.
+        var humanityTile = this.humanity(build.tile);
+        if (humanityTile && humanityTile.b === build.building) {
+          return null;
+        }
         // Send the construction information.
         return {
           at: terrain.keyFromTile(build.tile),
