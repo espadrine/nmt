@@ -45,7 +45,10 @@ function findConstructionLocation(humanity, tile, b) {
         return false;
       }
     }
-    return true;
+    // Check that the build order succeeds.
+    if (dependencyBuilds(humanity, b, tile) != null) {
+      return true;
+    } else { return false; }
   });
 }
 
@@ -85,7 +88,6 @@ function tileIsOneOf(tile, tiles) {
 // forbiddenTiles: [{q,r}]
 // Returns a list of {tile: {q,r}, building: type} that needs to be
 // constructed, in the correct order (see terrain.tileTypes).
-// FIXME: take unwalkable tiles (water, …) into account.
 // FIXME: don't destroy buildings which cost resources.
 function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
   forbiddenTiles = forbiddenTiles || [];
@@ -106,7 +108,10 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
     for (var j = 0; j < 6; j++) {
       var neighbor = terrain.neighborFromTile(tile, j);
       var neighborHumanity = humanity(neighbor);
-      if (neighborHumanity && neighborHumanity.b === buildingType) {
+      var neighborTerrain = terrain(neighbor);
+      if (neighborHumanity
+        && (neighborHumanity.b === buildingType
+         || neighborTerrain.type === buildingType)) {
         forbiddenTiles = forbiddenTiles.concat(neighbor);
         number -= 1;
         if (number <= 0) {
@@ -123,6 +128,9 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
     for (var j = 0; j < 6; j++) {
       var n = (j + startingNeighbor) % 6;
       var neighbor = terrain.neighborFromTile(tile, n);
+      // Is this neighbor constructible?
+      var neighborTerrain = terrain(neighbor);
+      if (neighborTerrain.type === terrain.tileTypes.water) { continue; }
       // Is this neighbor authorized?
       if (tileIsOneOf(neighbor, forbiddenTiles)) { continue; }
       var neighborBuildings =
@@ -130,12 +138,10 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
       if (neighborBuildings != null) {
         // We can build that.
         buildings = buildings.concat(neighborBuildings);
-        console.log('new buildings:', neighborBuildings);
         var lastNeighborBuilding =
           neighborBuildings[neighborBuildings.length - 1];
         // We mustn't destroy this tile, it is needed to build `b`.
         forbiddenTiles = forbiddenTiles.concat(lastNeighborBuilding.tile);
-        console.log('forbiddenTiles:', forbiddenTiles);
         number -= 1;
         if (number <= 0) {
           // We have built everything of this type of building.
@@ -356,6 +362,7 @@ Strategy.prototype = {
     console.log('construction location:', tile);
     var builds = this.dependencyBuilds(buildingType, tile);
     console.log('builds:', builds);
+    if (builds == null) { return; }
     // Find the nearest group around that tile.
     var groups = [];
     groups.push(this.addGroup(tile));
@@ -509,7 +516,7 @@ Strategy.prototype = {
         // Don't build something that is already there.
         var humanityTile = this.humanity(build.tile);
         if (humanityTile && humanityTile.b === build.building) {
-          return null;
+          return this.runProject();
         }
         // Send the construction information.
         return {
