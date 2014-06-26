@@ -89,12 +89,27 @@ function tileIsOneOf(tile, tiles) {
 // b: terrain.tileTypes
 // tile: {q,r}
 // forbiddenTiles: [{q,r}]
+// override: map from "q:r" to building type, showing buildings that
+//   will be built during the construction.
 // Returns a list of {tile: {q,r}, building: type} that needs to be
 // constructed, in the correct order (see terrain.tileTypes).
-// FIXME: keep track of what gets destroyed and created while building.
 // FIXME: don't destroy buildings which cost resources.
-function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
+// FIXME: don't destroy buildings of the type we're creating.
+function dependencyBuilds(humanity, b, tile, forbiddenTiles, override) {
   forbiddenTiles = forbiddenTiles || [];
+
+  // Keep track of what gets destroyed and created while building.
+  override = override || Object.create(null);
+  var buildingOnTile = function(tile) {
+    var tileKey = terrain.keyFromTile(tile);
+    if (override[tileKey] != null) {
+      return override[tileKey];
+    }
+    var humanityTile = humanity(tile);
+    if (humanityTile == null) { return null; }
+    return humanityTile.b;
+  };
+
   // List of {tile: {q,r}, building: type}.
   var buildings = [];
   var dependencies = terrain.buildingDependencies[b];
@@ -111,11 +126,9 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
     // Is what we are looking for already built there?
     for (var j = 0; j < 6; j++) {
       var neighbor = terrain.neighborFromTile(tile, j);
-      var neighborHumanity = humanity(neighbor);
       var neighborTerrain = terrain(neighbor);
-      if (neighborHumanity
-        && (neighborHumanity.b === buildingType
-         || neighborTerrain.type === buildingType)) {
+      if (buildingOnTile(neighbor) === buildingType
+        || neighborTerrain.type === buildingType) {
         forbiddenTiles = forbiddenTiles.concat(neighbor);
         number -= 1;
         if (number <= 0) {
@@ -138,7 +151,8 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
       // Is this neighbor authorized?
       if (tileIsOneOf(neighbor, forbiddenTiles)) { continue; }
       var neighborBuildings =
-        dependencyBuilds(humanity, buildingType, neighbor, forbiddenTiles);
+        dependencyBuilds(humanity, buildingType, neighbor,
+            forbiddenTiles, override);
       if (neighborBuildings != null) {
         // We can build that.
         buildings = buildings.concat(neighborBuildings);
@@ -158,6 +172,7 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
   }
   // We have built all the dependencies, now we can build the final piece.
   buildings.push({ tile: tile, building: b });
+  override[terrain.keyFromTile(tile)] = b;
   return buildings;
 }
 
