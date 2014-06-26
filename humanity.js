@@ -255,27 +255,29 @@ Camp.prototype = {
     }
     return ourTiles;
   },
-  get builtTiles () {
+  // Take a function from (humanityTile, tileKey) to a truth value.
+  // Returns our tiles for which this function returns true.
+  tilesWith: function(valid) {
     var ourTiles = [];
     for (var tileKey in humanityData) {
       var humanityTile = humanityData[tileKey];
-      if (humanityTile.c === this.id && humanityTile.b != null) {
+      if (humanityTile.c === this.id
+        && valid(humanityTile, tileKey)) {
         // This is our nationality.
         ourTiles.push(terrain.tileFromKey(tileKey));
       }
     }
     return ourTiles;
   },
+  get builtTiles () {
+    return this.tilesWith(function(humanityTile) {
+      return humanityTile.b != null;
+    });
+  },
   get inhabitedTiles () {
-    var ourTiles = [];
-    for (var tileKey in humanityData) {
-      var humanityTile = humanityData[tileKey];
-      if (humanityTile.c === this.id && humanityTile.h > 0) {
-        // This is our nationality.
-        ourTiles.push(terrain.tileFromKey(tileKey));
-      }
-    }
-    return ourTiles;
+    return this.tilesWith(function(humanityTile) {
+      return humanityTile.h > 0;
+    });
   },
 };
 
@@ -489,7 +491,8 @@ var MAX_INT = 9007199254740992;
 // limit: number of tiles away from `tile` after which we stop.
 // Returns the first tile which is valid.
 function findNearest(tile, valid, limit) {
-  limit = limit || (MAX_INT - 1);
+  if (limit == null) { limit = (MAX_INT - 1); }
+  if (limit === 0 && valid(tile)) { return tile; }
   var k = 1;
   while (!valid(tile) && k <= limit) {
     // Take the bottom left tile.

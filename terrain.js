@@ -333,6 +333,14 @@ var manufacture = {
   gun: 8
 };
 
+function manufactureFromBuilding(b) {
+  if (b === tileTypes.dock) { return manufacture.boat;
+  } else if (b === tileTypes.factory) { return manufacture.car;
+  } else if (b === tileTypes.airport) { return manufacture.plane;
+  } else if (b === tileTypes.gunsmith) { return manufacture.gun;
+  } else { return null; }
+}
+
 function speedFromHuman(human) {
   if ((human.o & manufacture.plane) !== 0) {
     return 32;

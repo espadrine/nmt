@@ -18,10 +18,13 @@ function findConstructionLocation(humanity, tile, b) {
     return isGenerated(dep[1]);
   });
   return humanity.findNearest(tile, function(tile) {
+    // This tile must not hold water.
+    var terrainTile = terrain(tile);
+    if (terrainTile.type === terrain.tileTypes.water) { return false; }
     // Current tile requirement.
     if (sameTileTerrainDependency) {
       var humanityTile = humanity(tile);
-      if (!isOneOf(terrain(tile).type, sameTileTerrainDependency)) {
+      if (!isOneOf(terrainTile.type, sameTileTerrainDependency)) {
         if (humanityTile == null) { return false; }
         if (!isOneOf(humanityTile.b, sameTileTerrainDependency)) {
           return false;
@@ -88,6 +91,7 @@ function tileIsOneOf(tile, tiles) {
 // forbiddenTiles: [{q,r}]
 // Returns a list of {tile: {q,r}, building: type} that needs to be
 // constructed, in the correct order (see terrain.tileTypes).
+// FIXME: keep track of what gets destroyed and created while building.
 // FIXME: don't destroy buildings which cost resources.
 function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
   forbiddenTiles = forbiddenTiles || [];
@@ -121,7 +125,7 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles) {
         }
       }
     }
-    if (number <= 0) { break; }
+    if (number <= 0) { continue; }
 
     // Choose a random starting neighbor, check all neighbors.
     var startingNeighbor = (Math.random() * 6)|0;
@@ -182,19 +186,127 @@ function findNearestEmpty(humanity, tile, size) {
 // A group corresponds to a camp. It is on a unique tile.
 // tile: {q,r}
 // camp: a camp object. See humanity.js.
-function Group(tile, camp) {
+function Group(tile, strategy) {
   this.tile = tile;
-  this.camp = camp;
+  this.strategy = strategy;
+  this.camp = strategy.camp;
 }
 
 Group.prototype = {
 
+  // Convert a list of tiles {q,r} to a map from tile keys to truth values.
+  tileListToMap: function(tiles) {
+    var tilesMap = Object.create(null);
+    for (var i = 0; i < tiles.length; i++) {
+      tilesMap[terrain.keyFromTile(tiles[i])] = true;
+    }
+    return tilesMap;
+  },
+
+  // Return the closest tile to `target` {q,r}
+  // that owns a certain manufactured item.
+  tileWithManufacture: function(manufacture, target) {
+    var tiles = this.camp.tilesWith(function(humanityTile) {
+      return (humanityTile.h > 0) && ((humanityTile.o & manufacture) !== 0);
+    });
+    if (tiles.length === 0) { return null; }
+    return closestTowardsAmong(this.tileListToMap(tiles), target);
+  },
+
+  // Return the closest manufacture {q,r} of a particular type `b`
+  // to the tile `target` {q,r}.
+  closestManufacture: function(b, target) {
+    var tiles = this.camp.tilesWith(function(humanityTile) {
+      return humanityTile.b === b;
+    });
+    if (tiles.length === 0) { return null; }
+    return closestTowardsAmong(this.tileListToMap(tiles), target);
+  },
+
+  // Return the closest tile {q,r} owned by this camp.
+  closestOwned: function(target) {
+    var tiles = this.camp.tiles;
+    if (tiles.length === 0) { return null; }
+    return closestTowardsAmong(this.tileListToMap(tiles), target);
+  },
+
+  // Switch this group (and potentially the current project)
+  // to ensure that either this group will eventually have
+  // the manufacture corresponding to the `b` building
+  // (see `terrain.tileTypes`).
+  useManufacture: function(b, target) {
+    // What is the code for the manufactured item obtained from that building?
+    var item = terrain.manufactureFromBuilding(b);
+    if (item == null) { return; }
+    var building = this.closestManufacture(b, target);
+    var owner = this.tileWithManufacture(item, target);
+    // Ideally, we already have people that own the correct manufacture.
+    if (owner != null) {
+      if (building != null) {
+        // Both exist.
+        if (distanceBetweenTiles(owner, target)
+          <= distanceBetweenTiles(building, target)) {
+          // The owner is closer to the target.
+          this.switchGroupTo(owner);
+        } else {
+          // The manufacture is closer to the target.
+          // Find someone to go to the manufacture.
+          this.moveFrom(building);
+        }
+      } else {
+        // We only have an owner. We need to build a manufacture anyway.
+        this.firstBuild(b, this.closestOwned(target));
+      }
+    } else if (building != null) {
+      // Find someone to go to the manufacture.
+      this.moveFrom(building);
+    } else {
+      // We need to build a manufacture.
+      this.firstBuild(b, this.closestOwned(target));
+    }
+  },
+
+  // Given a tile, change the group to the folks on that tile {q,r}.
+  switchGroupTo: function(tile) {
+    this.tile = tile;
+  },
+
+  // Given a tile {q,r}, make sure this group first moves there,
+  // from any tile near that one.
+  moveFrom: function(tile) {
+    var tiles = this.camp.inhabitedTiles;
+    // Convert tiles to a map.
+    var tilesMap = Object.create(null);
+    for (var i = 0; i < tiles.length; i++) {
+      tilesMap[terrain.keyFromTile(tiles[i])] = true;
+    }
+    var newGroupLocation = closestTowardsAmong(tilesMap, tile);
+    // When a group will be there, this group will be that group.
+    this.switchGroupTo(tile);
+    // Add a project to move there with a group at that location.
+    this.strategy.warProject(tile, this.camp.id);
+    // The strategy is at the end. Put it at the beginning.
+    var project = this.strategy.projects.pop();
+    this.strategy.projects.unshift(project);
+  },
+
+  // Create a project to build something (see terrain.tileTypes),
+  // somewhat close to `tile` {q,r},
+  // so that it has priority over the current project.
+  firstBuild: function(b, tile) {
+    // Add a project to build that there.
+    this.strategy.buildProject(b, tile);
+    // The strategy is at the end. Put it at the beginning.
+    var project = this.strategy.projects.pop();
+    this.strategy.projects.unshift(project);
+  },
+
   // Advance in the direction of target = {q,r}.
+  // Returns a plan {at,do,b,to,h}.
   moveTowards: function(humanity, target) {
     var fromTile = this.tile;
     var fromHumanityTile = humanity(fromTile);
     var terrainType = terrain(fromTile);
-    var toTile = closestTowards(fromTile, target) || fromTile;
     // Are we too hungry to go forward?
     if (fromHumanityTile.f <= 0
         // If we're on water, we can die.
@@ -205,6 +317,17 @@ Group.prototype = {
         b: terrain.tileTypes.farm,
       };
     }
+    // Filter out tiles where there are folks with manufactured items
+    // which would make us lose ours.
+    var ourManufacture = fromHumanityTile.o;
+    var toTile = closestTowards(fromTile, target, function(filterTile) {
+      var humanityTile = humanity(filterTile);
+      if (humanityTile == null) { return true; }
+      if (humanityTile.h === 0) { return true; }
+      var theirManufacture = humanityTile.o;
+      if (ourManufacture === 0) { return true; }
+      return ourManufacture === theirManufacture;
+    }) || fromTile;
     // Are we cut off by something?
     if (sameTile(toTile, fromTile)) {
       // What by?
@@ -218,19 +341,22 @@ Group.prototype = {
       var blockingTile = closestTowardsAmong(around, target);
       var nextTerrain = terrain(blockingTile);
       var nextHumanityTile = humanity(blockingTile);
-      if (nextTerrain.type === terrain.tileTypes.water
-        && (fromHumanityTile.o & terrain.manufacture.boat)) {
-        // FIXME: We need to go to a dock, if there is one close by,
-        // or we need to build one.
+      // Based on what blocks us, switch group to one which can go through.
+      if (nextTerrain.type === terrain.tileTypes.water) {
+        // We need to go to a dock close by or we need to build one.
         console.log('need a dock');
+        this.useManufacture(terrain.tileTypes.dock, fromTile);
       } else if (nextHumanityTile
         && nextHumanityTile.b === terrain.tileTypes.wall) {
-        // FIXME: We need to go to an airport or build one.
+        // We need to go to an airport or build one.
         console.log('need an airport');
+        this.useManufacture(terrain.tileTypes.airport, fromTile);
       } else if (nextTerrain.steepness > terrain.tileTypes.hill) {
-        // FIXME: We need to go to a factory or build one.
+        // We need to go to a factory or build one.
         console.log('need a factory');
+        this.useManufacture(terrain.tileTypes.factory, fromTile);
       }
+      debugger;
       return null;
     }
     // Go there.
@@ -327,13 +453,14 @@ Strategy.prototype = {
       debugger;
       return null;
     }
-    var group = new Group(chosenTile, this.camp);
+    var group = new Group(chosenTile, this);
     return group;
   },
 
   // Remove empty groups from a project.
   cleanGroups: function(project) {
     for (var i = 0; i < project.groups.length; i++) {
+      if (project.groups[i] == null) { debugger; }
       var humanityTile = this.humanity(project.groups[i].tile);
       if (humanityTile == null || humanityTile.h <= 0) {
         project.groups.splice(i, 1);
@@ -348,13 +475,17 @@ Strategy.prototype = {
 
   // Create a building.
   // FIXME: notice lack of resources needed for building.
-  buildProject: function(buildingType) {
-    // List of tileKeys
-    var tiles = this.camp.inhabitedTiles;
-    // Pick a random tile we occupy.
-    var tile = tiles[(tiles.length * Math.random())|0];
+  // FIXME: make sure you don't need the manufactured items the building
+  // provides to build the manufacture.
+  buildProject: function(buildingType, tile) {
+    if (tile == null) {
+      // List of tileKeys
+      var tiles = this.camp.inhabitedTiles;
+      // Pick a random tile we occupy.
+      tile = tiles[(tiles.length * Math.random())|0];
+    }
     // Find an unoccupied tile close by.
-    var size = 1;  // FIXME: choose a size depending on the building type.
+    var size = 0;  // FIXME: choose a size depending on the building type.
     tile = this.findNearestEmpty(tile, size);
     console.log('nearest empty:', tile);
     // Find a tile where this can be constructed.
@@ -404,6 +535,7 @@ Strategy.prototype = {
 
   // Harm a specific adversary.
   // Targets residential buildings and buildings around them.
+  // Can also be used to put humans on a specific tile.
   warProject: function(tile, campId) {
     // Find the nearest group around that tile.
     var groups = [];
@@ -473,13 +605,18 @@ Strategy.prototype = {
     // There are people left on the job.
     if (project.type === projectType.build) {
       return project.builds.length === 0;
-    } else if (project.type === projectType.conquer
-            || project.type === projectType.war) {
+    } else if (project.type === projectType.conquer) {
+      // We own the target.
+      var humanityTile = this.humanity(project.target);
+      if (humanityTile == null) { return false; }
+      return humanityTile.c === this.camp.id;
+    } else if (project.type === projectType.war) {
       // We have arrived to the target
       // (potentially killing enemies along the way).
       var humanityTile = this.humanity(project.target);
       if (humanityTile == null) { return false; }
-      return humanityTile.c === this.camp.id;
+      return (humanityTile.c === this.camp.id)
+        && (humanityTile.h > 0);
     }
   },
 
@@ -488,9 +625,16 @@ Strategy.prototype = {
     // Are we still there?
     if (this.camp.population <= 0) { return null; }
     // Find a project to use.
-    if (this.projects.length === 0) {
+    var notDesperateYet = 20;
+    while (this.projects.length === 0 && notDesperateYet > 0) {
       // We need to create a project.
       this.randomProject();
+    }
+    if (this.projects.length === 0) { return null; }
+    // Avoid infinite creation of new projects because of chicken-and-egg.
+    if (this.projects.length > 20) {
+      for (var i = 0; i < this.projects.length; i++) { this.removeProject(); }
+      return this.runProject();
     }
     ///console.log('projects:', JSON.stringify(this.projects, null, 2));
     // Complete the first project we have.
@@ -504,18 +648,14 @@ Strategy.prototype = {
     // First, you need to perform all the builds.
     if (project.builds && project.builds.length > 0) {
       var build = project.builds[0];
+      // FIXME: If there is someone on the tile already, build it now.
       // If we're on the tile, build it and be done with it.
-      var groupIsOnTile = false;
-      for (var i = 0; i < project.groups.length; i++) {
-        if (sameTile(project.groups[i].tile, build.tile)) {
-          groupIsOnTile = true;
-        }
-      }
-      if (groupIsOnTile) {
+      var humanityTile = this.humanity(build.tile);
+      if (humanityTile && humanityTile.c === this.camp.id
+        && humanityTile.h > 0) {
         project.builds.shift();
         // Don't build something that is already there.
-        var humanityTile = this.humanity(build.tile);
-        if (humanityTile && humanityTile.b === build.building) {
+        if (humanityTile.b === build.building) {
           return this.runProject();
         }
         // Send the construction information.
@@ -560,9 +700,25 @@ function distanceBetweenTiles(a, b) {
 
 // Return the closest tile we can go to from atTile {q,r}
 // in order to go to the target toTile {q,r}.
-function closestTowards(atTile, toTile) {
+function closestTowards(atTile, toTile, filter) {
   var accessibleTiles = terrain.humanTravel(atTile);
-  return closestTowardsAmong(accessibleTiles, toTile);
+  if (filter != null) {
+    // Filter those tiles.
+    for (var tileKey in accessibleTiles) {
+      if (!filter(terrain.tileFromKey(tileKey))) {
+        delete accessibleTiles[tileKey];
+      }
+    }
+  }
+  var closest = closestTowardsAmong(accessibleTiles, toTile);
+  // Current distance from atTile to toTile.
+  var currentDistance = distanceBetweenTiles(atTile, toTile);
+  // Distance between supposedly closest and toTile.
+  var futureDistance = distanceBetweenTiles(closest, toTile);
+  if (futureDistance >= currentDistance) {
+    return atTile;
+  }
+  return closest;
 }
 
 // Given a target location {q,r}, and a map from "q:r" to truthy values,

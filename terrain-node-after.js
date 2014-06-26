@@ -7,6 +7,7 @@ module.exports.buildingTypes = buildingTypes;
 module.exports.buildingDependencies = buildingDependencies;
 module.exports.buildingTileDependency = buildingTileDependency;
 module.exports.manufacture = manufacture;
+module.exports.manufactureFromBuilding = manufactureFromBuilding;
 module.exports.validConstruction = validConstruction;
 module.exports.neighborFromTile = neighborFromTile;
 
