@@ -306,11 +306,18 @@ function runAiNTimes(n) {
 }
 
 // Uncomment the following to make the AI play constantly.
-//setInterval(function () {
+//setTimeout(function autoAi() {
 //  var aiPlan = ai.runCamp(humanity, humanity.campFromId(0));
 //  console.log('ai plan:', aiPlan);
 //  //debugger;
-//  if (aiPlan != null) { aiPlan.ai = true; judgePlan(0, aiPlan, true); }
+//  if (aiPlan != null) {
+//    aiPlan.ai = true;
+//    judgePlan(0, aiPlan, true, function(msg) {
+//      if (msg != null) { console.log(msg); debugger; }
+//    });
+//  }
+//  var minTime = 40;
+//  setTimeout(autoAi, (Math.random() * 500 + minTime)|0)
 //}, 1000);
 
 var maxFood = 20;
@@ -474,9 +481,16 @@ function addPopulation(updatedHumanity) {
 
 function addFolk(homes, index) {
   var randomHome = homes[index];
-  var randomHomeTile = humanity(terrain.tileFromKey(randomHome));
+  var tile = terrain.tileFromKey(randomHome);
+  var randomHomeTile = humanity(tile);
   randomHomeTile.h++;
   randomHomeTile.f = maxFood;
+  var terrainTile = terrain(tile);
+  if (terrainTile.type === terrain.tileTypes.mountain) {
+    getManufacture(randomHomeTile, terrain.manufacture.car);
+  } else if (terrainTile.type === terrain.tileTypes.taiga) {
+    getManufacture(randomHomeTile, terrain.manufacture.plane);
+  }
   updatedHumanity[randomHome] = randomHomeTile;
 }
 
