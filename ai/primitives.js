@@ -84,6 +84,20 @@ function tileIsOneOf(tile, tiles) {
   return false;
 }
 
+// FIXME: dynamically build a list of valuable buildings.
+var valuableBuildings = [
+  terrain.tileTypes.dock,
+  terrain.tileTypes.airport,
+  terrain.tileTypes.wall,
+  terrain.tileTypes.blackdeath,
+  terrain.tileTypes.metal,
+  terrain.tileTypes.lumber,
+  terrain.tileTypes.mine,
+  terrain.tileTypes.industry,
+  terrain.tileTypes.citrus,
+  terrain.tileTypes.university,
+];
+
 // Compute the set of buildings to build, in order, to be able to build
 // something specific, on a tile.
 // b: terrain.tileTypes
@@ -94,16 +108,15 @@ function tileIsOneOf(tile, tiles) {
 // buildingPurpose: building type (see terrain.tileTypes). (Internal use.)
 // Returns a list of {tile: {q,r}, building: type} that needs to be
 // constructed, in the correct order (see terrain.tileTypes).
-// FIXME: don't destroy buildings which cost resources.
 function dependencyBuilds(humanity, b, tile, forbiddenTiles,
     override, buildingPurpose) {
   forbiddenTiles = forbiddenTiles || [];
+  var humanityTile = humanity(tile);
 
   // Don't destroy buildings of the type we're creating.
   if (buildingPurpose == null) {
     buildingPurpose = b;
     // Don't destroy a building which type you're currently building.
-    var humanityTile = humanity(tile);
     if (humanityTile && humanityTile.b === buildingPurpose) { return null; }
   }
   // Don't build manufactures on tiles which require their items to get to.
@@ -114,6 +127,10 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
   if (buildingPurpose === terrain.tileTypes.airport) {
     if (terrainTile.type === terrain.tileTypes.taiga ||
        humanityTile.b === terrain.tileTypes.wall) { return null; }
+  }
+  // Don't destroy buildings which cost resources.
+  if (humanityTile && isOneOf(humanityTile.b, valuableBuildings)) {
+    return null;
   }
 
   // Keep track of what gets destroyed and created while building.
