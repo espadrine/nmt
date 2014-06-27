@@ -90,13 +90,22 @@ function tileIsOneOf(tile, tiles) {
 // tile: {q,r}
 // forbiddenTiles: [{q,r}]
 // override: map from "q:r" to building type, showing buildings that
-//   will be built during the construction.
+//   will be built during the construction. (Internal use.)
+// buildingPurpose: building type (see terrain.tileTypes). (Internal use.)
 // Returns a list of {tile: {q,r}, building: type} that needs to be
 // constructed, in the correct order (see terrain.tileTypes).
 // FIXME: don't destroy buildings which cost resources.
-// FIXME: don't destroy buildings of the type we're creating.
-function dependencyBuilds(humanity, b, tile, forbiddenTiles, override) {
+function dependencyBuilds(humanity, b, tile, forbiddenTiles,
+    override, buildingPurpose) {
   forbiddenTiles = forbiddenTiles || [];
+
+  // Don't destroy buildings of the type we're creating.
+  if (buildingPurpose == null) {
+    buildingPurpose = b;
+    // Don't destroy a building which type you're currently building.
+    var humanityTile = humanity(tile);
+    if (humanityTile && humanityTile.b === buildingPurpose) { return null; }
+  }
 
   // Keep track of what gets destroyed and created while building.
   override = override || Object.create(null);
@@ -148,11 +157,15 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles, override) {
       // Is this neighbor constructible?
       var neighborTerrain = terrain(neighbor);
       if (neighborTerrain.type === terrain.tileTypes.water) { continue; }
+      var neighborHumanity = humanity(neighbor);
+      // Don't destroy a building which type you're currently building.
+      if (neighborHumanity &&
+          neighborHumanity.b === buildingPurpose) { continue; }
       // Is this neighbor authorized?
       if (tileIsOneOf(neighbor, forbiddenTiles)) { continue; }
       var neighborBuildings =
         dependencyBuilds(humanity, buildingType, neighbor,
-            forbiddenTiles, override);
+            forbiddenTiles, override, buildingPurpose);
       if (neighborBuildings != null) {
         // We can build that.
         buildings = buildings.concat(neighborBuildings);
@@ -318,6 +331,7 @@ Group.prototype = {
 
   // Advance in the direction of target = {q,r}.
   // Returns a plan {at,do,b,to,h}.
+  // FIXME: use A*.
   moveTowards: function(humanity, target) {
     var fromTile = this.tile;
     var fromHumanityTile = humanity(fromTile);
@@ -371,7 +385,6 @@ Group.prototype = {
         console.log('need a factory');
         this.useManufacture(terrain.tileTypes.factory, fromTile);
       }
-      debugger;
       return null;
     }
     // Go there.
@@ -464,10 +477,7 @@ Strategy.prototype = {
         chosenTile = tiles[i];
       }
     }
-    if (chosenTile == null) {
-      debugger;
-      return null;
-    }
+    if (chosenTile == null) { debugger; return null; }
     var group = new Group(chosenTile, this);
     return group;
   },
@@ -683,14 +693,14 @@ Strategy.prototype = {
       // We need to go towards this building tile.
       var group = project.groups[(project.groups.length * Math.random())|0];
       var plan = group.moveTowards(this.humanity, build.tile);
-      if (plan == null) { debugger; }
+      if (plan == null) { debugger; return this.runProject(); }
       return plan;
     }
     // Go to the target.
     // FIXME: give availability to choose between groups to move forward.
     var group = project.groups[(project.groups.length * Math.random())|0];
     var plan = group.moveTowards(this.humanity, project.target);
-    if (plan == null) { debugger; }
+    if (plan == null) { debugger; return this.runProject(); }
     return plan;
   },
 
