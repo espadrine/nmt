@@ -106,6 +106,15 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
     var humanityTile = humanity(tile);
     if (humanityTile && humanityTile.b === buildingPurpose) { return null; }
   }
+  // Don't build manufactures on tiles which require their items to get to.
+  var terrainTile = terrain(tile);
+  if (buildingPurpose === terrain.tileTypes.factory) {
+    if (terrainTile.type === terrain.tileTypes.mountain) { return null; }
+  }
+  if (buildingPurpose === terrain.tileTypes.airport) {
+    if (terrainTile.type === terrain.tileTypes.taiga ||
+       humanityTile.b === terrain.tileTypes.wall) { return null; }
+  }
 
   // Keep track of what gets destroyed and created while building.
   override = override || Object.create(null);
@@ -459,7 +468,8 @@ Strategy.prototype = {
   // Find a group. If the tile = {q,r} is given,
   // find the group closest to that tile.
   // Returns the group.
-  addGroup: function(tile) {
+  addGroup: function(tile, stealGroup) {
+    if (stealGroup == null) { stealGroup = false; }
     // It needs to be a group we don't currently count.
     var tiles = this.camp.inhabitedTiles;
     var chosenTile;
@@ -467,8 +477,10 @@ Strategy.prototype = {
     var closest = MAX_INT;
     for (var i = 0; i < tiles.length; i++) {
       var tileKey = terrain.keyFromTile(tiles[i]);
-      // Skip groups we already control.
-      if (groupFromKey[tileKey] !== undefined) { continue; }
+      if (!stealGroup) {
+        // Skip groups we already control.
+        if (groupFromKey[tileKey] !== undefined) { continue; }
+      }
       // FIXME: don't include tiles controlled by players.
       // Locate the closest group to the target tile.
       var distance = distanceBetweenTiles(tile, tiles[i]);
@@ -477,7 +489,7 @@ Strategy.prototype = {
         chosenTile = tiles[i];
       }
     }
-    if (chosenTile == null) { debugger; return null; }
+    if (chosenTile == null) { debugger; return this.addGroup(tile, true); }
     var group = new Group(chosenTile, this);
     return group;
   },

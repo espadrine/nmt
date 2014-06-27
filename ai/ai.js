@@ -36,7 +36,13 @@ AI.prototype = {
       this.strategy[camp.id]
         = new aiPrimitives.Strategy(camp, humanity);
     }
-    return this.strategy[camp.id].runProject();
+    try {
+      return this.strategy[camp.id].runProject();
+    } catch(e) {
+      // Reset.
+      delete this.strategy[camp.id];
+      return this.runCamp(humanity, camp);
+    }
   },
 
 };
