@@ -1497,14 +1497,17 @@ function paintPopulation() {
 // Tile Messages.
 var surrenderMessages = [
   "We surrender!",
+  "I give up!",
+  "Enemies captured!",
   "I, for one, welcome our new overlords."
 ];
 var hungerMessages = [
+  "Make a farm.",
   "Hungry!",
   "Is dinner ready?",
   "I can't feel my stomach!",
   "You're starving us!",
-  "I could eat anything now. Rats. Babies.",
+  "I could eat anything. Rats. Babies.",
   "You look like a sandwich to me."
 ];
 var warMessages = [
@@ -1515,11 +1518,18 @@ var warMessages = [
   "Sorry Mommy!",
   "New legs, please!",
   "Have you seen my head?",
-  "That wine tastes good. Wait—",
-  "Tell my wife I loved her… meals…",
-  "I do!",
+  "There is wine on the floor…",
+  "They're bleeding demised!",
+  "Them ex-people make daisies happy.",
+  "⬐ Acclimated to the being dead position",
+  "So much for survival!",
+  "Today I died.",
+  "I dare you! I double-dare you!",
+  "Mayday!",
+  "Area pacified, over!",
   "Resistance is futile.",
-  "I didn't expect the Spanish Inquisition!",
+  "All your base are belong to us.",
+  "Nobody expects the Spanish Inquisition!",
   "Whoop-de-doo!",
   "You'll never take me alive!",
   "Told you he wasn't immortal!",
@@ -1529,7 +1539,7 @@ var warMessages = [
   "I owe a cock to Asclepius.",
   "More light!",
   "Life's too short!",
-  "They couldn't hit an elephant at this dist…",
+  "What will you do, kill m—?!",
   "Drink to me!"
 ];
 
