@@ -40,6 +40,8 @@ AI.prototype = {
       return this.strategy[camp.id].runProject();
     } catch(e) {
       // Reset.
+      console.error(e);
+      debugger;
       delete this.strategy[camp.id];
       return this.runCamp(humanity, camp);
     }
