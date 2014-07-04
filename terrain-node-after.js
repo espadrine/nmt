@@ -1,7 +1,9 @@
 
 module.exports = terrain;
-module.exports.travel = humanTravelTo;
-module.exports.humanTravel = humanTravel;
+module.exports.travel = humanTravelPath;
+module.exports.humanTravelTo = humanTravelTo;
+module.exports.humanTravel = humanTravelFrom;
+module.exports.speedFromHuman = speedFromHuman;
 module.exports.tileTypes = tileTypes;
 module.exports.buildingTypes = buildingTypes;
 module.exports.buildingDependencies = buildingDependencies;

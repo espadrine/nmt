@@ -1199,19 +1199,6 @@ function paint(gs) {
   paintTilesFromCache(gs, function() { paintIntermediateUI(gs); });
 }
 
-// previousTile is a map from tileKey to the previous tileKey.
-function humanTravelToCache(currentTile, targetTile, previousTile) {
-  var trajectory = [];
-  var tileKey = keyFromTile(targetTile);
-  if (previousTile[tileKey] === undefined) { return trajectory; }
-  while (previousTile[tileKey] !== tileKey) {
-    trajectory.unshift(tileKey);
-    tileKey = previousTile[tileKey];
-  }
-  trajectory.unshift(tileKey);
-  return trajectory;
-}
-
 // Paint the UI for population, winner information, etc.
 // gs is the GraphicState.
 function paintIntermediateUI(gs) {
@@ -1234,11 +1221,11 @@ function paintIntermediateUI(gs) {
        selectionMode === selectionModes.split)) {
     // Paint the path that the selected folks would take.
     paintAlongTiles(gs,
-        humanTravelToCache(currentTile, targetTile, accessibleTiles));
+        pathFromParents(keyFromTile(targetTile), accessibleTiles));
   }
   // Paint the path that folks will take.
   for (var to in registerMoves) {
-    paintAlongTiles(gs, humanTravelTo(registerMoves[to], tileFromKey(to)));
+    paintAlongTiles(gs, humanTravelPath(registerMoves[to], tileFromKey(to)));
   }
   paintTileMessages(gs);
   if (gameOver !== undefined) {
@@ -1706,7 +1693,7 @@ function updateCurrentTileInformation() {
     // Tile information.
     showTileInformation(currentTile);
     // Accessible tiles.
-    accessibleTiles = humanTravel(currentTile);
+    accessibleTiles = humanTravelFrom(currentTile);
     // Valid constructions.
     indicateValidConstructions(currentTile);
   }
@@ -1907,7 +1894,7 @@ function mouseSelection(event) {
     }
     // Send travel information.
     var startTile = posTile;
-    if (humanTravelTo(currentTile, startTile).length > 1
+    if (humanTravelPath(currentTile, startTile).length > 1
         && humanityTile.c === playerCamp) {
       if (humanityTile.f > 0) {
         sendMove(currentTile, startTile, numberOfPeople);

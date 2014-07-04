@@ -164,9 +164,9 @@ function tileFromKey(key) {
 // Returns a map from tileKey (see keyFromTile) to the tile key whence we come.
 function travelFrom(tstart, speed) {
   var camp = humanity(tstart).c;    // Camp which wants to travel.
-  var walkedTiles = {};     // Valid accessible tiles.
+  var walkedTiles = {};     // Valid accessible tiles mapped to parents.
   var current = keyFromTile(tstart);
-  walkedTiles[current] = current;
+  walkedTiles[current] = null;
   var consideredTiles = {}; // Map from tile keys to distance walked.
   consideredTiles[current] = 0;
   var fastest = [];         // List of tile keys from fastest to slowest.
@@ -217,12 +217,21 @@ function travelFrom(tstart, speed) {
   return walkedTiles;
 }
 
+var MAX_INT = 9007199254740992;
+
 // Find the path from tstart = {q, r} to tend = {q, r}
 // with a minimal distance, at a certain speed. (It's A*.)
 // Requires humans to be on that tile.
 // Returns a list of tiles = "q:r" through the trajectory.
-function travelTo(tstart, tend, speed) {
-  var camp = humanity(tstart).c;    // Camp which wants to travel.
+// - endKey: the "q:r" tile of the target.
+// - parents: map from "q:r" tiles to the "q:r" tile you would walk from
+//   to get there.
+// - costs: map from "q:r" tiles to the speed cost to get there.
+function travelTo(tstart, tend, speed, maxTiles, human) {
+  // Optional parameters.
+  if (maxTiles == null) { maxTiles = MAX_INT; }
+  if (human == null) { human = humanity(tstart); }
+  var camp = human.c;       // Camp which wants to travel.
   var endKey = keyFromTile(tend);
   var walkedTiles = {};     // Valid accessed tiles.
   var consideredTiles = {}; // Map from tile keys to distance walked.
@@ -230,6 +239,7 @@ function travelTo(tstart, tend, speed) {
   var fastest = [];         // List of tile keys from fastest to slowest.
   var parents = {};         // Map from tile keys to parent tile keys.
   var current = keyFromTile(tstart);
+  parents[current] = null;
   consideredTiles[current] = 0;
   fastest.push(current);
   // Going through each considered tile.
@@ -244,48 +254,64 @@ function travelTo(tstart, tend, speed) {
     }
     for (var i = 0; i < 6; i++) {
       var neighbor = neighborFromTile(tileFromKey(current), i);
-      var newDistance = consideredTiles[current] + distance(neighbor);
-      if (newDistance <= speed) {
-        var neighborKey = keyFromTile(neighbor);
-        if (consideredTiles[neighborKey] !== undefined &&
-            newDistance < consideredTiles[neighborKey]) {
-          // We have a better path to this tile.
-          delete consideredTiles[neighborKey];
-        }
-        if (consideredTiles[neighborKey] === undefined &&
-            walkedTiles[neighborKey] === undefined) {
-          consideredTiles[neighborKey] = newDistance;
-          heuristic[neighborKey] = newDistance + (
-              Math.abs(tend.q - neighbor.q) +
-              Math.abs(tend.r - neighbor.r) +
-              Math.abs(tend.q + tend.r - neighbor.q - neighbor.r)) / 2;
-          // Where should we insert it in `fastest`?
-          var insertionIndex = -1;
-          for (var k = 0; k < fastest.length; k++) {
-            if (heuristic[fastest[k]] === undefined) {
-              fastest.splice(k, 1);  // Has been removed before.
-              k--;
-              continue;
-            }
-            if (heuristic[neighborKey] <= heuristic[fastest[k]]) {
-              insertionIndex = k;
-              break;
-            }
+      var distanceCost = distance(neighbor);
+      // Can we go there at that speed?
+      if (speed < distanceCost) { continue; }
+      if (maxTiles <= 0) { return null; }
+      else { maxTiles--; }
+      // Here, we can go there.
+      var newDistance = consideredTiles[current] + distanceCost;
+      var neighborKey = keyFromTile(neighbor);
+      if (consideredTiles[neighborKey] !== undefined &&
+          newDistance < consideredTiles[neighborKey]) {
+        // We have a better path to this tile.
+        delete consideredTiles[neighborKey];
+      }
+      if (consideredTiles[neighborKey] === undefined &&
+          walkedTiles[neighborKey] === undefined) {
+        consideredTiles[neighborKey] = newDistance;
+        heuristic[neighborKey] = newDistance + (
+            Math.abs(tend.q - neighbor.q) +
+            Math.abs(tend.r - neighbor.r) +
+            Math.abs(tend.q + tend.r - neighbor.q - neighbor.r)) / 2;
+        // Where should we insert it in `fastest`?
+        var insertionIndex = -1;
+        for (var k = 0; k < fastest.length; k++) {
+          if (heuristic[fastest[k]] === undefined) {
+            fastest.splice(k, 1);  // Has been removed before.
+            k--;
+            continue;
           }
-          if (insertionIndex === -1) { fastest.push(neighborKey); }
-          else { fastest.splice(insertionIndex, 0, neighborKey); }
-          parents[neighborKey] = current;
+          if (heuristic[neighborKey] <= heuristic[fastest[k]]) {
+            insertionIndex = k;
+            break;
+          }
         }
+        if (insertionIndex === -1) { fastest.push(neighborKey); }
+        else { fastest.splice(insertionIndex, 0, neighborKey); }
+        parents[neighborKey] = current;
       }
     }
   }
+  if (endKey !== current) { return null; }  // No dice. ☹
+  return {
+    endKey: endKey,
+    parents: parents,
+    costs: consideredTiles,
+  };
+}
+
+// Given a target tileKey `endKey`
+// and `parents`, a map from tileKey to the previous tileKey,
+// return a list from the start position to `endKey`, tile by tile.
+function pathFromParents(endKey, parents) {
   var path = [];
-  if (endKey !== current) { return path; }  // No dice. ☹
-  while (parents[endKey] !== undefined) {
+  if (parents[endKey] == null) { return []; }
+  while (parents[endKey] !== null) {
     path.push(endKey);
     endKey = parents[endKey];
   }
-  path.push(keyFromTile(tstart));
+  path.push(endKey);
   return path.reverse();
 }
 
@@ -304,7 +330,7 @@ function unsetDistancesForHuman(h) {
   distances[tileTypes.water] = normalWater;
   distances[tileTypes.swamp] = normalSwamp;
 }
-function humanTravel(tpos) {
+function humanTravelFrom(tpos) {
   var h = humanity(tpos);
   if (!h || h.h <= 0) { return {}; }
   setDistancesForHuman(h);
@@ -313,13 +339,19 @@ function humanTravel(tpos) {
   return tiles;
 }
 
-function humanTravelTo(tpos, tend) {
-  var h = humanity(tpos);
-  if (!h || h.h <= 0) { return []; }
+function humanTravelTo(tpos, tend, maxTiles, h) {
+  if (h == null) { h = humanity(tpos); }
+  if (!h || h.h <= 0) { return null; }
   setDistancesForHuman(h);
-  var tiles = travelTo(tpos, tend, speedFromHuman(h));
+  var tiles = travelTo(tpos, tend, speedFromHuman(h), maxTiles, h);
   unsetDistancesForHuman(h);
   return tiles;
+}
+
+function humanTravelPath(tpos, tend) {
+  var travel = humanTravelTo(tpos, tend);
+  if (travel == null) { return []; }
+  return pathFromParents(travel.endKey, travel.parents);
 }
 
 
