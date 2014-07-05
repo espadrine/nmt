@@ -129,7 +129,9 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
   }
   if (buildingPurpose === terrain.tileTypes.airport) {
     if (terrainTile.type === terrain.tileTypes.taiga ||
-       humanityTile.b === terrain.tileTypes.wall) { return null; }
+       (humanityTile && humanityTile.b === terrain.tileTypes.wall)) {
+       return null;
+     }
   }
   // Don't destroy buildings which cost resources.
   if (humanityTile && isOneOf(humanityTile.b, valuableBuildings)) {
@@ -235,6 +237,36 @@ function findNearestEmpty(humanity, tile, size) {
   });
 }
 
+// Take tiles `from` and `to` {q,r}, returns the list of all steps to go
+// through as tiles "q:r".
+function trajectory(from, to, human, maxTiles) {
+  maxTiles = maxTiles || 100000;  // 100 thousand tiles.
+  var travel = terrain.humanTravelTo(from, to, maxTiles, human);
+  if (travel == null) { return travel; }
+  // Cut the path in walkable parts.
+  var steps = [];
+  var endKey = travel.endKey;
+  var parents = travel.parents;
+  var costs = travel.costs;
+  var humanSpeed = terrain.speedFromHuman(human);
+  var speed = humanSpeed;
+  steps.push(endKey);
+  while (parents[endKey] !== null) {
+    var delta = costs[endKey] - costs[parents[endKey]];
+    speed -= delta;
+    endKey = parents[endKey];
+    if (speed <= 0) {
+      speed = humanSpeed;
+      steps.push(endKey);
+    }
+  }
+  // If the first jump does nothing, ignore it.
+  if (steps[steps.length - 1] !== endKey) {
+    steps.push(endKey);
+  }
+  return steps.reverse();
+}
+
 
 
 // Managing projects.
@@ -247,6 +279,7 @@ function Group(tile, strategy) {
   this.tile = tile;
   this.strategy = strategy;
   this.camp = strategy.camp;
+  this.trajectory = [];
 }
 
 Group.prototype = {
@@ -347,6 +380,11 @@ Group.prototype = {
     // The strategy is at the end. Put it at the beginning.
     var project = this.strategy.projects.pop();
     this.strategy.projects.unshift(project);
+    // Try to compute the trajectory.
+    var group = project.groups[0];
+    var humanityTile = this.strategy.humanity(group.tile);
+    var traj = trajectory(group.tile, project.target, humanityTile);
+    if (traj != null) { group.trajectory = traj; }
   },
 
   // Create a project to build something (see terrain.tileTypes),
@@ -360,10 +398,39 @@ Group.prototype = {
     this.strategy.projects.unshift(project);
   },
 
+  // Return next plan along `this.trajectory`.
+  moveAlongTrajectory: function() {
+    // If there is nothing, or only a starting location, we can't use it.
+    if (this.trajectory.length <= 1) { return null; }
+    var fromTileKey = this.trajectory[0];
+    var fromTile = terrain.tileFromKey(fromTileKey);
+    if (!sameTile(fromTile, this.tile)) {
+      this.trajectory = [];
+      return null;
+    }
+    // Remove current tile, going to the next tile.
+    this.trajectory.shift();
+    var toTileKey = this.trajectory[0];
+    var fromHumanityTile = this.strategy.humanity(fromTile);
+    return {
+      at: fromTileKey,
+      do: terrain.planTypes.move,
+      to: toTileKey,
+      h: fromHumanityTile.h
+    };
+  },
+
   // Advance in the direction of target = {q,r}.
   // Returns a plan {at,do,b,to,h}.
-  // FIXME: use A*.
   moveTowards: function(humanity, target) {
+    // Implementation reminder: change this.tile when moving group.
+    // Do we have a computed trajectory?
+    var computedTrajectory = this.moveAlongTrajectory();
+    if (computedTrajectory != null) {
+      this.tile = terrain.tileFromKey(computedTrajectory.to);
+      return computedTrajectory;
+    }
+    // No known trajectory.
     var fromTile = this.tile;
     var fromHumanityTile = humanity(fromTile);
     var terrainType = terrain(fromTile);
@@ -406,12 +473,13 @@ Group.prototype = {
         // We need to go to a dock close by or we need to build one.
         console.log('need a dock');
         this.useManufacture(terrain.tileTypes.dock, fromTile);
-      } else if (nextHumanityTile
-        && nextHumanityTile.b === terrain.tileTypes.wall) {
+      } else if ((nextHumanityTile
+        && nextHumanityTile.b === terrain.tileTypes.wall)
+        || nextTerrain.type === terrain.tileTypes.taiga) {
         // We need to go to an airport or build one.
         console.log('need an airport');
         this.useManufacture(terrain.tileTypes.airport, fromTile);
-      } else if (nextTerrain.steepness > terrain.tileTypes.hill) {
+      } else if (nextTerrain.type === terrain.tileTypes.mountain) {
         // We need to go to a factory or build one.
         console.log('need a factory');
         this.useManufacture(terrain.tileTypes.factory, fromTile);
@@ -424,7 +492,6 @@ Group.prototype = {
             return !(sameTile(filterTile, fromTile)
               || sameTile(filterTile, blockingTile));
           });
-        debugger;
         return {
           at: terrain.keyFromTile(blockingTile),
           do: terrain.planTypes.move,
@@ -454,6 +521,7 @@ function Strategy(camp, humanity) {
   // Active projects.
   // Each project is {type, groups, target, builds, camp}.
   this.projects = [];  // Ordered by priority.
+  this.recursionLimit = 0;
 }
 
 // Strategy gives primitives for elementary projects
@@ -536,7 +604,6 @@ Strategy.prototype = {
   // Remove empty groups from a project.
   cleanGroups: function(project) {
     for (var i = 0; i < project.groups.length; i++) {
-      if (project.groups[i] == null) { debugger; }
       var humanityTile = this.humanity(project.groups[i].tile);
       if (humanityTile == null || humanityTile.h <= 0) {
         project.groups.splice(i, 1);
@@ -548,39 +615,6 @@ Strategy.prototype = {
 
   // Project creation below.
   //
-
-  // tile: {q,r}
-  // Return a list of tileKey we step through, or null.
-  trajectory: function(toTile) {
-    // Find the closest inhabitant.
-    var closestGroup = this.addGroup(toTile);
-    var fromTile = closestGroup.tile;
-    var humanityTile = this.humanity(fromTile);
-    var distance = distanceBetweenTiles(fromTile, toTile);
-    var list = [];
-    do {
-      var closestNeighbor;
-      var closestNeighborDistance = distance;
-      for (var i = 0; i < 6; i++) {
-        var neighbor = terrain.neighborFromTile(fromTile, i);
-        var neighborDistance = distanceBetweenTiles(neighbor, toTile);
-        if (neighborDistance < closestNeighborDistance) {
-          closestNeighborDistance = neighborDistance;
-          closestNeighbor = neighbor;
-        }
-      }
-      if (closestNeighbor == null) {
-        debugger;
-        return null;
-      } else {
-        list.push(closestNeighbor);
-        fromTile = closestNeighbor;
-      }
-    } while (!sameTile(fromTile, toTile));
-    console.log('trajectory:', list);
-    debugger;
-    return list;
-  },
 
   // Create a building.
   // buildingType: see terrain.tileTypes.
@@ -603,16 +637,22 @@ Strategy.prototype = {
       tile = this.findNearestEmpty(tile, size);
       console.log('nearest empty:', tile);
     }
-    console.log('loc1');
     // Don't build manufactures on tiles which require their items to get to.
     // Is there a trajectory from the closest humans to here?
     if (buildingType === terrain.tileTypes.factory
       || buildingType === terrain.tileTypes.dock
       || buildingType === terrain.tileTypes.airport) {
+      var traj;
+      var group;
       var self = this;
-      var valid = function(tile) { return !!self.trajectory(tile); };
+      var valid = function(tile) {
+        group = self.addGroup(tile);
+        var fromTile = group.tile;
+        var humanityTile = self.humanity(fromTile);
+        traj = trajectory(fromTile, tile, humanityTile);
+        return !!traj;
+      };
     }
-    console.log('loc2');
     // Find a tile where this can be constructed.
     tile = this.findConstructionLocation(tile, buildingType, valid);
     console.log('construction location:', tile);
@@ -620,14 +660,19 @@ Strategy.prototype = {
     console.log('builds:', builds);
     if (builds == null) { return; }
     // Find the nearest group around that tile.
-    var groups = [];
-    groups.push(this.addGroup(tile));
+    if (group === undefined) {
+      var group = this.addGroup(tile);
+    }
+    if (traj !== undefined) {
+      group.trajectory = traj;
+    }
+    var groups = [group];
     this.projects.push({
       type: projectType.build,
       groups: groups,
       target: tile,
       builds: builds,
-      ttl: 50,
+      ttl: 100,
     });
     console.log('build project');
   },
@@ -653,7 +698,7 @@ Strategy.prototype = {
       groups: groups,
       target: tile,
       camp: campId,
-      ttl: 50,
+      ttl: 100,
     });
     console.log('conquer project');
   },
@@ -670,7 +715,7 @@ Strategy.prototype = {
       groups: groups,
       target: tile,
       camp: campId,
-      ttl: 50,
+      ttl: 100,
     });
     console.log('war project');
   },
@@ -717,7 +762,6 @@ Strategy.prototype = {
   },
 
   // Return true if the project is done.
-  // FIXME: add an incremental timeout to projects.
   isProjectComplete: function(project) {
     project.ttl--;
     // If the project's time to live has sunk to 0, kill it.
@@ -747,18 +791,21 @@ Strategy.prototype = {
 
   // Return an atomic operation to send to the server.
   runProject: function() {
+    // Implementation note: when recursing over this function,
+    // increment `this.recursionLimit`.
     // Are we still there?
     if (this.camp.population <= 0) { return null; }
     // Find a project to use.
-    var notDesperateYet = 20;
-    while (this.projects.length === 0 && notDesperateYet > 0) {
+    while (this.projects.length === 0) {
       // We need to create a project.
       this.randomProject();
     }
     if (this.projects.length === 0) { return null; }
     // Avoid infinite creation of new projects because of chicken-and-egg.
-    if (this.projects.length > 20) {
+    if (this.projects.length > 20 || this.recursionLimit > 7) {
+      console.log('Projects reset.');
       for (var i = 0; i < this.projects.length; i++) { this.removeProject(); }
+      this.recursionLimit = 0;
       return this.runProject();
     }
     ///console.log('projects:', JSON.stringify(this.projects, null, 2));
@@ -768,6 +815,7 @@ Strategy.prototype = {
     this.cleanGroups(project);
     if (this.isProjectComplete(project)) {
       this.removeProject();
+      this.recursionLimit++;
       return this.runProject();
     }
     // First, you need to perform all the builds.
@@ -780,6 +828,7 @@ Strategy.prototype = {
         project.builds.shift();
         // Don't build something that is already there.
         if (humanityTile.b === build.building) {
+          this.recursionLimit++;
           return this.runProject();
         }
         // Send the construction information.
@@ -792,14 +841,14 @@ Strategy.prototype = {
       // We need to go towards this building tile.
       var group = project.groups[(project.groups.length * Math.random())|0];
       var plan = group.moveTowards(this.humanity, build.tile);
-      if (plan == null) { debugger; return this.runProject(); }
+      if (plan == null) { debugger; this.recursionLimit++; return this.runProject(); }
       return plan;
     }
     // Go to the target.
     // FIXME: give availability to choose between groups to move forward.
     var group = project.groups[(project.groups.length * Math.random())|0];
     var plan = group.moveTowards(this.humanity, project.target);
-    if (plan == null) { debugger; return this.runProject(); }
+    if (plan == null) { debugger; this.recursionLimit++; return this.runProject(); }
     return plan;
   },
 
@@ -866,6 +915,7 @@ function closestTowardsAmong(tiles, toTile) {
 
 exports.findConstructionLocation = findConstructionLocation;
 exports.dependencyBuilds = dependencyBuilds;
+exports.trajectory = trajectory;
 exports.Strategy = Strategy;
 exports.projectType = projectType;
 exports.projectTypeList = projectTypeList;
