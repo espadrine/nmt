@@ -240,6 +240,9 @@ Camp.prototype = {
       acquiredUniversitiesMap: this.acquiredUniversitiesMap,
     };
   },
+  get leftFarm () { return this.farm - this.usedFarm; },
+  get leftLumber () { return this.lumber - this.usedLumber; },
+  get leftMetal () { return this.metal - this.usedMetal; },
   // Number of universities won from enemies.
   get acquiredUniversities () {
     return Object.keys(this.acquiredUniversitiesMap).length;

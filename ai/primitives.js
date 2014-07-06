@@ -19,36 +19,8 @@ function findConstructionLocation(humanity, tile, b, valid) {
     return isGenerated(dep[1]);
   });
   return humanity.findNearest(tile, function(tile) {
-    // This tile must not hold water.
-    var terrainTile = terrain(tile);
-    if (terrainTile.type === terrain.tileTypes.water) { return false; }
-    // Current tile requirement.
-    if (sameTileTerrainDependency) {
-      var humanityTile = humanity(tile);
-      if (!isOneOf(terrainTile.type, sameTileTerrainDependency)) {
-        if (humanityTile == null) { return false; }
-        if (!isOneOf(humanityTile.b, sameTileTerrainDependency)) {
-          return false;
-        }
-      }
-    }
-    // For each surrounding dependency, count the surroundings.
-    for (var i = 0; i < terrainDependencies.length; i++) {
-      var dependencyCount = terrainDependencies[i][0];
-      var dependencyType = terrainDependencies[i][1];
-      var count = 0;
-      for (var j = 0; j < 6; j++) {
-        var neighbor = terrain.neighborFromTile(tile, j);
-        var humanityNeighbor = humanity(neighbor);
-        if (terrain(neighbor).type === dependencyType
-          || (humanityNeighbor && humanityNeighbor.b === dependencyType)) {
-          count++;
-        }
-      }
-      if (count < dependencyCount) {
-        return false;
-      }
-    }
+    var isTerrainValid = validConstructionLocation(humanity, tile, b);
+    if (!isTerrainValid) { return false; }
     // Check that the build order succeeds.
     if (dependencyBuilds(humanity, b, tile) != null) {
       if (valid != null) {
@@ -56,6 +28,63 @@ function findConstructionLocation(humanity, tile, b, valid) {
       } else { return true; }
     } else { return false; }
   });
+}
+
+// Check whether building `b` (see `terrain.tileTypes`) has all requirements
+// met on `tile` {q,r} regarding generated terrain features on the current tile
+// and on tiles surrounding it.
+function validConstructionLocation(humanity, tile, b) {
+  var dependencies = terrain.buildingDependencies[b];
+  dependencies = dependencies || [];
+  var sameTileDependency = terrain.buildingTileDependency[b];
+  var terrainTile = terrain(tile);
+  var humanityTile = humanity(tile);
+
+  // This tile must not hold water.
+  if (terrainTile.type === terrain.tileTypes.water) { return false; }
+
+  // Check for the dependency on the current tile.
+  if (sameTileDependency) {
+    var areOk = [];
+    for (var i = 0; i < sameTileDependency.length; i++) {
+      if (isOneOf(sameTileDependency[i], terrain.buildingTypes)) {
+        // We must build this on top of something we can build.
+        areOk.push(validConstructionLocation(tile, sameTileDependency[i]));
+      } else {
+        // We must build this on top of something generated.
+        if (terrainTile.type === sameTileDependency[i]
+         || (humanityTile && humanityTile.b === sameTileDependency[i])) {
+          areOk.push(true);
+        }
+      }
+    }
+    // If there isn't a single acceptable option, return.
+    if (areOk.every(function(a) { return !a; })) { return false; }
+  }
+
+  // Check for dependencies on neighbor tiles.
+  // List of [number, building type] for generated things.
+  var terrainDependencies = dependencies.filter(function(dep) {
+    return isGenerated(dep[1]);
+  });
+  // For each surrounding dependency, count the surroundings.
+  for (var i = 0; i < terrainDependencies.length; i++) {
+    var dependencyCount = terrainDependencies[i][0];
+    var dependencyType = terrainDependencies[i][1];
+    var count = 0;
+    for (var j = 0; j < 6; j++) {
+      var neighbor = terrain.neighborFromTile(tile, j);
+      var humanityNeighbor = humanity(neighbor);
+      if (terrain(neighbor).type === dependencyType
+        || (humanityNeighbor && humanityNeighbor.b === dependencyType)) {
+        count++;
+      }
+    }
+    if (count < dependencyCount) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Given a building type (number), returns true if it can be built.
@@ -92,14 +121,15 @@ var valuableBuildings = [
   terrain.tileTypes.dock,
   terrain.tileTypes.airport,
   terrain.tileTypes.wall,
-  terrain.tileTypes.blackdeath,
-  terrain.tileTypes.metal,
   terrain.tileTypes.lumber,
   terrain.tileTypes.mine,
   terrain.tileTypes.industry,
-  terrain.tileTypes.citrus,
   terrain.tileTypes.university,
 ];
+var constructFromValuable = Object.create(null);
+constructFromValuable[terrain.tileTypes.blackdeath] = terrain.tileTypes.airport;
+constructFromValuable[terrain.tileTypes.metal] = terrain.tileTypes.mine;
+constructFromValuable[terrain.tileTypes.citrus] = terrain.tileTypes.university;
 
 // Compute the set of buildings to build, in order, to be able to build
 // something specific, on a tile.
@@ -133,9 +163,12 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
        return null;
      }
   }
-  // Don't destroy buildings which cost resources.
-  if (humanityTile && isOneOf(humanityTile.b, valuableBuildings)) {
-    return null;
+  if (humanityTile) {
+    // Don't destroy buildings which cost resources.
+    if (isOneOf(humanityTile.b, valuableBuildings)) { return null; }
+    // … unless they're improvements.
+    if (constructFromValuable[humanityTile.b] !== undefined
+      && constructFromValuable[humanityTile.b] !== b) { return null; }
   }
 
   // Keep track of what gets destroyed and created while building.
@@ -187,7 +220,9 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
       var neighbor = terrain.neighborFromTile(tile, n);
       // Is this neighbor constructible?
       var neighborTerrain = terrain(neighbor);
-      if (neighborTerrain.type === terrain.tileTypes.water) { continue; }
+      if (!validConstructionLocation(humanity, neighbor, buildingType)) {
+        continue;
+      }
       var neighborHumanity = humanity(neighbor);
       // Don't destroy a building which type you're currently building.
       if (neighborHumanity &&
@@ -235,6 +270,37 @@ function findNearestEmpty(humanity, tile, size) {
     // If it finds no built terrain, we're good to go.
     return !humanity.findNearest(tile, builtTerrain, size);
   });
+}
+
+// Given a camp and a buildingType (see `terrain.tileTypes`),
+// return a list of [quantity, resourceType], which indicates
+// the resource type we need (see `terrain.resourceTypes`).
+function resourceBuildRequirement(buildingType, camp) {
+  var buildingRequirements = terrain.buildingDependencies[buildingType];
+  var requirements = [];
+  if (buildingRequirements == null) { return []; }
+  var left = [camp.leftLumber, camp.leftMetal, camp.leftFarm];
+  var type = terrain.listOfResourceTypes;
+  // Extract required resources.
+  for (var i = 0; i < buildingRequirements.length; i++) {
+    var resourceType = buildingRequirements[i][1];
+    var quantity = buildingRequirements[i][0];
+    // Check whether it is an actual resource.
+    for (var j = 0; j < type.length; j++) {
+      if (resourceType === type[j]) {
+        if (left[j] < quantity) {
+          requirements.push([quantity - left[j], resourceType]);
+        }
+      }
+    }
+    // If it is a building, what are its own requirements?
+    if (isBuilding(resourceType)) {
+      // list of [quantity, resourceType].
+      var annexResources = resourceBuildRequirement(resourceType, camp);
+      requirements = requirements.concat(annexResources);
+    }
+  }
+  return requirements;
 }
 
 // Take tiles `from` and `to` {q,r}, returns the list of all steps to go
@@ -471,22 +537,22 @@ Group.prototype = {
       // Based on what blocks us, switch group to one which can go through.
       if (nextTerrain.type === terrain.tileTypes.water) {
         // We need to go to a dock close by or we need to build one.
-        console.log('need a dock');
+        console.log('need a dock near', fromTile);
         this.useManufacture(terrain.tileTypes.dock, fromTile);
       } else if ((nextHumanityTile
         && nextHumanityTile.b === terrain.tileTypes.wall)
         || nextTerrain.type === terrain.tileTypes.taiga) {
         // We need to go to an airport or build one.
-        console.log('need an airport');
+        console.log('need an airport near', fromTile);
         this.useManufacture(terrain.tileTypes.airport, fromTile);
       } else if (nextTerrain.type === terrain.tileTypes.mountain) {
         // We need to go to a factory or build one.
-        console.log('need a factory');
+        console.log('need a factory near', fromTile);
         this.useManufacture(terrain.tileTypes.factory, fromTile);
       } else if (nextHumanityTile && nextHumanityTile.h > 0) {
         // We are blocked by a silly group in front of us.
         // Tell them to get off our lawn!
-        console.log('need to get them off my lawn');
+        console.log('need to get them off my lawn near', fromTile);
         var awayFromLawn = closestTowards(blockingTile, {q:0,r:0},
           function(filterTile) {
             return !(sameTile(filterTile, fromTile)
@@ -621,7 +687,6 @@ Strategy.prototype = {
   // tile: {q,r}
   // size: number of empty layers around the building spot.
   //   If that value is negative, you are desperate to build anywhere.
-  // FIXME: notice lack of resources needed for building.
   buildProject: function(buildingType, tile, size) {
     if (tile == null) {
       // List of tileKeys
@@ -674,7 +739,36 @@ Strategy.prototype = {
       builds: builds,
       ttl: 100,
     });
+    // Check for the lack of resources needed to build this.
+    this.resourceProject(resourceBuildRequirement(buildingType, this.camp));
     console.log('build project');
+  },
+
+  // resources: list of [quantity, resourceType] (see terrain.resourceTypes).
+  resourceProject: function(resources) {
+    console.log('resources:', resources);
+    for (var i = 0; i < resources.length; i++) {
+      var quantity = resources[i][0];
+      var resource = resources[i][1];
+      var buildingType;
+      var size;
+      if (resource === terrain.resourceTypes.lumber) {
+        buildingType = terrain.tileTypes.lumber;
+        size = -1;
+      } else if (resource === terrain.resourceTypes.metal) {
+        buildingType = terrain.tileTypes.industry;
+        size = -1;
+      } else if (resource === terrain.resourceTypes.farm) {
+        buildingType = terrain.tileTypes.farm;
+      } else { continue; }
+      if (buildingType == null) { debugger; continue; }
+      for (var j = 0; j < quantity; j++) {
+        this.buildProject(buildingType, null, size);
+        // The strategy is at the end. Put it at the beginning.
+        var project = this.projects.pop();
+        this.projects.unshift(project);
+      }
+    }
   },
 
   // Obtain control over a type of tile.
@@ -736,8 +830,10 @@ Strategy.prototype = {
       // Random building.
       var buildingType = terrain.buildingTypes[
         (terrain.buildingTypes.length * Math.random())|0];
-      // TODO: remove next line.
-      buildingType = terrain.tileTypes.skyscraper;
+      // TODO: remove next lines.
+      if (this.camp.population < 50) {
+        buildingType = terrain.tileTypes.skyscraper;
+      } else { buildingType = terrain.tileTypes.industry; }
       this.buildProject(buildingType);
     } else if (type === projectType.conquer) {
       // Random camp, find a tile type it owns.

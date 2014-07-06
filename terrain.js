@@ -40,6 +40,11 @@ var resourceTypes = {
   metal:    -2,
   farm:     -3
 };
+var listOfResourceTypes = [
+  resourceTypes.lumber,
+  resourceTypes.metal,
+  resourceTypes.farm
+];
 
 var tileVegetationTypeFromSteepness = [];
 tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
