@@ -403,6 +403,14 @@ Group.prototype = {
     if (item == null) { return; }
     var building = this.closestManufacture(b, target);
     var owner = this.tileWithManufacture(item, target);
+    // Can we get to `target` from that spot?
+    var maxTiles = 100000;
+    var pathFromBuilding = trajectory(building, target,
+        { h:1, c:this.camp.id, o:item });
+    if (!pathFromBuilding) { building = null; }
+    var pathFromOwner = trajectory(owner, target,
+        this.strategy.humanity(owner));
+    if (!pathFromOwner) { owner = null; }
     // Ideally, we already have people that own the correct manufacture.
     if (owner != null) {
       if (building != null) {
@@ -410,11 +418,11 @@ Group.prototype = {
         if (distanceBetweenTiles(owner, target)
           <= distanceBetweenTiles(building, target)) {
           // The owner is closer to the target.
-          this.switchGroupTo(owner);
+          this.switchGroupTo(owner, pathFromOwner);
         } else {
           // The manufacture is closer to the target.
           // Find someone to go to the manufacture.
-          this.moveFrom(building);
+          this.moveFrom(building, pathFromBuilding);
         }
       } else {
         // We only have an owner. We need to build a manufacture anyway.
@@ -422,7 +430,7 @@ Group.prototype = {
       }
     } else if (building != null) {
       // Find someone to go to the manufacture.
-      this.moveFrom(building);
+      this.moveFrom(building, pathFromBuilding);
     } else {
       // We need to build a manufacture.
       this.firstBuild(b, this.closestInhabited(target));
@@ -430,17 +438,23 @@ Group.prototype = {
   },
 
   // Given a tile, change the group to the folks on that tile {q,r}.
-  switchGroupTo: function(tile) {
+  // path (optional): output of trajectory(), going from the intended
+  // tile to move from, to the ultimate tile to get to.
+  switchGroupTo: function(tile, path) {
     this.tile = tile;
+    this.trajectory = path;
   },
 
   // Given a tile {q,r}, make sure this group first moves there,
   // from any tile near that one.
-  moveFrom: function(tile) {
+  // path (optional): output of trajectory(), going from the intended
+  // tile to move from, to the ultimate tile to get to.
+  moveFrom: function(tile, path) {
     var tilesMap = this.tileListToMap(this.camp.inhabitedTiles);
     var newGroupLocation = closestTowardsAmong(tilesMap, tile);
     // When a group will be there, this group will be that group.
     this.switchGroupTo(tile);
+    this.trajectory = path;
     // Add a project to move there with a group at that location.
     this.strategy.warProject(tile, this.camp.id);
     // The strategy is at the end. Put it at the beginning.
@@ -465,6 +479,7 @@ Group.prototype = {
   },
 
   // Return next plan along `this.trajectory`.
+  // FIXME: don't merge groups.
   moveAlongTrajectory: function() {
     // If there is nothing, or only a starting location, we can't use it.
     if (this.trajectory.length <= 1) { return null; }
