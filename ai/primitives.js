@@ -404,7 +404,6 @@ Group.prototype = {
     var building = this.closestManufacture(b, target);
     var owner = this.tileWithManufacture(item, target);
     // Can we get to `target` from that spot?
-    var maxTiles = 100000;
     var pathFromBuilding = trajectory(building, target,
         { h:1, c:this.camp.id, o:item });
     if (!pathFromBuilding) { building = null; }
@@ -478,8 +477,34 @@ Group.prototype = {
     this.strategy.projects.unshift(project);
   },
 
+  // Move people of our own camp from a `blockingTile` {q,r} on a path where
+  // we have a group currently residing at `fromTile` {q,r}, anywhere away.
+  // humanityTile (optional): the humanity information about the group
+  //    we want to put away.
+  putOwnPeopleAway: function(blockingTile, fromTile, humanityTile) {
+    if (humanityTile == null) {
+      humanityTile = this.strategy.humanity(blockingTile);
+    }
+    var accessibleTiles = terrain.humanTravel(blockingTile);
+    // Remove blockingTile and fromTile.
+    for (var tileKey in accessibleTiles) {
+      var filterTile = terrain.tileFromKey(tileKey);
+      if (sameTile(filterTile, fromTile)
+            || sameTile(filterTile, blockingTile)) {
+        delete accessibleTiles[tileKey];
+      }
+    }
+    var accessibles = Object.keys(accessibleTiles);
+    var awayFromLawn = accessibles[(Math.random() * accessibles.length)|0];
+    return {
+      at: terrain.keyFromTile(blockingTile),
+      do: terrain.planTypes.move,
+      to: awayFromLawn,
+      h: humanityTile.h
+    };
+  },
+
   // Return next plan along `this.trajectory`.
-  // FIXME: don't merge groups.
   moveAlongTrajectory: function() {
     // If there is nothing, or only a starting location, we can't use it.
     if (this.trajectory.length <= 1) { return null; }
@@ -489,9 +514,19 @@ Group.prototype = {
       this.trajectory = [];
       return null;
     }
+    var toTileKey = this.trajectory[1];
+    // If there is a group there, move it.
+    var toTile = terrain.tileFromKey(toTileKey);
+    var nextHumanityTile = this.strategy.humanity(toTile);
+    if (nextHumanityTile && nextHumanityTile.c === this.camp.id
+        && nextHumanityTile.h > 0) {
+      // We are blocked by a silly group in front of us.
+      // Tell them to get off our lawn!
+      console.log('need to get them off my path near', fromTile);
+      return this.putOwnPeopleAway(toTile, fromTile, nextHumanityTile);
+    }
     // Remove current tile, going to the next tile.
     this.trajectory.shift();
-    var toTileKey = this.trajectory[0];
     var fromHumanityTile = this.strategy.humanity(fromTile);
     return {
       at: fromTileKey,
@@ -508,7 +543,10 @@ Group.prototype = {
     // Do we have a computed trajectory?
     var computedTrajectory = this.moveAlongTrajectory();
     if (computedTrajectory != null) {
-      this.tile = terrain.tileFromKey(computedTrajectory.to);
+      // If this move comes from our group, register our group's new tile.
+      if (sameTile(this.tile, computedTrajectory.at)) {
+        this.tile = terrain.tileFromKey(computedTrajectory.to);
+      }
       return computedTrajectory;
     }
     // No known trajectory.
@@ -553,6 +591,7 @@ Group.prototype = {
       if (nextTerrain.type === terrain.tileTypes.water) {
         // We need to go to a dock close by or we need to build one.
         console.log('need a dock near', fromTile);
+        debugger;
         this.useManufacture(terrain.tileTypes.dock, fromTile);
       } else if ((nextHumanityTile
         && nextHumanityTile.b === terrain.tileTypes.wall)
@@ -568,17 +607,7 @@ Group.prototype = {
         // We are blocked by a silly group in front of us.
         // Tell them to get off our lawn!
         console.log('need to get them off my lawn near', fromTile);
-        var awayFromLawn = closestTowards(blockingTile, {q:0,r:0},
-          function(filterTile) {
-            return !(sameTile(filterTile, fromTile)
-              || sameTile(filterTile, blockingTile));
-          });
-        return {
-          at: terrain.keyFromTile(blockingTile),
-          do: terrain.planTypes.move,
-          to: terrain.keyFromTile(awayFromLawn),
-          h: nextHumanityTile.h
-        };
+        return this.putOwnPeopleAway(blockingTile, fromTile, nextHumanityTile);
       }
       return null;
     }
