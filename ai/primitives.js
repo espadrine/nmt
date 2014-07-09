@@ -304,7 +304,7 @@ function resourceBuildRequirement(buildingType, camp) {
 }
 
 // Take tiles `from` and `to` {q,r}, returns the list of all steps to go
-// through as tiles "q:r".
+// through as tiles "q:r", or null if it failed.
 function trajectory(from, to, human, maxTiles) {
   maxTiles = maxTiles || 100000;  // 100 thousand tiles.
   var travel = terrain.humanTravelTo(from, to, maxTiles, human);
@@ -407,12 +407,12 @@ Group.prototype = {
     if (owner != null) {
       var pathFromOwner = trajectory(owner, target,
           this.strategy.humanity(owner));
-      if (!pathFromOwner) { owner = null; }
+      if (!pathFromOwner || pathFromOwner.length > 20) { owner = null; }
     }
     if (building != null) {
       var pathFromBuilding = trajectory(building, target,
           { h:1, c:this.camp.id, o:item });
-      if (!pathFromBuilding) { building = null; }
+      if (!pathFromBuilding || pathFromBuilding.length>20) { building = null; }
     }
     // Ideally, we already have people that own the correct manufacture.
     if (owner != null) {
