@@ -401,15 +401,19 @@ Group.prototype = {
     // What is the code for the manufactured item obtained from that building?
     var item = terrain.manufactureFromBuilding(b);
     if (item == null) { return; }
-    var building = this.closestManufacture(b, target);
     var owner = this.tileWithManufacture(item, target);
+    var building = this.closestManufacture(b, target);
     // Can we get to `target` from that spot?
-    var pathFromBuilding = trajectory(building, target,
-        { h:1, c:this.camp.id, o:item });
-    if (!pathFromBuilding) { building = null; }
-    var pathFromOwner = trajectory(owner, target,
-        this.strategy.humanity(owner));
-    if (!pathFromOwner) { owner = null; }
+    if (owner != null) {
+      var pathFromOwner = trajectory(owner, target,
+          this.strategy.humanity(owner));
+      if (!pathFromOwner) { owner = null; }
+    }
+    if (building != null) {
+      var pathFromBuilding = trajectory(building, target,
+          { h:1, c:this.camp.id, o:item });
+      if (!pathFromBuilding) { building = null; }
+    }
     // Ideally, we already have people that own the correct manufacture.
     if (owner != null) {
       if (building != null) {
