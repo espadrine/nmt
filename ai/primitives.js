@@ -548,7 +548,7 @@ Group.prototype = {
     var computedTrajectory = this.moveAlongTrajectory();
     if (computedTrajectory != null) {
       // If this move comes from our group, register our group's new tile.
-      if (sameTile(this.tile, computedTrajectory.at)) {
+      if (sameTile(this.tile, terrain.tileFromKey(computedTrajectory.at))) {
         this.tile = terrain.tileFromKey(computedTrajectory.to);
       }
       return computedTrajectory;
