@@ -334,6 +334,25 @@ function trajectory(from, to, human, maxTiles) {
 }
 
 
+// Return a valid plan that either moves people from "q:r" to "q:r" tiles,
+// or builds a farm, if they're out of food.
+function moveOrFood(from, to, humanityTile) {
+  if (humanityTile.f <= 0) {
+    return {
+      at: from,
+      do: terrain.planTypes.build,
+      b: terrain.tileTypes.farm
+    };
+  }
+  return {
+    at: from,
+    do: terrain.planTypes.move,
+    to: to,
+    h: humanityTile.h
+  };
+}
+
+
 
 // Managing projects.
 // Each plan corresponds to a group of folks that must accomplish it.
@@ -414,6 +433,7 @@ Group.prototype = {
           { h:1, c:this.camp.id, o:item });
       if (!pathFromBuilding || pathFromBuilding.length>20) { building = null; }
     }
+    debugger;
     // Ideally, we already have people that own the correct manufacture.
     if (owner != null) {
       if (building != null) {
@@ -500,12 +520,8 @@ Group.prototype = {
     }
     var accessibles = Object.keys(accessibleTiles);
     var awayFromLawn = accessibles[(Math.random() * accessibles.length)|0];
-    return {
-      at: terrain.keyFromTile(blockingTile),
-      do: terrain.planTypes.move,
-      to: awayFromLawn,
-      h: humanityTile.h
-    };
+    return moveOrFood(terrain.keyFromTile(blockingTile), awayFromLawn,
+        humanityTile);
   },
 
   // Return next plan along `this.trajectory`.
@@ -532,12 +548,7 @@ Group.prototype = {
     // Remove current tile, going to the next tile.
     this.trajectory.shift();
     var fromHumanityTile = this.strategy.humanity(fromTile);
-    return {
-      at: fromTileKey,
-      do: terrain.planTypes.move,
-      to: toTileKey,
-      h: fromHumanityTile.h
-    };
+    return moveOrFood(fromTileKey, toTileKey, fromHumanityTile);
   },
 
   // Advance in the direction of target = {q,r}.
@@ -595,7 +606,6 @@ Group.prototype = {
       if (nextTerrain.type === terrain.tileTypes.water) {
         // We need to go to a dock close by or we need to build one.
         console.log('need a dock near', fromTile);
-        debugger;
         this.useManufacture(terrain.tileTypes.dock, fromTile);
       } else if ((nextHumanityTile
         && nextHumanityTile.b === terrain.tileTypes.wall)
@@ -617,12 +627,8 @@ Group.prototype = {
     }
     // Go there.
     this.tile = toTile;
-    return {
-      at: terrain.keyFromTile(fromTile),
-      do: terrain.planTypes.move,
-      to: terrain.keyFromTile(toTile),
-      h: fromHumanityTile.h
-    };
+    return moveOrFood(terrain.keyFromTile(fromTile),terrain.keyFromTile(toTile),
+      fromHumanityTile);
   },
 
 };
