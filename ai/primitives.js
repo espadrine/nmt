@@ -155,13 +155,16 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
   // Don't build manufactures on tiles which require their items to get to.
   var terrainTile = terrain(tile);
   if (buildingPurpose === terrain.tileTypes.factory) {
-    if (terrainTile.type === terrain.tileTypes.mountain) { return null; }
+    if (terrainTile.steepness >= terrain.tileTypes.mountain ||
+       (humanityTile && humanityTile.b === terrain.tileTypes.wall)) {
+      return null;
+    }
   }
   if (buildingPurpose === terrain.tileTypes.airport) {
     if (terrainTile.type === terrain.tileTypes.taiga ||
        (humanityTile && humanityTile.b === terrain.tileTypes.wall)) {
-       return null;
-     }
+      return null;
+    }
   }
   if (humanityTile) {
     // Don't destroy buildings which cost resources.
