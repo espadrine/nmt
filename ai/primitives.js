@@ -341,11 +341,16 @@ function trajectory(from, to, human, maxTiles) {
 // or builds a farm, if they're out of food.
 function moveOrFood(from, to, humanityTile) {
   if (humanityTile.f <= 0) {
-    return {
-      at: from,
-      do: terrain.planTypes.build,
-      b: terrain.tileTypes.farm
-    };
+    // If we are on water and need food, we're dead meat anyway.
+    var isNotOnWater =
+      terrain(terrain.tileFromKey(from)).type !== terrain.tileTypes.water;
+    if (isNotOnWater) {
+      return {
+        at: from,
+        do: terrain.planTypes.build,
+        b: terrain.tileTypes.farm
+      };
+    }
   }
   return {
     at: from,
@@ -436,7 +441,7 @@ Group.prototype = {
           { h:1, c:this.camp.id, o:item });
       if (!pathFromBuilding || pathFromBuilding.length>20) { building = null; }
     }
-    debugger;
+    //debugger;
     // Ideally, we already have people that own the correct manufacture.
     if (owner != null) {
       if (building != null) {
@@ -563,6 +568,10 @@ Group.prototype = {
     if (computedTrajectory != null) {
       // If this move comes from our group, register our group's new tile.
       if (sameTile(this.tile, terrain.tileFromKey(computedTrajectory.at))) {
+        if (computedTrajectory.to == null && computedTrajectory.b != null) {
+          // They are building a farm or something.
+          return computedTrajectory;
+        }
         this.tile = terrain.tileFromKey(computedTrajectory.to);
       }
       return computedTrajectory;
