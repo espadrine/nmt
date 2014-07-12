@@ -6,18 +6,7 @@ var terrain = require('terrain-gen');
 // can be built, or null.
 // valid: function taking a tile, returning false is the tile is inacceptable.
 function findConstructionLocation(humanity, tile, b, valid) {
-  var dependencies = terrain.buildingDependencies[b];
-  dependencies = dependencies || [];
-  var sameTileDependency = terrain.buildingTileDependency[b];
-  // Aggregate all terrain-based requirements.
-  // That includes terrain and things which cannot be built.
-  if (isGenerated(sameTileDependency)) {
-    var sameTileTerrainDependency = sameTileDependency;
-  }
-  // List of [number, building type].
-  var terrainDependencies = dependencies.filter(function(dep) {
-    return isGenerated(dep[1]);
-  });
+  // FIXME: for certain constructions, look at places first.
   return humanity.findNearest(tile, function(tile) {
     var isTerrainValid = validConstructionLocation(humanity, tile, b);
     if (!isTerrainValid) { return false; }
@@ -141,6 +130,7 @@ constructFromValuable[terrain.tileTypes.citrus] = terrain.tileTypes.university;
 // buildingPurpose: building type (see terrain.tileTypes). (Internal use.)
 // Returns a list of {tile: {q,r}, building: type} that needs to be
 // constructed, in the correct order (see terrain.tileTypes).
+// FIXME: don't destroy a building from an unfinished build project.
 function dependencyBuilds(humanity, b, tile, forbiddenTiles,
     override, buildingPurpose) {
   forbiddenTiles = forbiddenTiles || [];
@@ -707,6 +697,7 @@ Strategy.prototype = {
   // Find a group. If the tile = {q,r} is given,
   // find the group closest to that tile.
   // Returns the group.
+  // FIXME: fork a nearby already-used group if possible, and fork it.
   addGroup: function(tile, stealGroup) {
     if (stealGroup == null) { stealGroup = false; }
     // It needs to be a group we don't currently count.
@@ -951,10 +942,22 @@ Strategy.prototype = {
     }
   },
 
+  // Use these in `runProject` only.
+  runProjectAgain: function() {
+    this.recursionLimit++;
+    return this.runProject();
+  },
+  returnPlan: function(plan) {
+    this.recursionLimit = 0;
+    return plan;
+  },
+
   // Return an atomic operation to send to the server.
   runProject: function() {
-    // Implementation note: when recursing over this function,
-    // increment `this.recursionLimit`.
+    // Implementation note: when returning from this function,
+    // use `this.runProjectAgain` to recurse over this function,
+    // or `this.returnPlan` if you return an actual plan.
+
     // Are we still there?
     if (this.camp.population <= 0) { return null; }
     // Find a project to use.
@@ -967,6 +970,7 @@ Strategy.prototype = {
     if (this.projects.length > 20 || this.recursionLimit > 7) {
       console.log('Projects reset.');
       for (var i = 0; i < this.projects.length; i++) { this.removeProject(); }
+      // This is the only exception to the rule at the head of this function.
       this.recursionLimit = 0;
       return this.runProject();
     }
@@ -977,8 +981,7 @@ Strategy.prototype = {
     this.cleanGroups(project);
     if (this.isProjectComplete(project)) {
       this.removeProject();
-      this.recursionLimit++;
-      return this.runProject();
+      return this.runProjectAgain();
     }
     // First, you need to perform all the builds.
     if (project.builds && project.builds.length > 0) {
@@ -990,28 +993,27 @@ Strategy.prototype = {
         project.builds.shift();
         // Don't build something that is already there.
         if (humanityTile.b === build.building) {
-          this.recursionLimit++;
-          return this.runProject();
+          return this.runProjectAgain();
         }
         // Send the construction information.
-        return {
+        return this.returnPlan({
           at: terrain.keyFromTile(build.tile),
           do: terrain.planTypes.build,
           b: build.building
-        };
+        });
       }
       // We need to go towards this building tile.
       var group = project.groups[(project.groups.length * Math.random())|0];
       var plan = group.moveTowards(this.humanity, build.tile);
       if (plan == null) { debugger; this.recursionLimit++; return this.runProject(); }
-      return plan;
+      return this.returnPlan(plan);
     }
     // Go to the target.
     // FIXME: give availability to choose between groups to move forward.
     var group = project.groups[(project.groups.length * Math.random())|0];
     var plan = group.moveTowards(this.humanity, project.target);
     if (plan == null) { debugger; this.recursionLimit++; return this.runProject(); }
-    return plan;
+    return this.returnPlan(plan);
   },
 
 };
