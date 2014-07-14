@@ -369,6 +369,17 @@ function pixelFromTile(p, px0, size) {
   };
 }
 
+// Random nudge to {x: 0, y:0}. The size of the nudge is given by `size`.
+// `tile` {q,r} is given as input to the randomness.
+// The result will be the same for each tile.
+function noisyPixel(size, tile) {
+  var t = terrain(tile);
+  var c = { x: 0, y: 0 };
+  c.x += (tile.q ^ tile.r ^ ((t.rain*128)|0)) % size;
+  c.y +=  (tile.q ^ tile.r ^ ((t.rain*256)|0)) % size;
+  return c;
+}
+
 // Sprites.
 
 function loadSprites() {
@@ -489,8 +500,7 @@ function straightPathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance) {
 // Given a set of tiles {q, r} representing hexagon coordinates,
 // construct the path around those hexagons.
 // gs is the GraphicState.
-// gs is the GraphicState.
-function pathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance) {
+function pathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance, noisy) {
   var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   ctx.beginPath();
   var vertices = [];
@@ -506,7 +516,7 @@ function pathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance) {
     }
   }
   pathFromPolygons(gs,
-      polygonFromVertices(gs, vertices, hexHorizDistance));
+      polygonFromVertices(gs, vertices, hexHorizDistance, noisy));
 }
 
 // Just like `pathFromTiles` above, but with polygonally-drawn paths.
@@ -565,9 +575,9 @@ function vertexFromTileKey(tileKey, vertex) {
   } else { return "invalid:vertex:key"; }
 }
 
-// Take a vertex key, return the {x,y} point in the screen's coordinate.
+// Take a vertex key "q:r:0", return the {x,y} point in the screen's coordinate.
 // gs is the GraphicState.
-function pointFromVertex(gs, vertex, hexHorizDistance) {
+function pointFromVertex(gs, vertex, hexHorizDistance, noisy) {
   var size = gs.hexSize; var origin = gs.origin;
   var vertexSide = +vertex.slice(-1);
   var tileKey = vertex.slice(0, -2);
@@ -577,8 +587,9 @@ function pointFromVertex(gs, vertex, hexHorizDistance) {
   var cy = cp.y|0;
   var halfHorizDistance = hexHorizDistance/2|0;
   var halfSize = size/2|0;
+  var ncx = noisy? noisyPixel(size / 2, tile): {x:0, y:0};
   if (vertexSide === 0) {
-    return {x: cx + halfHorizDistance, y: cy + halfSize};
+    return { x: cx + halfHorizDistance + ncx.x, y: cy + halfSize + ncx.y };
   } else if (vertexSide === 1) {
     return {x: cx + halfHorizDistance, y: cy - halfSize};
   }
@@ -587,7 +598,7 @@ function pointFromVertex(gs, vertex, hexHorizDistance) {
 // Given a list of vertices "q:r:0" containing from / to line information,
 // return a list of polygons [{x,y}] with no duplicate point.
 // gs is the GraphicState.
-function polygonFromVertices(gs, vertices, hexHorizDistance) {
+function polygonFromVertices(gs, vertices, hexHorizDistance, noisy) {
   var size = gs.hexSize; var origin = gs.origin;
   var verticesLeft = new Array(vertices.length);
   for (var i = 0; i < vertices.length; i++) {
@@ -598,19 +609,21 @@ function polygonFromVertices(gs, vertices, hexHorizDistance) {
     var startVertex = verticesLeft.shift();
     var currentVertex = verticesLeft.shift();
     var polygon = [
-      pointFromVertex(gs, startVertex, hexHorizDistance),
-      pointFromVertex(gs, currentVertex, hexHorizDistance)
+      pointFromVertex(gs, startVertex, hexHorizDistance, noisy),
+      pointFromVertex(gs, currentVertex, hexHorizDistance, noisy)
     ];
     var infiniteLoopCut = 10000;
     while (currentVertex !== startVertex && (infiniteLoopCut--) > 0) {
       for (var i = 0; i < verticesLeft.length; i += 2) {
         if (verticesLeft[i] === currentVertex) {
-          polygon.push(pointFromVertex(gs, verticesLeft[i+1],hexHorizDistance));
+          polygon.push(pointFromVertex(gs, verticesLeft[i+1],
+                hexHorizDistance, noisy));
           currentVertex = verticesLeft[i+1];
           verticesLeft.splice(i, 2);
           break;
         } else if (verticesLeft[i+1] === currentVertex) {
-          polygon.push(gs, pointFromVertex(verticesLeft[i], hexHorizDistance));
+          polygon.push(pointFromVertex(gs, verticesLeft[i],
+                hexHorizDistance, noisy));
           currentVertex = verticesLeft[i];
           verticesLeft.splice(i, 2);
           break;
@@ -768,7 +781,7 @@ function paintAroundTiles(gs, tiles, color) {
   var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   var hexHorizDistance = size * Math.sqrt(3);
   var hexVertDistance = size * 3/2;
-  pathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance);
+  pathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance, /*noisy*/ true);
   ctx.strokeStyle = color || 'white';
   ctx.stroke();
 }
