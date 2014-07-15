@@ -130,12 +130,12 @@ function applyPlan(plan) {
 
     // Do we have enough food?
     if (humanityFrom.f <= 0) {
-      if (terrain(tileFrom).type === terrain.tileTypes.water) {
-        humanityFrom.h = 0;
-      }
-      updatedHumanity[plan.at] = humanityFrom;
-      return;
+      // They're starving, they will lose people.
+      humanityFrom.h = (humanityFrom.h / 2)|0;
+      if (humanityFrom.h < 0) { humanityFrom.h = 0; }
+      if (humanityFrom.f < 0) { humanityFrom.f = 0; }
     }
+    if (plan.h > humanityFrom.h) { plan.h = humanityFrom.h; }
 
     //console.log('Before:');
     //console.log('humanityFrom =', humanityFrom);

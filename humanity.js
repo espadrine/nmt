@@ -71,6 +71,7 @@ function start(t) {
 // f: food (how much there is in the group);
 // o: manufactured goods owned;
 var humanityData = {};
+// Map from tileKey to textual description of place.
 var places = {};
 function data() { return humanityData; }
 
@@ -528,6 +529,7 @@ function population() {
   return list;
 }
 
+// Map from tileKey to textual description of place.
 function getPlaces() { return places; }
 
 function campNames() {
