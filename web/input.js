@@ -1909,13 +1909,12 @@ function mouseSelection(event) {
     var startTile = posTile;
     if (humanTravelPath(currentTile, startTile).length > 1
         && humanityTile.c === playerCamp) {
-      if (humanityTile.f > 0) {
-        sendMove(currentTile, startTile, numberOfPeople);
-      } else {
+      if (humanityTile.f <= 0) {
         var starveMessage = {};
         starveMessage[keyFromTile(currentTile)] = humanityTile;
         addStarveMessages(starveMessage);
       }
+      sendMove(currentTile, startTile, numberOfPeople);
     }
     enterMode(selectionModes.normal);
   } else { sendPos(currentTile, posTile); }
