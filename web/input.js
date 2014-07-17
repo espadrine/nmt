@@ -500,7 +500,8 @@ function straightPathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance) {
 // Given a set of tiles {q, r} representing hexagon coordinates,
 // construct the path around those hexagons.
 // gs is the GraphicState.
-function pathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance, noisy) {
+function pathFromTiles(gs, tiles,
+    hexHorizDistance, hexVertDistance, noisy, dashed) {
   var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   ctx.beginPath();
   var vertices = [];
@@ -516,7 +517,7 @@ function pathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance, noisy) {
     }
   }
   pathFromPolygons(gs,
-      polygonFromVertices(gs, vertices, hexHorizDistance, noisy));
+      polygonFromVertices(gs, vertices, hexHorizDistance, noisy), !!dashed);
 }
 
 // Just like `pathFromTiles` above, but with polygonally-drawn paths.
@@ -649,11 +650,11 @@ function partialPathFromPolygon(gs, polygon) {
 
 // Construct the path of list of polygons [{x,y}].
 // gs is the GraphicState.
-function pathFromPolygons(gs, polygons) {
+function pathFromPolygons(gs, polygons, dashed) {
   var ctx = gs.ctx;
   ctx.beginPath();
   for (var i = 0; i < polygons.length; i++) {
-    partialPathForSmoothPolygon(gs, polygons[i]);
+    partialPathForSmoothPolygon(gs, polygons[i], !!dashed);
   }
 }
 
@@ -672,7 +673,8 @@ function extremizePoint(a, b, c) {
 // Given a canvas context and a polygon [{x,y}],
 // construct the path that draws a smoother version of the polygon.
 // gs is the GraphicState.
-function partialPathForSmoothPolygon(gs, oldPolygon) {
+function partialPathForSmoothPolygon(gs, oldPolygon, dashed) {
+  dashed = !!dashed;
   var ctx = gs.ctx;
   if (oldPolygon.length < 3) { return partialPathFromPolygon(gs, oldPolygon); }
   // This polygon's vertices are the middle of each edge.
@@ -688,9 +690,14 @@ function partialPathForSmoothPolygon(gs, oldPolygon) {
   ctx.moveTo(avgPoint.x, avgPoint.y);
   for (var i = 1; i < polygon.length; i++) {
     avgPoint = averagePoint(polygon[i], polygon[(i+1)%polygon.length]);
+    if (dashed && ((i % 2) === 0)) {
+      ctx.moveTo(avgPoint.x, avgPoint.y);
+      continue;
+    }
     ctx.quadraticCurveTo(polygon[i].x, polygon[i].y,
                          avgPoint.x, avgPoint.y);
   }
+  if (dashed) { return; }
   avgPoint = averagePoint(polygon[0], polygon[1]);
   ctx.quadraticCurveTo(polygon[0].x, polygon[0].y,
                        avgPoint.x, avgPoint.y);
@@ -1434,19 +1441,43 @@ function paintCamps(gs) {
         ctx.fillRect(px.x - size, px.y - size, 2 * size, 2 * size);
       }
     } else {
-      ctx.lineWidth = 4;
-      paintAroundTiles(gs, visibleCamps[i], '#777');
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = campHsl(i);
+      var bold = 2/3;
+      var hexHorizDistance = gs.hexSize * Math.sqrt(3);
+      var hexVertDistance = gs.hexSize * 3/2;
+      // Inside border.
+      pathFromTiles(gs, visibleCamps[i],
+          hexHorizDistance, hexVertDistance, /*noisy*/ true);
+      ctx.save();
+      ctx.clip();
+      ctx.lineWidth = gs.hexSize * bold;
+      var hsla = 'hsla(' + campHueCreator9000(i) + ',70%,30%,0.4)';
+      ctx.strokeStyle = hsla;
       ctx.stroke();
+      ctx.restore();
+
+      // Dashed border.
+      ctx.lineWidth = gs.hexSize * bold / 4;
+      ctx.strokeStyle = campHsl(i, 87, 24);
+      ctx.stroke();
+      pathFromTiles(gs, visibleCamps[i],
+          hexHorizDistance, hexVertDistance, /*noisy*/ true, /*dashed*/ true);
+      ctx.lineWidth = gs.hexSize * bold / 16;
+      ctx.strokeStyle = campHsl(i, 90);
+      ctx.stroke();
+
       ctx.lineWidth = 1;
     }
   }
 }
 
 // Return CSS hsl string.
-function campHsl(camp) {
-  return 'hsl(' + campHueCreator9000(camp) + ',100%,50%)';
+// saturation: number from 0 to 100.
+// lightness: number from 0 to 100.
+function campHsl(camp, saturation, lightness) {
+  if (saturation == null) { saturation = 100; }
+  if (lightness == null) { lightness = 45; }
+  return 'hsl(' + campHueCreator9000(camp)
+      + ',' + saturation + '%,' + lightness + '%)';
 }
 
 var campHue = [];
@@ -1467,7 +1498,7 @@ function paintPopulation() {
   var height = 10;
   var svg = '<svg id=populationMonitor>';
   // Paint the border.
-  svg += '<rect stroke="#345" stroke-width="1" x="0" y="0" rx="3" ry="3" width="'
+  svg += '<rect stroke="hsl(0,0%,40%)" stroke-width="1" x="0" y="0" rx="3" ry="3" width="'
     + (width) + '" height="' + (height) + '" />';
   // Paint the population.
   var totalPopulation = 0;
@@ -1481,15 +1512,22 @@ function paintPopulation() {
   for (var i = 0; i < humanityPopulation.length - 1; i++) {
     popWidth = (innerWidth * humanityPopulation[i] / totalPopulation)|0;
     allButLastWidth += popWidth;
-    svg += '<rect fill="' + 'hsl(' + campHueCreator9000(i) + ',80%,50%)' + '"'
+    svg += '<rect fill="' + campHsl(i) + '"'
         + ' x="' + (start) + '" y="1" width="' + (popWidth) + '"'
         + ' height="' + (height - 2) + '" />';
     start += popWidth;
   }
   popWidth = innerWidth - allButLastWidth;
-  svg += '<rect fill="' + 'hsl(' + campHueCreator9000(i) + ',80%,50%)' + '"'
+  svg += '<rect fill="' + campHsl(i) + '"'
       + ' x="' + (start) + '" y="1" width="' + (popWidth) + '"'
-      + ' height="' + (height - 2) + '" /></svg>';
+      + ' height="' + (height - 2) + '" />'
+      + '<linearGradient id="grad" y2="100%" x2="0">'
+      + '<stop offset="0" stop-color="#fff" stop-opacity=".1"/>'
+      + '<stop offset="1" stop-color="#000" stop-opacity=".2"/>'
+      + '</linearGradient>'
+      + '<rect fill="url(#grad)" x="1" y="1" '
+      + 'width="' + (width - 2) + '" height="' + (height - 2) + '"/>'
+      + '</svg>';
   // Using outerHTML to avoid this bug: <https://bugzilla.mozilla.org/show_bug.cgi?id=886390>
   populationMonitor.outerHTML = svg;
 }
