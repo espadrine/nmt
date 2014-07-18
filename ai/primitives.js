@@ -2,12 +2,16 @@
 
 var terrain = require('terrain-gen');
 
+// The following buildings are built on a place.
+var lookAtPlaces = Object.create(null);
+lookAtPlaces[terrain.tileTypes.mine] = true;
+lookAtPlaces[terrain.tileTypes.university] = true;
+
 // Given a tile position and something to build, find the nearest tile where it
 // can be built, or null.
 // valid: function taking a tile, returning false is the tile is inacceptable.
 function findConstructionLocation(humanity, tile, b, valid) {
-  // FIXME: for certain constructions, look at places first.
-  return humanity.findNearest(tile, function(tile) {
+  var isValid = function(tile) {
     var isTerrainValid = validConstructionLocation(humanity, tile, b);
     if (!isTerrainValid) { return false; }
     // Check that the build order succeeds.
@@ -16,7 +20,17 @@ function findConstructionLocation(humanity, tile, b, valid) {
         return valid(tile);
       } else { return true; }
     } else { return false; }
-  });
+  };
+  if (lookAtPlaces[b] != null) {
+    // We should look up places first.
+    var places = humanity.getPlaces();
+    for (var tileKey in places) {
+      var tile = terrain.tileFromKey(tileKey);
+      if (isValid(tile)) { return tile; }
+    }
+  }
+  // Look around the given tile.
+  return humanity.findNearest(tile, isValid);
 }
 
 // Check whether building `b` (see `terrain.tileTypes`) has all requirements
