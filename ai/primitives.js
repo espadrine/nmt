@@ -158,17 +158,9 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
   }
   // Don't build manufactures on tiles which require their items to get to.
   var terrainTile = terrain(tile);
-  if (buildingPurpose === terrain.tileTypes.factory) {
-    if (terrainTile.steepness >= terrain.tileTypes.mountain ||
-       (humanityTile && humanityTile.b === terrain.tileTypes.wall)) {
-      return null;
-    }
-  }
-  if (buildingPurpose === terrain.tileTypes.airport) {
-    if (terrainTile.type === terrain.tileTypes.taiga ||
-       (humanityTile && humanityTile.b === terrain.tileTypes.wall)) {
-      return null;
-    }
+  if (inaccessibleForManufactureBuilding(buildingPurpose,
+      terrainTile, humanityTile)) {
+    return null;
   }
   if (humanityTile) {
     // Don't destroy buildings which cost resources.
@@ -310,6 +302,26 @@ function resourceBuildRequirement(buildingType, camp) {
   return requirements;
 }
 
+// Whether a tile is inaccessible to a group that doesn't own the manufactured
+// items they can obtain from a building `b`.
+// b: building (see `terrain.tileTypes`).
+function inaccessibleForManufactureBuilding(b, terrainTile, humanityTile) {
+  // `humanityTile` may be undefined.
+  if (b === terrain.tileTypes.factory) {
+    if (terrainTile.steepness >= terrain.tileTypes.mountain ||
+       (humanityTile && humanityTile.b === terrain.tileTypes.wall)) {
+      return true;
+    }
+  }
+  if (b === terrain.tileTypes.airport) {
+    if (terrainTile.type === terrain.tileTypes.taiga ||
+       (humanityTile && humanityTile.b === terrain.tileTypes.wall)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Take tiles `from` and `to` {q,r}, returns the list of all steps to go
 // through as tiles "q:r", or null if it failed.
 function trajectory(from, to, human, maxTiles) {
@@ -441,9 +453,18 @@ Group.prototype = {
       if (!pathFromOwner || pathFromOwner.length > 20) { owner = null; }
     }
     if (building != null) {
-      var pathFromBuilding = trajectory(building, target,
-          { h:1, c:this.camp.id, o:item });
-      if (!pathFromBuilding || pathFromBuilding.length>20) { building = null; }
+      // If the building is on a tile needed to get to it, don't do it.
+      if (inaccessibleForManufactureBuilding(b,
+          terrain(building), this.strategy.humanity(building))) {
+        building = null;
+      } else {
+        // Can we get from that building to where we want to go?
+        var pathFromBuilding = trajectory(building, target,
+            { h:1, c:this.camp.id, o:item });
+        if (!pathFromBuilding || pathFromBuilding.length > 20) {
+          building = null;
+        }
+      }
     }
     //debugger;
     // Ideally, we already have people that own the correct manufacture.
