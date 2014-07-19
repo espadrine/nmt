@@ -1091,7 +1091,6 @@ var cachePending = {};  // map from 'x:y' to truthy values.
 // gs is the GraphicState.
 // Note: the callback `cb(canvas)` may be called several times.
 function getCachedPaint(gs, cacheX, cacheY, cb) {
-  var size = gs.hexSize; var origin = gs.origin;
   var pos = cacheX + ':' + cacheY;
   var cache = cachedPaint[pos];
   if (cache == null) {
@@ -1103,7 +1102,7 @@ function getCachedPaint(gs, cacheX, cacheY, cb) {
       // Paint it black immediately.
       var ctxBuffer = canvasBuffer.getContext('2d');
       ctxBuffer.fillStyle = 'black';
-      ctxBuffer.fillRect(0, 0, canvas.width, canvas.height);
+      ctxBuffer.fillRect(0, 0, gs.width, gs.height);
       cb(canvasBuffer);
     }
     // Deferred actual painting.
@@ -1113,12 +1112,21 @@ function getCachedPaint(gs, cacheX, cacheY, cb) {
       gsBuffer.hexSize = gs.hexSize;
       gsBuffer.origin = { x0: cacheX, y0: cacheY };
       paintTiles(gsBuffer, function() {
-        cache = cachedPaint[cacheX + ':' + cacheY] = canvasBuffer;
+        cache = cachedPaint[pos] = canvasBuffer;
         cachePending[pos](cache);
         delete cachePending[pos];
       });
     } else { cachePending[pos] = cb; }
   } else { cb(cache); }
+}
+
+// gs is the GraphicState
+// cacheX, cacheY: 'x' and 'y' values for a cache index 'x:y'
+// x, y: pixel position on the window screen.
+function drawCachedPaint(gs, cacheX, cacheY, x, y) {
+  var pos = cacheX + ':' + cacheY;
+  var cache = cachedPaint[pos];
+  if (cache != null) { gs.ctx.drawImage(cache, x, y); }
 }
 
 // Given a pixel relative to the center of the map, find the region index.
@@ -1169,7 +1177,7 @@ function updateCachedPaint(gs, tiles) {
 
 // gs is the GraphicState.
 function paintTilesFromCache(gs, cb) {
-  var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
+  var ctx = gs.ctx; var origin = gs.origin;
   // We assume that the window width does not change.
   // We can have up to 4 caches to draw.
   var width = gs.width;
@@ -1186,7 +1194,11 @@ function paintTilesFromCache(gs, cb) {
   var countDone = 0;
   var makeDraw = function makeDraw(x, y) {
     return function draw(cache) {
-      ctx.drawImage(cache, x, y);
+      if (countDone <= 4) {
+        ctx.drawImage(cache, x, y);
+      } else {
+        paintTilesFromCurrentCache(gs);
+      }
       // We have four jobs to make in total.
       countDone++;
       if (countDone >= 4) { cb(); }
@@ -1196,6 +1208,29 @@ function paintTilesFromCache(gs, cb) {
   getCachedPaint(gs, right, top, makeDraw(width-x, -y));
   getCachedPaint(gs, left, bottom, makeDraw(-x, height-y));
   getCachedPaint(gs, right, bottom, makeDraw(width-x, height-y));
+}
+
+// Same as paintTilesFromCache, but won't update the cache.
+function paintTilesFromCurrentCache(gs) {
+  var ctx = gs.ctx; var origin = gs.origin;
+  // We assume that the window width does not change.
+  // We can have up to 4 caches to draw.
+  var width = gs.width;
+  var height = gs.height;
+  // Coordinates of top left screen pixel in top left buffer.
+  var x = (origin.x0 % width);
+  if (x < 0) { x += width; }    // x must be the distance from the right.
+  var y = (origin.y0 % height);
+  if (y < 0) { y += height; }
+  var left   = origin.x0 - x;
+  var right  = origin.x0 + width - x;
+  var top    = origin.y0 - y;
+  var bottom = origin.y0 + height - y;
+
+  drawCachedPaint(gs, left, top, -x, -y);
+  drawCachedPaint(gs, right, top, width-x, -y);
+  drawCachedPaint(gs, left, bottom, -x, height-y);
+  drawCachedPaint(gs, right, bottom, width-x, height-y);
 }
 
 // Pixels currently on display. Useful for smooth animations.
@@ -1431,6 +1466,9 @@ function paintCamps(gs) {
     var humans = humanityData[visibleHumans[i]];
     visibleCamps[humans.c][visibleHumans[i]] = true;
   }
+  var bold = gs.hexSize * 2/3;
+  var hexHorizDistance = gs.hexSize * Math.sqrt(3);
+  var hexVertDistance = gs.hexSize * 3/2;
   for (var i = 0; i < numberOfCamps; i++) {
     if (size < 5) {
       // We're too far above.
@@ -1441,27 +1479,24 @@ function paintCamps(gs) {
         ctx.fillRect(px.x - size, px.y - size, 2 * size, 2 * size);
       }
     } else {
-      var bold = 2/3;
-      var hexHorizDistance = gs.hexSize * Math.sqrt(3);
-      var hexVertDistance = gs.hexSize * 3/2;
       // Inside border.
       pathFromTiles(gs, visibleCamps[i],
           hexHorizDistance, hexVertDistance, /*noisy*/ true);
       ctx.save();
       ctx.clip();
-      ctx.lineWidth = gs.hexSize * bold;
+      ctx.lineWidth = bold;
       var hsla = 'hsla(' + campHueCreator9000(i) + ',70%,30%,0.4)';
       ctx.strokeStyle = hsla;
       ctx.stroke();
       ctx.restore();
 
       // Dashed border.
-      ctx.lineWidth = gs.hexSize * bold / 4;
+      ctx.lineWidth = bold / 4;
       ctx.strokeStyle = campHsl(i, 87, 24);
       ctx.stroke();
       pathFromTiles(gs, visibleCamps[i],
           hexHorizDistance, hexVertDistance, /*noisy*/ true, /*dashed*/ true);
-      ctx.lineWidth = gs.hexSize * bold / 16;
+      ctx.lineWidth = bold / 16;
       ctx.strokeStyle = campHsl(i, 90);
       ctx.stroke();
 
