@@ -1396,8 +1396,8 @@ function paintHumans(gs, humanityData) {
     if (number > humanAnimation.length) { number = humanAnimation.length; }
     for (var i = 0; i < number; i++) {
       var animation = humanAnimation[Math.abs(i+q^r^human.f) % humanAnimation.length];
-      var animx = cx - size + animation.x * 2 * size;
-      var animy = cy - size + animation.y * 2 * size;
+      var animx = (cx - size + animation.x * 2 * size)|0;
+      var animy = (cy - size + animation.y * 2 * size)|0;
       var pixel = size/20;
       ctx.fillStyle = 'black';
       if ((tile.type === tileTypes.water || tile.type === tileTypes.swamp)
@@ -1414,7 +1414,7 @@ function paintHumans(gs, humanityData) {
         ctx.fillRect(animx + 3*pixel, animy + pixel, pixel, pixel);
       } else if ((human.o & manufacture.car) !== 0) {
         ctx.fillStyle = '#420';
-        ctx.fillRect(animx, animy, 2*pixel, pixel);
+        ctx.fillRect(animx, animy, 3*pixel, 2*pixel);
       } else {
         ctx.fillRect(animx, animy, pixel, 2*pixel);
       }
