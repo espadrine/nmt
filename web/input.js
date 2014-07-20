@@ -1264,7 +1264,7 @@ function paintIntermediateUI(gs) {
         campHsl(lockedTiles[tileKey]), 1);
   }
   if (currentTile != null && playerCamp != null) {
-    paintTileHexagon(gs, currentTile, campHsl(playerCamp));
+    paintTileHexagon(gs, currentTile, campHsl(playerCamp, 100, 40));
   }
   paintCamps(gs);
   // Paint the set of accessible tiles.
@@ -1469,8 +1469,8 @@ function paintCamps(gs) {
   var bold = gs.hexSize * 2/3;
   var hexHorizDistance = gs.hexSize * Math.sqrt(3);
   var hexVertDistance = gs.hexSize * 3/2;
-  for (var i = 0; i < numberOfCamps; i++) {
-    if (size < 5) {
+  if (size < 5) {
+    for (var i = 0; i < numberOfCamps; i++) {
       // We're too far above.
       ctx.fillStyle = campHsl(i);
       var visibleCamp = visibleCamps[i];
@@ -1478,27 +1478,40 @@ function paintCamps(gs) {
         var px = pixelFromTile(tileFromKey(key), origin, size);
         ctx.fillRect(px.x - size, px.y - size, 2 * size, 2 * size);
       }
-    } else {
-      // Inside border.
+    }
+  } else {
+    for (var i = 0; i < numberOfCamps; i++) {
+      // Background border.
+      // Mostly because Chrome's clip() pixelates.
       pathFromTiles(gs, visibleCamps[i],
           hexHorizDistance, hexVertDistance, /*noisy*/ true);
+      ctx.lineWidth = bold / 4;
+      ctx.strokeStyle = campHsl(i, 70, 35);
+      ctx.stroke();
+      // Dashed border.
+      pathFromTiles(gs, visibleCamps[i],
+          hexHorizDistance, hexVertDistance, /*noisy*/ true, /*dashed*/ true);
+      ctx.lineWidth = bold / 8;
+      ctx.strokeStyle = campHsl(i, 80, 42);
+      ctx.stroke();
+
+    }
+
+    for (var i = 0; i < numberOfCamps; i++) {
+      // Inside translucent border.
+      pathFromTiles(gs, visibleCamps[i],
+          hexHorizDistance, hexVertDistance, /*noisy*/ true, /*dashed*/ false);
       ctx.save();
       ctx.clip();
       ctx.lineWidth = bold;
-      var hsla = 'hsla(' + campHueCreator9000(i) + ',70%,30%,0.4)';
+      var hsla = 'hsla(' + campHueCreator9000(i) + ',70%,40%,0.4)';
       ctx.strokeStyle = hsla;
       ctx.stroke();
-      ctx.restore();
-
-      // Dashed border.
+      // Inside border.
       ctx.lineWidth = bold / 4;
-      ctx.strokeStyle = campHsl(i, 87, 24);
+      ctx.strokeStyle = campHsl(i, 70, 35);
       ctx.stroke();
-      pathFromTiles(gs, visibleCamps[i],
-          hexHorizDistance, hexVertDistance, /*noisy*/ true, /*dashed*/ true);
-      ctx.lineWidth = bold / 16;
-      ctx.strokeStyle = campHsl(i, 90);
-      ctx.stroke();
+      ctx.restore();
 
       ctx.lineWidth = 1;
     }
