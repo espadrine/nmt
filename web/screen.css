@@ -143,12 +143,13 @@ iframe#helpPane {
   position: absolute;
   top: 73px;
   left: 7px;
-  padding: 0 5px;
-  background: rgba(0,0,0,.6);
-  border: 1px solid #345;
-  border-radius: 2px;
+  padding: 5px;
+  background: #111;
+  border: 2px solid #111;
+  border-radius: 4px;
   font-style: italic;
   z-index: -2;
+  box-shadow: #999 1px 1px inset, #999 -1px -1px inset;
 }
 div.populationPanel { color: pink; }
 div.farmPanel { color: #dd0; }
