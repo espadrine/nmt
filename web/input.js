@@ -422,6 +422,7 @@ var canvas = document.getElementById('canvas');
 canvas.width = document.documentElement.clientWidth;
 canvas.height = document.documentElement.clientHeight;
 var gs = makeGraphicState(canvas, sprites);
+var globalGs = gs;
 // Blink and Webkit get the following wrong.
 // Remove without worry
 // when https://code.google.com/p/chromium/issues/detail?id=168840 is fixed.
@@ -920,36 +921,6 @@ function paintTerrain(gs, cx, cy, hexHorizDistance, hexVertDistance, tilePos) {
   // Draw terrain.
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
   paintSprite(gs, cx, cy, t.type, rotation);
-  // Heavy rain makes it darker.
-  pathFromHex(gs, { x:cx, y:cy }, hexHorizDistance, hexVertDistance);
-  var grey = Math.floor((1 - t.rain) / 2 * 127)|0;
-  if (t.type === tileTypes.water) {
-    // If it's next to something, make a beach.
-    var border = false;
-    for (var i = 0; i < 6; i++) {
-      if (terrain(neighborFromTile(tilePos, i)).type !== tileTypes.water) {
-        border = true;
-      }
-    }
-    if (border) { grey += 20; }
-    ctx.fillStyle = 'rgba(' + grey + ',' + grey + ',' + grey + ',0.3)';
-  } else {
-    var delta = (Math.abs(grey - 127/2) / 1)|0;
-    var red = grey;
-    var green = grey;
-    if (grey < 127/2) { red -= delta; green += delta; }
-    else if (grey > 127/2) { red += 2*delta; green += delta; }
-    if (t.type === tileTypes.steppe) {
-      // If it's next to water, make a beach.
-      var leftTile = neighborFromTile(tilePos, 0);
-      var rightTile = neighborFromTile(tilePos, 3);
-      if (terrain(leftTile).type === tileTypes.water
-       || terrain(rightTile).type === tileTypes.water) {
-        red += ((127-grey)/2)|0; green += ((127-grey)/4)|0;
-      }
-    }
-    ctx.fillStyle = 'rgba(' + red + ',' + green + ',' + grey + ',0.3)';
-  }
   ctx.fill();
 }
 
@@ -978,8 +949,8 @@ function paintTilesSprited(gs) {
   if (cachedTerrainPaint[cachePos] === undefined) {
     // Prepare cache.
     var canvasBuffer = document.createElement('canvas');
-    canvasBuffer.width = canvas.width;
-    canvasBuffer.height = canvas.height;
+    canvasBuffer.width = gs.width;
+    canvasBuffer.height = gs.height;
     var gsBuffer = makeGraphicState(canvasBuffer, sprites);
     gsBuffer.hexSize = gs.hexSize;
 
@@ -1005,6 +976,29 @@ function paintTilesSprited(gs) {
     }
 
     cachedTerrainPaint[cachePos] = canvasBuffer;
+
+    // Prepare overlay, computed from worker.
+    renderWorker.addEventListener('message', function workerRecv(e) {
+      if (e.data.origin.x0 === origin.x0 && e.data.origin.y0 === origin.y0
+        && e.data.size === size) {
+        workerCanvasBuffer.getContext('2d').putImageData(e.data.image, 0, 0);
+        gsBuffer.ctx.drawImage(workerCanvasBuffer, 0, 0);
+        renderWorker.removeEventListener('message', workerRecv);
+        var cx = centerPixel.x + origin.x0 - size/2;
+        var cy = centerPixel.y + origin.y0 - size/2;
+        updateCachedRegion(cx, cy, width, height);
+        updateCachedRegion(cx + width, cy, width, height);
+        updateCachedRegion(cx, cy + height, width, height);
+        updateCachedRegion(cx + width, cy + height, width, height);
+        paint(globalGs);
+        paintHumans(globalGs, humanityData);
+      }
+    });
+    workerMessage.image = workerImageBuffer;
+    workerMessage.size = size;
+    workerMessage.origin = origin;
+    workerMessage.type = 'rainfall';
+    renderWorker.postMessage(workerMessage);
   }
 
   ctx.drawImage(cachedTerrainPaint[cachePos], 0, 0);
@@ -1054,11 +1048,11 @@ function paintTilesRaw(gs) {
   ctx.putImageData(imgdata, 0, 0);
 }
 
-var canvasBuffer = document.createElement('canvas');
-canvasBuffer.width = gs.width;
-canvasBuffer.height = gs.height;
-var imageBuffer =
-  canvasBuffer.getContext('2d').getImageData(0, 0, gs.width, gs.height);
+var workerCanvasBuffer = document.createElement('canvas');
+workerCanvasBuffer.width = gs.width;
+workerCanvasBuffer.height = gs.height;
+var workerImageBuffer =
+  workerCanvasBuffer.getContext('2d').getImageData(0, 0, gs.width, gs.height);
 var workerMessage = { image: null, size: gs.hexSize, origin: gs.origin };
 var renderWorker = new Worker('render-worker.js');
 // gs is the GraphicState.
@@ -1074,9 +1068,10 @@ function paintTiles(gs, cb) {
         cb();
       }
     });
-    workerMessage.image = imageBuffer;
+    workerMessage.image = workerImageBuffer;
     workerMessage.size = size;
     workerMessage.origin = origin;
+    workerMessage.type = 'raw';
     renderWorker.postMessage(workerMessage);
   } else {
     paintTilesSprited(gs);
@@ -1484,7 +1479,7 @@ function paintCamps(gs) {
       // Background border.
       // Mostly because Chrome's clip() pixelates.
       pathFromTiles(gs, visibleCamps[i],
-          hexHorizDistance, hexVertDistance, /*noisy*/ true);
+          hexHorizDistance, hexVertDistance, /*noisy*/ true, /*dashed*/ false);
       ctx.lineWidth = bold / 4;
       ctx.strokeStyle = campHsl(i, 70, 35);
       ctx.stroke();
@@ -1494,7 +1489,6 @@ function paintCamps(gs) {
       ctx.lineWidth = bold / 8;
       ctx.strokeStyle = campHsl(i, 80, 42);
       ctx.stroke();
-
     }
 
     for (var i = 0; i < numberOfCamps; i++) {
@@ -1504,17 +1498,16 @@ function paintCamps(gs) {
       ctx.save();
       ctx.clip();
       ctx.lineWidth = bold;
-      var hsla = 'hsla(' + campHueCreator9000(i) + ',70%,40%,0.4)';
-      ctx.strokeStyle = hsla;
+      ctx.strokeStyle = 'hsla(' + campHueCreator9000(i) + ',70%,40%,0.4)';
       ctx.stroke();
       // Inside border.
       ctx.lineWidth = bold / 4;
       ctx.strokeStyle = campHsl(i, 70, 35);
       ctx.stroke();
       ctx.restore();
-
-      ctx.lineWidth = 1;
     }
+
+    ctx.lineWidth = 1;
   }
 }
 

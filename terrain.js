@@ -116,6 +116,7 @@ function terrain(coord) {
     steepness: steepness,
     vegetation: vegetation,
     type: tileType(steepness, vegetation),
+    height: heightNoise - riverNoise,
     rain: -vegetationNoise / 2
   };
   return tile;
