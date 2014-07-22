@@ -978,6 +978,7 @@ function paintTilesSprited(gs) {
     cachedTerrainPaint[cachePos] = canvasBuffer;
 
     // Prepare overlay, computed from worker.
+    var renderWorker = getWorkerFromPool();
     renderWorker.addEventListener('message', function workerRecv(e) {
       if (e.data.origin.x0 === origin.x0 && e.data.origin.y0 === origin.y0
         && e.data.size === size) {
@@ -1054,12 +1055,24 @@ workerCanvasBuffer.height = gs.height;
 var workerImageBuffer =
   workerCanvasBuffer.getContext('2d').getImageData(0, 0, gs.width, gs.height);
 var workerMessage = { image: null, size: gs.hexSize, origin: gs.origin };
-var renderWorker = new Worker('render-worker.js');
+var workerPool = [
+  new Worker('render-worker.js'),
+  new Worker('render-worker.js'),
+  new Worker('render-worker.js'),
+  new Worker('render-worker.js')
+];
+var workerPoolRoundRobin = 0;
+function getWorkerFromPool() {
+  workerPoolRoundRobin++;
+  workerPoolRoundRobin = workerPoolRoundRobin % workerPool.length;
+  return workerPool[workerPoolRoundRobin];
+}
 // gs is the GraphicState.
 function paintTiles(gs, cb) {
   var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   if (size < 5) {
     // Special case: we're from too far above, use direct pixel manipulation.
+    var renderWorker = getWorkerFromPool();
     renderWorker.addEventListener('message', function workerRecv(e) {
       if (e.data.origin.x0 === origin.x0 && e.data.origin.y0 === origin.y0
         && e.data.size === size) {

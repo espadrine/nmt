@@ -69,12 +69,9 @@ function paintTilesRaw(imgdata, size, origin) {
         var color = [0,0,0];
         var fromRed = 0, toRed = 0, fromGreen = 0, toGreen = 0;
         var heightMin = -1, heightMax = 1;
-        //color[2] = 10;
         if (t.steepness == tileTypes.water) {
-          //color = [50, 50, 180];
           color[2] = 180;
         } else if (t.steepness == tileTypes.steppe) {
-          //color = [0, 180, 0];
           fromRed = 0;
           fromGreen = 200;
           toRed = 85;
@@ -82,7 +79,6 @@ function paintTilesRaw(imgdata, size, origin) {
           heightMin = -0.6;
           heightMax = 0.4;
         } else if (t.steepness == tileTypes.hill) {
-          //color = [180, 100, 0];
           fromRed = 110;
           fromGreen = 150;
           toRed = 160;
@@ -90,7 +86,6 @@ function paintTilesRaw(imgdata, size, origin) {
           heightMin = 0.4;
           heightMax = 0.65;
         } else {
-          //color = [180, 0, 0];
           fromRed = 120;
           fromGreen = 90;
           toRed = 50;
@@ -111,7 +106,6 @@ function paintTilesRaw(imgdata, size, origin) {
         color[1] = grey * toGreen + (1 - grey) * fromGreen;
         // Rainfall
         var rain = Math.min(Math.abs(color[0] - color[1]) / 2 * t.rain, 255);
-        //color[0] -= rain; // darker red
         color[1] -= rain; // darker green
         color[2] -= Math.min(t.rain * 50, 255);   // darker blue
         // Vegetation
