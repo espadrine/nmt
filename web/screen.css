@@ -78,7 +78,7 @@ p.buildSelection {
   cursor: default;
   /* Invalid by default */
   color: #403;
-  text-shadow: -1px -1px 1px #c7c, 1px 1px 1px #949;
+  text-shadow: -1px -1px 0px #949, 1px 1px 0px #727, -1px 1px 0px #727, 1px -1px 0px #949;
   font-size: 0.8em;
 }
 p.buildSelection:hover {
