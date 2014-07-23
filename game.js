@@ -455,23 +455,30 @@ function addPopulation(updatedHumanity) {
     var newPopulation = targetPopulation - camp.population;
     if (newPopulation > 0) {
       var residenceHomes = Object.keys(camp.residence);
-      var nResidenceHomes = residenceHomes.length > 0?
-        humanity.homePerHouse.residence: 0;
       var skyscraperHomes = Object.keys(camp.skyscraper);
-      var nSkyscraperHomes = skyscraperHomes.length > 0?
-        humanity.homePerHouse.skyscraper: 0;
-      var total = nResidenceHomes + nSkyscraperHomes;
-      var residenceProb = nResidenceHomes / total;
-      var skyscraperProb = nSkyscraperHomes / total;
-      for (var j = 0; j < newPopulation; j++) {
-        var pickedHome = Math.random();
-        var pickedIndex = Math.random();
-        // More recent buildings should be more probable.
-        pickedIndex = 1 - (pickedIndex * pickedIndex);
-        if (pickedHome < residenceProb) {
-          addFolk(residenceHomes, (residenceHomes.length * pickedIndex)|0);
-        } else {
-          addFolk(skyscraperHomes, (skyscraperHomes.length * pickedIndex)|0);
+      var nResidenceHomes = humanity.homePerHouse.residence;
+      var nSkyscraperHomes = humanity.homePerHouse.skyscraper;
+      // Start with the most recent homes.
+      for (var i = skyscraperHomes.length - 1; i >= 0; i--) {
+        var humanityTile = humanity(terrain.tileFromKey(skyscraperHomes[i]));
+        if (humanityTile == null) { debugger; continue; }
+        var freeHomes = nSkyscraperHomes - humanityTile.h;
+        if (freeHomes > 0) {
+          var nFolks = Math.min(freeHomes, newPopulation);
+          addFolk(skyscraperHomes, i, nFolks);
+          newPopulation -= nFolks;
+          if (newPopulation <= 0) { break; }
+        }
+      }
+      for (var i = residenceHomes.length - 1; i >= 0; i--) {
+        var humanityTile = humanity(terrain.tileFromKey(residenceHomes[i]));
+        if (humanityTile == null) { debugger; continue; }
+        var freeHomes = nResidenceHomes - humanityTile.h;
+        if (freeHomes > 0) {
+          var nFolks = Math.min(freeHomes, newPopulation);
+          addFolk(residenceHomes, i, nFolks);
+          newPopulation -= nFolks;
+          if (newPopulation <= 0) { break; }
         }
       }
       camp.population = targetPopulation;
@@ -479,11 +486,11 @@ function addPopulation(updatedHumanity) {
   }
 }
 
-function addFolk(homes, index) {
+function addFolk(homes, index, number) {
   var randomHome = homes[index];
   var tile = terrain.tileFromKey(randomHome);
   var randomHomeTile = humanity(tile);
-  randomHomeTile.h++;
+  randomHomeTile.h += number;
   randomHomeTile.f = maxFood;
   var terrainTile = terrain(tile);
   if (terrainTile.type === terrain.tileTypes.mountain) {
