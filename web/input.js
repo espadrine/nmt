@@ -382,12 +382,12 @@ function noisyPixel(size, tile) {
 
 // Sprites.
 
-function loadSprites() {
+function loadSprites(src) {
   var img = new Image();
-  img.src = 'sprites.png';
+  img.src = src;
   return img;
 }
-var sprites = loadSprites();
+var sprites = loadSprites('sprites.png');
 // Canvas with the sprites on it. Set when loaded.
 var spritesLoaded = false;
 sprites.onload = function loadingSprites() {
@@ -414,7 +414,7 @@ function makeGraphicState(canvas, sprites) {
     width: canvas.width,
     height: canvas.height,
     sprites: sprites,
-    spritesWidth: spritesWidth
+    spritesWidth: sprites.width
   };
 }
 
@@ -833,9 +833,12 @@ function paintSprite(gs, cx, cy, sprite, rotation) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(rotation * mπd3);
-  ctx.drawImage(sprites,
+  var factor = size / 20;
+  var msize = - (spritesWidth * factor / 2)|0;
+  var mwidth = (spritesWidth * factor)|0;
+  ctx.drawImage(gs.sprites,
       0, (spritesWidth * sprite)|0, spritesWidth, spritesWidth,
-      (-size)|0, (-size)|0, (size * 2)|0, (size * 2)|0);
+      msize, msize, mwidth, mwidth);
   ctx.restore();
 }
 
@@ -921,8 +924,8 @@ function paintTerrain(gs, cx, cy, hexHorizDistance, hexVertDistance, tilePos) {
   // Draw terrain.
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
   paintSprite(gs, cx, cy, t.type, rotation);
-  ctx.fill();
 }
+
 
 // From 'size:x:y' to cached terrain, centered on the map origin.
 var cachedTerrainPaint = {};
@@ -953,26 +956,44 @@ function paintTilesSprited(gs) {
     canvasBuffer.height = gs.height;
     var gsBuffer = makeGraphicState(canvasBuffer, sprites);
     gsBuffer.hexSize = gs.hexSize;
+    gsBuffer.origin = gs.origin;
 
-    var offLeft = true;     // Each row is offset from the row above.
-    while (cy - hexVertDistance < height) {
-      while (cx - hexHorizDistance < width) {
-        tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
-        // Draw terrain.
-        paintTerrain(gsBuffer, cx, cy,
-            hexHorizDistance, hexVertDistance, tilePos);
-        cx += hexHorizDistance;
+    for (var i = 0; i < 9; i++) {
+      var offLeft = true;     // Each row is offset from the row above.
+      var cx = centerPixel.x;
+      var cy = centerPixel.y;
+      while (cy - hexVertDistance < height) {
+        while (cx - hexHorizDistance < width) {
+          tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
+          var t = terrain(tilePos);
+          if (t.type === i) {
+            // Draw tile.
+            paintTerrain(gsBuffer, cx, cy,
+                hexHorizDistance, hexVertDistance, tilePos);
+          } else if (i === 8 && t.type === tileTypes.water) {
+            // Overlay sprites (beaches, …).
+            for (var f = 0; f < 6; f++) {
+              var neighbor = neighborFromTile(tilePos, f);
+              var neighborTile = terrain(neighbor);
+              if (neighborTile.type !== tileTypes.water
+                  && neighborTile.type !== tileTypes.swamp) {
+                paintSprite(gsBuffer, cx, cy, tileTypes.beach, (f) % 6);
+              }
+            }
+          }
+          cx += hexHorizDistance;
+        }
+        cy += hexVertDistance;
+        cx = centerPixel.x;
+        if (offLeft) {
+          cx -= hexHorizDistance / 2;   // This row is offset.
+          offLeft = false;
+        } else {
+          offLeft = true;
+        }
+        cx = cx|0;
+        cy = cy|0;
       }
-      cy += hexVertDistance;
-      cx = centerPixel.x;
-      if (offLeft) {
-        cx -= hexHorizDistance / 2;   // This row is offset.
-        offLeft = false;
-      } else {
-        offLeft = true;
-      }
-      cx = Math.floor(cx);
-      cy = Math.floor(cy);
     }
 
     cachedTerrainPaint[cachePos] = canvasBuffer;

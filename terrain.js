@@ -31,7 +31,8 @@ var tileTypes = {
   mine:         21,
   industry:     22,
   citrus:       23,
-  university:   24
+  university:   24,
+  beach:        25
 };
 var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24 ];
 
