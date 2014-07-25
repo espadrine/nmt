@@ -540,6 +540,7 @@ function population() {
 
 // Map from tileKey to textual description of place.
 function getPlaces() { return places; }
+function getCenterTile() { return centerTile; }
 
 function campNames() {
   var list = new Array(camps.length);
@@ -586,6 +587,7 @@ module.exports.campFromId = campFromId;
 module.exports.numberOfCamps = numberOfCamps;
 module.exports.population = population;
 module.exports.setSpawn = setSpawn;
+module.exports.getCenterTile = getCenterTile;
 module.exports.moveTreasure = moveTreasure;
 module.exports.awayFrom = awayFrom;
 module.exports.findMountain = findMountain;

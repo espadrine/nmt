@@ -5,12 +5,24 @@ var terrain = require('terrain-gen');
 // The following buildings are built on a place.
 var lookAtPlaces = Object.create(null);
 lookAtPlaces[terrain.tileTypes.mine] = true;
+lookAtPlaces[terrain.tileTypes.industry] = true;
 lookAtPlaces[terrain.tileTypes.university] = true;
+
+var lookAroundBuildings = Object.create(null);
+lookAroundBuildings[terrain.tileTypes.industry] = [ terrain.tileTypes.mine ];
+lookAroundBuildings[terrain.tileTypes.lumber] = [terrain.tileTypes.lumber];
 
 // Given a tile position and something to build, find the nearest tile where it
 // can be built, or null.
-// valid: function taking a tile, returning false is the tile is inacceptable.
-function findConstructionLocation(humanity, tile, b, valid) {
+// options:
+// - tiles: list of {q,r} tiles where we own buildings.
+// - maxSearch: radius (in unit tiles) of the search.
+// - valid: function taking a tile, returning false is the tile is inacceptable,
+//   returning null if the search should be stopped.
+function findConstructionLocation(humanity, tile, b, options) {
+  var valid = options.valid;
+  var maxSearch = (options.maxSearch|0) || null;
+  var builtTiles = options.builtTiles;
   var isValid = function(tile) {
     var isTerrainValid = validConstructionLocation(humanity, tile, b);
     if (!isTerrainValid) { return false; }
@@ -21,16 +33,37 @@ function findConstructionLocation(humanity, tile, b, valid) {
       } else { return true; }
     } else { return false; }
   };
+  // Tiles for which we should look around.
+  var tilesWithThatBuilding = [];
+  // Should we look up places first?
   if (lookAtPlaces[b] != null) {
-    // We should look up places first.
     var places = humanity.getPlaces();
     for (var tileKey in places) {
       var tile = terrain.tileFromKey(tileKey);
-      if (isValid(tile)) { return tile; }
+      tilesWithThatBuilding.push(tile);
     }
   }
+  // Should we look up around certain buildings first?
+  if (lookAroundBuildings[b] != null) {
+    var buildingTypes = lookAroundBuildings[b];
+    // Find a tile holding a building of that type.
+    for (var bti = 0; bti < buildingTypes.length; bti++) {
+      var buildingType = buildingTypes[bti];
+      for (var i = 0; i < builtTiles.length; i++) {
+        var humanityTile = humanity(builtTiles[i]);
+        if (humanityTile && humanityTile.b === buildingType) {
+          tilesWithThatBuilding.push(builtTiles[i]);
+        }
+      }
+    }
+  }
+  var tb = null;
+  for (var i = 0; i < tilesWithThatBuilding.length; i++) {
+    tb = humanity.findNearest(tilesWithThatBuilding[i], isValid, 2);
+  }
+  if (tb !== null) { return tb; }
   // Look around the given tile.
-  return humanity.findNearest(tile, isValid);
+  return humanity.findNearest(tile, isValid, maxSearch);
 }
 
 // Check whether building `b` (see `terrain.tileTypes`) has all requirements
@@ -675,6 +708,7 @@ Group.prototype = {
 function Strategy(camp, humanity) {
   this.camp = camp;
   this.humanity = humanity;
+  terrain.setCenterTile(humanity.getCenterTile());
   // Active projects.
   // Each project is {type, groups, target, builds, camp}.
   this.projects = [];  // Ordered by priority.
@@ -705,8 +739,8 @@ Strategy.prototype = {
   findNearestEmpty: function(tile, size) {
     return findNearestEmpty(this.humanity, tile, size);
   },
-  findConstructionLocation: function(tile, b, valid) {
-    return findConstructionLocation(this.humanity, tile, b, valid);
+  findConstructionLocation: function(tile, b, options) {
+    return findConstructionLocation(this.humanity, tile, b, options);
   },
   dependencyBuilds: function(b, tile, forbiddenTiles) {
     return dependencyBuilds(this.humanity, b, tile, forbiddenTiles);
@@ -794,6 +828,7 @@ Strategy.prototype = {
       tile = this.findNearestEmpty(tile, size);
       console.log('nearest empty:', tile);
     }
+    var maxSearch = 500;
     // Don't build manufactures on tiles which require their items to get to.
     // Is there a trajectory from the closest humans to here?
     if (buildingType === terrain.tileTypes.factory
@@ -809,9 +844,12 @@ Strategy.prototype = {
         traj = trajectory(fromTile, tile, humanityTile);
         return !!traj;
       };
+      // That will be computationally expensive, so go easy.
+      maxSearch = 7;
     }
     // Find a tile where this can be constructed.
-    tile = this.findConstructionLocation(tile, buildingType, valid);
+    tile = this.findConstructionLocation(tile, buildingType,
+      { builtTiles: this.camp.builtTiles, maxSearch: maxSearch, valid: valid });
     console.log('construction location:', tile);
     var builds = this.dependencyBuilds(buildingType, tile);
     console.log('builds:', builds);

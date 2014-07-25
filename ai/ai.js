@@ -1,6 +1,5 @@
 // Interface between game management and the AI entities.
 
-var terrain = require('../terrain-gen');
 var aiPrimitives = require('./primitives');
 
 function AI(humanity) {
