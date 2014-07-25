@@ -115,7 +115,7 @@ function humanityChange(change) {
 function makeCoherentTile(tile) {
   if (tile.h <= 0) {
     tile.f = 0; tile.o = 0;
-    if (tile.b === null) {
+    if (tile.b === null || tile.b === terrain.tileTypes.road) {
       tile.c = null;
     }
   }
