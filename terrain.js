@@ -192,7 +192,7 @@ function neighborFromTile(tile, orientation) {
 function keyFromTile(tile) { return tile.q + ':' + tile.r; }
 function tileFromKey(key) {
   var values = key.split(':');
-  return { q: +values[0], r: +values[1] };
+  return { q: values[0]|0, r: values[1]|0 };
 }
 
 // Find the set of tiles one can move to, from a starter tile.

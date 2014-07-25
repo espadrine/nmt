@@ -71,6 +71,7 @@ function socketMessage(e) {
     if (change.places !== undefined) {
       // Set the places.
       insertPlaces(change.places);
+      fillMapIndex(change.places);
       delete change.places;
     }
     if (change.campNames !== undefined) {
@@ -1297,6 +1298,8 @@ function paint(gs) {
 // gs is the GraphicState.
 function paintIntermediateUI(gs) {
   var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
+  // Paint unzoomed map information.
+  if (size < 5) { drawMapPlaces(gs); }
   // Show tiles controlled by a player.
   for (var tileKey in lockedTiles) {
     paintTileHexagon(gs, tileFromKey(tileKey),
@@ -1360,22 +1363,45 @@ function drawTitle(gs, lines, color) {
   var line1 = lines[0];
   var line2 = lines[1];
   var line3 = lines[2];
-  var measure;
   ctx.fillStyle = color || 'black';
-  ctx.strokeStyle = 'black';
+  if (color) { ctx.strokeStyle = 'black'; }
   ctx.textAlign = 'center';
   ctx.font = (height / 16) + 'px "Linux Biolinum", sans-serif';
-  measure = ctx.measureText(line1).width;
   ctx.fillText(line1, width / 2, height * 1/3);
-  ctx.strokeText(line1, width / 2, height * 1/3);
+  if (color) { ctx.strokeText(line1, width / 2, height * 1/3); }
   ctx.font = (height / 8) + 'px "Linux Biolinum", sans-serif';
-  measure = ctx.measureText(line2).width;
   ctx.fillText(line2, width / 2, height * 13/24);
-  ctx.strokeText(line2, width / 2, height * 13/24);
+  if (color) { ctx.strokeText(line2, width / 2, height * 13/24); }
   ctx.font = (height / 16) + 'px "Linux Biolinum", sans-serif';
-  measure = ctx.measureText(line3).width;
   ctx.fillText(line3, width / 2, height * 2/3);
-  ctx.strokeText(line3, width / 2, height * 2/3);
+  if (color) { ctx.strokeText(line3, width / 2, height * 2/3); }
+  ctx.textAlign = 'start';
+}
+
+// Map from "size:q:r" places to textual information.
+var mapIndex = Object.create(null);
+
+// Insert places = {"tileKey": "Place name"} into mapIndex.
+function fillMapIndex(places) {
+  for (var tileKey in places) {
+    mapIndex['2:' + tileKey] = places[tileKey];
+  }
+}
+
+function drawMapPlaces(gs) {
+  var ctx = gs.ctx;
+  ctx.fillStyle = 'black';
+  ctx.textAlign = 'center';
+  for (var tileSizeKey in mapIndex) {
+    var e = tileSizeKey.split(':');
+    var size = +e[0];
+    var tile = { q: e[1]|0, r: e[2]|0 };
+    var pixel = pixelFromTile(tile, gs.origin, gs.hexSize);
+    var text = mapIndex[tileSizeKey];
+    ctx.font = 'italic '
+      + (gs.hexSize*size*7) + 'px "Linux Biolinum", sans-serif';
+    ctx.fillText(text, pixel.x, pixel.y - 15);
+  }
   ctx.textAlign = 'start';
 }
 
