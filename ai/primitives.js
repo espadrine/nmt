@@ -831,26 +831,26 @@ Strategy.prototype = {
     var maxSearch = 500;
     // Don't build manufactures on tiles which require their items to get to.
     // Is there a trajectory from the closest humans to here?
-    if (buildingType === terrain.tileTypes.factory
+    var isManufacture = (buildingType === terrain.tileTypes.factory
       || buildingType === terrain.tileTypes.dock
-      || buildingType === terrain.tileTypes.airport) {
-      var traj;
-      var group;
-      var self = this;
-      var valid = function(tile) {
-        group = self.addGroup(tile);
-        var fromTile = group.tile;
-        var humanityTile = self.humanity(fromTile);
-        traj = trajectory(fromTile, tile, humanityTile);
-        return !!traj;
-      };
-      // That will be computationally expensive, so go easy.
-      maxSearch = 7;
-    }
+      || buildingType === terrain.tileTypes.airport);
+    // Avoid searching too far away if it's not worth it.
+    if (isManufacture) { maxSearch = 20; }
     // Find a tile where this can be constructed.
     tile = this.findConstructionLocation(tile, buildingType,
-      { builtTiles: this.camp.builtTiles, maxSearch: maxSearch, valid: valid });
+      { builtTiles: this.camp.builtTiles, maxSearch: maxSearch });
+    if (isManufacture) {
+      // We must only allow it if we know for certain we can get there.
+      var traj, group;
+      group = this.addGroup(tile);
+      var fromTile = group.tile;
+      var humanityTile = this.humanity(fromTile);
+      traj = trajectory(fromTile, tile, humanityTile);
+      // We could not find an accessible construction spot → we lack people.
+      if (!traj) { return this.warProject(tile, this.camp.id); }
+    }
     console.log('construction location:', tile);
+    if (tile == null) { return; }
     var builds = this.dependencyBuilds(buildingType, tile);
     console.log('builds:', builds);
     if (builds == null) { return; }

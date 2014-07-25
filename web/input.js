@@ -1535,8 +1535,17 @@ function paintCamps(gs) {
   var hexHorizDistance = gs.hexSize * Math.sqrt(3);
   var hexVertDistance = gs.hexSize * 3/2;
   if (size < 5) {
+    // We're too far above.
+    ctx.fillStyle = 'black';
+    var bSize = 2 * size;
     for (var i = 0; i < numberOfCamps; i++) {
-      // We're too far above.
+      var visibleCamp = visibleCamps[i];
+      for (var key in visibleCamp) {
+        var px = pixelFromTile(tileFromKey(key), origin, size);
+        ctx.fillRect(px.x - bSize, px.y - bSize, 2 * bSize, 2 * bSize);
+      }
+    }
+    for (var i = 0; i < numberOfCamps; i++) {
       ctx.fillStyle = campHsl(i);
       var visibleCamp = visibleCamps[i];
       for (var key in visibleCamp) {
