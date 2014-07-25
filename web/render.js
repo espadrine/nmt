@@ -1,4 +1,5 @@
 onmessage = function workerRecv(e) {
+  if (e.data.centerPoint) { centerPoint = e.data.centerPoint; return; }
   if (e.data.type === 'raw') {
     paintTilesRaw(e.data.image, e.data.size, e.data.origin);
   } else if (e.data.type === 'rainfall') {

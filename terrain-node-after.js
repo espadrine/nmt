@@ -1,5 +1,6 @@
 
 module.exports = terrain;
+module.exports.setCenterTile = setCenterTile;
 module.exports.travel = humanTravelPath;
 module.exports.humanTravelTo = humanTravelTo;
 module.exports.humanTravel = humanTravelFrom;

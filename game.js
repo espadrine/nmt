@@ -32,6 +32,7 @@ function actWSStart(socket) {
     camp: camp,
     goto: playerCamp.spawn,
     places: humanity.getPlaces(),
+    centerTile: centerTile,
     campNames: humanity.campNames(),
     resources: humanity.getResources(),
   }));
@@ -504,8 +505,10 @@ function addFolk(homes, index, number) {
 
 // Starting the game.
 
+var centerTile;
 function startGame() {
-  humanity.setSpawn();
+  centerTile = humanity.setSpawn();
+  console.log('center:', centerTile);
   startGameLoop();
 }
 
@@ -516,7 +519,8 @@ function startGameLoop() {
 
 var actChannel;
 function start(camp) {
-  humanity.start(terrain);
+  centerTile = humanity.start(terrain);
+  console.log('center:', centerTile);
   startGameLoop();
   actChannel = camp.ws('act', actWSStart);
 }

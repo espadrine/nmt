@@ -18,6 +18,7 @@ function saveWorld() {
       world[tileKey] = humanityData[tileKey];
     }
     world.places = places;
+    world.centerTile = centerTile;
     world.campNames = campNames();
     world.usedResources = getUsedResources();
     fs.writeFile(worldFile, JSON.stringify(world));
@@ -32,11 +33,13 @@ function start(t) {
     var world = require(worldFile);
     camps = makeCamps();
     places = world.places;
+    centerTile = world.centerTile;
     for (var i = 0; i < numberOfCamps; i++) {
       camps[i].spawn = terrain.tileFromKey(Object.keys(places)[i]);
       camps[i].name = world.campNames[i];
     }
     delete world.places;
+    delete world.centerTile;
     delete world.campNames;
     var usedResources = world.usedResources;
     for (var i = 0; i < numberOfCamps; i++) {
@@ -56,12 +59,13 @@ function start(t) {
   } catch(e) {
     setSpawn();
   }
-  for (var i = 0; i < numberOfCamps; i++) {
-    console.log('camp', i + ':', camps[i].spawn);
-  }
+  //for (var i = 0; i < numberOfCamps; i++) {
+  //  console.log('camp', i + ':', camps[i].spawn);
+  //}
   // Update periodically.
   var periodicity = 10000;  // Every 10s.
   setInterval(saveWorld, periodicity);
+  return centerTile;
 }
 
 // Map from tileKeys to objects with the following keys:
@@ -73,6 +77,8 @@ function start(t) {
 var humanityData = {};
 // Map from tileKey to textual description of place.
 var places = {};
+// {q,r} location of center.
+var centerTile;
 function data() { return humanityData; }
 
 function makeDefault() {
@@ -316,13 +322,15 @@ function winners(criterion) {
 
 
 // Modifies `camps`.
+// Returns {q,r} location of center of map.
 function setSpawn() {
   spawnCampCursor = 0;
   camps = makeCamps();
   humanityData = {};    // reset humanity.
   places = {};
-  var center = findSpawns();
-  findTreasures(center);
+  centerTile = findSpawns();
+  findTreasures(centerTile);
+  return centerTile;
 }
 
 
@@ -383,6 +391,7 @@ function findSpawns() {
     q: (Math.random() * 10000)|0,
     r: (Math.random() * 10000)|0,
   };
+  terrain.setCenterTile(centerSpot);
   var angle = 0;
   for (var i = 0; i < numberOfCamps; i++) {
     var oneSpot = {

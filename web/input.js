@@ -58,6 +58,16 @@ function socketMessage(e) {
       gotoPlace(change.goto);
       delete change.goto;
     }
+    if (change.centerTile !== undefined) {
+      // Set the places.
+      var centerTile = change.centerTile;
+      centerPoint.x = ((Math.sqrt(3) * (centerTile.q + centerTile.r / 2))|0);
+      centerPoint.y = (3/2 * centerTile.r);
+      for (var i = 0; i < workerPool.length; i++) {
+        workerPool[i].postMessage({centerPoint: centerPoint});
+      }
+      delete change.centerTile;
+    }
     if (change.places !== undefined) {
       // Set the places.
       insertPlaces(change.places);
@@ -1970,13 +1980,11 @@ window.onkeydown = function keyInputManagement(event) {
           || event.keyCode === 109 || event.keyCode === 219
           || event.keyCode === 169) {   // -
     // Unzoom.
-    if (gs.hexSize > 2) {
-      gs.hexSize = gs.hexSize / 2;
-      gs.origin.x0 = (gs.origin.x0 / 2 - gs.width / 4)|0;
-      gs.origin.y0 = (gs.origin.y0 / 2 - gs.height / 4)|0;
-      voidCache = true;
-      redraw = true;
-    }
+    gs.hexSize = gs.hexSize / 2;
+    gs.origin.x0 = (gs.origin.x0 / 2 - gs.width / 4)|0;
+    gs.origin.y0 = (gs.origin.y0 / 2 - gs.height / 4)|0;
+    voidCache = true;
+    redraw = true;
   } else if (event.keyCode === 84) {    // T
     enterMode(selectionModes.travel);
   } else if (event.keyCode === 67) {    // C

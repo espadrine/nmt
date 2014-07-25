@@ -58,6 +58,34 @@ function tileType(steepness, vegetation) {
   else { return steepness; }
 }
 
+function heatmap(x, y, simplex, size, harmonics) {
+  var value = 0;
+  var sum = 0;
+  for (var i = 0; i < harmonics; i++) {
+    var coeff = Math.pow(2, i);
+    value += simplex.noise2D(x/size*coeff, y/size*coeff) / coeff;
+    sum += 1 / coeff;
+  }
+  return value / sum;
+}
+
+var centerPoint = { x: 0, y: 0 };
+function setCenterTile(coord) {
+  centerPoint.x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
+  centerPoint.y = (3/2 * coord.r);
+}
+
+// Returns true if it is part of the continent.
+function continent(x, y, center) {
+  var size = 1100;
+  var limit = 0.35;
+  var hm = heatmap(x, y, simplex1, 4/5*size, 8);
+  hm = (hm + 1) / 2;
+  hm = hm * Math.exp((-(x - center.x) * (x - center.x)
+                      -(y - center.y) * (y - center.y)) / (size * size));
+  return hm > limit;
+}
+
 // Get information about the tile at hexagonal coordinates `coord` {q, r}.
 // Returns
 //  - steepness: altitude level. See `tileTypes`.
@@ -94,7 +122,8 @@ function terrain(coord) {
       + 1/4 * simplex2.noise2D(4*x/factor, 4*y/factor)
       + 1/8 * simplex2.noise2D(8*x/factor, 8*y/factor)
       + 1/16 * simplex2.noise2D(16*x/factor, 16*y/factor);
-  var steepness = (
+  if (continent(x, y, centerPoint)) {
+    var steepness = (
     // Rivers are thinner in mountains.
     (riverNoise - (heightNoise > 0.6? riverNoise: 0) > 0.98
     // Seas are smaller in mountains.
@@ -108,10 +137,11 @@ function terrain(coord) {
     (heightNoise - riverNoise < 0.2) ?
         tileTypes.hill:
         tileTypes.mountain);
-  var vegetation = (vegetationNoise
-      // Less vegetation on water.
-      - (steepness === tileTypes.water? 2 * seaNoise: 0)
-      + Math.abs(heightNoise + 0.15)) < 0;
+    var vegetation = (vegetationNoise
+        // Less vegetation on water.
+        - (steepness === tileTypes.water? 2 * seaNoise: 0)
+        + Math.abs(heightNoise + 0.15)) < 0;
+  } else { var steepness = tileTypes.water; var vegetation = false; }
 
   var tile = {
     steepness: steepness,
