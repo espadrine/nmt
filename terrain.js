@@ -78,12 +78,11 @@ function setCenterTile(coord) {
 // Returns true if it is part of the continent.
 function continent(x, y, center) {
   var size = 1100;
-  var limit = 0.35;
   var hm = heatmap(x, y, simplex1, 4/5*size, 8);
   hm = (hm + 1) / 2;
   hm = hm * Math.exp((-(x - center.x) * (x - center.x)
                       -(y - center.y) * (y - center.y)) / (size * size));
-  return hm > limit;
+  return hm;
 }
 
 // Get information about the tile at hexagonal coordinates `coord` {q, r}.
@@ -122,32 +121,42 @@ function terrain(coord) {
       + 1/4 * simplex2.noise2D(4*x/factor, 4*y/factor)
       + 1/8 * simplex2.noise2D(8*x/factor, 8*y/factor)
       + 1/16 * simplex2.noise2D(16*x/factor, 16*y/factor);
-  if (continent(x, y, centerPoint)) {
+  var height = heightNoise - riverNoise;
+  var continentLimit = 0.35;
+  var continentNoise = continent(x, y, centerPoint);
+  if (continentNoise > continentLimit) {
     var steepness = (
     // Rivers are thinner in mountains.
-    (riverNoise - (heightNoise > 0.6? riverNoise: 0) > 0.98
+    (((heightNoise > 0.6)? false: (riverNoise > 0.98))
     // Seas are smaller in mountains.
     || seaNoise*3/4 + heightNoise/4 < -0.7) ?
-        tileTypes.water:
+        (height = ((continentNoise - 2) + seaNoise / 8 - 1.5) / 2,
+         tileTypes.water):
     (vegetationNoise < -1.0)?
         tileTypes.hill:
-    (heightNoise - riverNoise/2 < 0.1) ?
+    (height < -0.2) ?
         tileTypes.steppe:
     // Mountains are cut off (by river) to avoid circular mountain formations.
-    (heightNoise - riverNoise < 0.2) ?
+    (height < 0.2) ?
         tileTypes.hill:
         tileTypes.mountain);
     var vegetation = (vegetationNoise
         // Less vegetation on water.
         - (steepness === tileTypes.water? 2 * seaNoise: 0)
         + Math.abs(heightNoise + 0.15)) < 0;
-  } else { var steepness = tileTypes.water; var vegetation = false; }
+  } else {
+    var steepness = tileTypes.water;
+    var vegetation = false;
+    // When continentNoise is at maximum (continentLimit),
+    // height must be at -1.5 (continentLimit - 1.5).
+    height = ((continentNoise - 2) + seaNoise / 8 - 1.5) / 2;
+  }
 
   var tile = {
     steepness: steepness,
     vegetation: vegetation,
     type: tileType(steepness, vegetation),
-    height: heightNoise - riverNoise,
+    height: height,
     rain: -vegetationNoise / 2
   };
   return tile;

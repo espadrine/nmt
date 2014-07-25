@@ -72,26 +72,32 @@ function paintTilesRaw(imgdata, size, origin) {
         var heightMin = -1, heightMax = 1;
         if (t.steepness == tileTypes.water) {
           color[2] = 180;
-        } else if (t.steepness == tileTypes.steppe) {
           fromRed = 0;
-          fromGreen = 200;
+          fromGreen = 0;
+          toRed = 80;
+          toGreen = 80;
+          heightMin = -2;
+          heightMax = -1.5;
+        } else if (t.steepness == tileTypes.steppe) {
+          fromRed = 10;
+          fromGreen = 190;
           toRed = 85;
           toGreen = 170;
-          heightMin = -0.6;
-          heightMax = 0.4;
+          heightMin = -1.5;
+          heightMax = -0.2;
         } else if (t.steepness == tileTypes.hill) {
-          fromRed = 110;
-          fromGreen = 150;
-          toRed = 160;
-          toGreen = 90;
-          heightMin = 0.4;
-          heightMax = 0.65;
+          fromRed = 100;
+          fromGreen = 160;
+          toRed = 150;
+          toGreen = 110;
+          heightMin = -0.2;
+          heightMax = 0.2;
         } else {
-          fromRed = 120;
-          fromGreen = 90;
-          toRed = 50;
-          toGreen = 0;
-          heightMin = 0.65;
+          fromRed = 150;
+          fromGreen = 100;
+          toRed = 40;
+          toGreen = 10;
+          heightMin = 0.2;
           heightMax = 1;
         }
         if (t.type == tileTypes.forest) {
@@ -100,15 +106,14 @@ function paintTilesRaw(imgdata, size, origin) {
           toRed = 50;
           toGreen = 100;
         }
-        var grey = (((t.height + 1) / 2));
-        grey = (grey - heightMin) / (heightMax - heightMin);
+        var grey = (t.height - heightMin) / (heightMax - heightMin);
         var inverseGrey = 1 - grey;
         color[0] = grey * toRed + (1 - grey) * fromRed;
         color[1] = grey * toGreen + (1 - grey) * fromGreen;
         // Rainfall
         var rain = Math.min(Math.abs(color[0] - color[1]) / 2 * t.rain, 255);
         color[1] -= rain; // darker green
-        color[2] -= Math.min(t.rain * 50, 255);   // darker blue
+        color[2] -= Math.min(t.rain * 20, 255);   // darker blue
         // Vegetation
         if (t.vegetation) {
           color[0] -= 50;
