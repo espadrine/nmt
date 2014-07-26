@@ -386,30 +386,6 @@ function trajectory(from, to, human, maxTiles) {
 }
 
 
-// Return a valid plan that either moves people from "q:r" to "q:r" tiles,
-// or builds a farm, if they're out of food.
-// FIXME: attempt to move to the nearest farm when food is needed.
-function moveOrFood(from, to, humanityTile) {
-  if (humanityTile.f <= 0) {
-    // If we are on water and need food, we're dead meat anyway.
-    var isNotOnWater =
-      terrain(terrain.tileFromKey(from)).type !== terrain.tileTypes.water;
-    if (isNotOnWater) {
-      return {
-        at: from,
-        do: terrain.planTypes.build,
-        b: terrain.tileTypes.farm
-      };
-    }
-  }
-  return {
-    at: from,
-    do: terrain.planTypes.move,
-    to: to,
-    h: humanityTile.h
-  };
-}
-
 
 
 // Managing projects.
@@ -422,7 +398,10 @@ function Group(tile, strategy) {
   this.tile = tile;
   this.strategy = strategy;
   this.camp = strategy.camp;
+  // See trajectory().
   this.trajectory = [];
+  // Whether we should start by forking the group on this location.
+  this.fork = false;
 }
 
 Group.prototype = {
@@ -468,6 +447,37 @@ Group.prototype = {
     var tiles = this.camp.inhabitedTiles;
     if (tiles.length === 0) { return null; }
     return closestTowardsAmong(this.tileListToMap(tiles), target);
+  },
+
+  // Return a valid plan that either moves people from "q:r" to "q:r" tiles,
+  // or builds a farm, if they're out of food.
+  // FIXME: attempt to move to the nearest farm when food is needed.
+  moveOrFood: function(from, to, humanityTile) {
+    if (humanityTile.f <= 0) {
+      // If we are on water and need food, we're dead meat anyway.
+      var isNotOnWater =
+        terrain(terrain.tileFromKey(from)).type !== terrain.tileTypes.water;
+      if (isNotOnWater) {
+        return {
+          at: from,
+          do: terrain.planTypes.build,
+          b: terrain.tileTypes.farm
+        };
+      }
+    }
+    var humansMoving = humanityTile.h;
+    // Should we fork the current group?
+    if (!!this.fork) {
+      humansMoving = (humansMoving / 2)|0;
+      if (humansMoving <= 0) { humansMoving = 1; }
+      this.fork = false;
+    }
+    return {
+      at: from,
+      do: terrain.planTypes.move,
+      to: to,
+      h: humansMoving
+    };
   },
 
   // Switch this group (and potentially the current project)
@@ -587,7 +597,7 @@ Group.prototype = {
     }
     var accessibles = Object.keys(accessibleTiles);
     var awayFromLawn = accessibles[(Math.random() * accessibles.length)|0];
-    return moveOrFood(terrain.keyFromTile(blockingTile), awayFromLawn,
+    return this.moveOrFood(terrain.keyFromTile(blockingTile), awayFromLawn,
         humanityTile);
   },
 
@@ -615,7 +625,7 @@ Group.prototype = {
     // Remove current tile, going to the next tile.
     this.trajectory.shift();
     var fromHumanityTile = this.strategy.humanity(fromTile);
-    var plan = moveOrFood(fromTileKey, toTileKey, fromHumanityTile);
+    var plan = this.moveOrFood(fromTileKey, toTileKey, fromHumanityTile);
     // If this move changes our tile, register our group's new tile.
     if (plan.to == null && plan.b != null) {
       // They are building a farm or something.
@@ -700,8 +710,8 @@ Group.prototype = {
     }
     // Go there.
     this.tile = toTile;
-    return moveOrFood(terrain.keyFromTile(fromTile),terrain.keyFromTile(toTile),
-      fromHumanityTile);
+    return this.moveOrFood(terrain.keyFromTile(fromTile),
+        terrain.keyFromTile(toTile), fromHumanityTile);
   },
 
 };
@@ -766,10 +776,10 @@ Strategy.prototype = {
     return groupFromKey;
   },
 
-  // Find a group. If the tile = {q,r} is given,
-  // find the group closest to that tile.
+  // Find a group closest to the tile = {q,r}.
+  // It may return a group we already occupy if we can fork it,
+  // or if the `stealGroup` flag is true.
   // Returns the group.
-  // FIXME: fork a nearby already-used group if possible, and fork it.
   addGroup: function(tile, stealGroup) {
     if (stealGroup == null) { stealGroup = false; }
     // It needs to be a group we don't currently count.
@@ -779,9 +789,11 @@ Strategy.prototype = {
     var closest = MAX_INT;
     for (var i = 0; i < tiles.length; i++) {
       var tileKey = terrain.keyFromTile(tiles[i]);
-      if (!stealGroup) {
-        // Skip groups we already control.
-        if (groupFromKey[tileKey] !== undefined) { continue; }
+      // Groups we already control.
+      if (groupFromKey[tileKey] !== undefined) {
+        // If there is more than one, we can we can fork them.
+        var humanityTile = this.humanity(terrain.tileFromKey(tileKey));
+        if (!stealGroup && humanityTile.h < 2) { continue; }
       }
       // FIXME: don't include tiles controlled by players.
       // Locate the closest group to the target tile.
@@ -793,6 +805,8 @@ Strategy.prototype = {
     }
     if (chosenTile == null) { debugger; return this.addGroup(tile, true); }
     var group = new Group(chosenTile, this);
+    // If we own that
+    if (groupFromKey[tileKey] !== undefined) { group.fork = true; }
     return group;
   },
 
