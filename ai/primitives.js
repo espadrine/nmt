@@ -388,6 +388,7 @@ function trajectory(from, to, human, maxTiles) {
 
 // Return a valid plan that either moves people from "q:r" to "q:r" tiles,
 // or builds a farm, if they're out of food.
+// FIXME: attempt to move to the nearest farm when food is needed.
 function moveOrFood(from, to, humanityTile) {
   if (humanityTile.f <= 0) {
     // If we are on water and need food, we're dead meat anyway.
@@ -614,7 +615,14 @@ Group.prototype = {
     // Remove current tile, going to the next tile.
     this.trajectory.shift();
     var fromHumanityTile = this.strategy.humanity(fromTile);
-    return moveOrFood(fromTileKey, toTileKey, fromHumanityTile);
+    var plan = moveOrFood(fromTileKey, toTileKey, fromHumanityTile);
+    // If this move changes our tile, register our group's new tile.
+    if (plan.to == null && plan.b != null) {
+      // They are building a farm or something.
+      return plan;
+    }
+    this.tile = terrain.tileFromKey(plan.to);
+    return plan;
   },
 
   // Advance in the direction of target = {q,r}.
@@ -623,17 +631,7 @@ Group.prototype = {
     // Implementation reminder: change this.tile when moving group.
     // Do we have a computed trajectory?
     var computedTrajectory = this.moveAlongTrajectory();
-    if (computedTrajectory != null) {
-      // If this move comes from our group, register our group's new tile.
-      if (sameTile(this.tile, terrain.tileFromKey(computedTrajectory.at))) {
-        if (computedTrajectory.to == null && computedTrajectory.b != null) {
-          // They are building a farm or something.
-          return computedTrajectory;
-        }
-        this.tile = terrain.tileFromKey(computedTrajectory.to);
-      }
-      return computedTrajectory;
-    }
+    if (computedTrajectory != null) { return computedTrajectory; }
     // No known trajectory.
     var fromTile = this.tile;
     var fromHumanityTile = humanity(fromTile);
@@ -661,7 +659,12 @@ Group.prototype = {
     }) || fromTile;
     // Are we cut off by something?
     if (sameTile(toTile, fromTile)) {
-      // What by?
+      // Is there a more intelligent path we could see?
+      var path = trajectory(fromTile, target, fromHumanityTile);
+      if (path != null) {
+        this.trajectory = path; return this.moveAlongTrajectory();
+      }
+      // What are we cut off by?
       // Construct tiles map directly around the current tile.
       var around = Object.create(null);
       around[terrain.keyFromTile(fromTile)] = true;
