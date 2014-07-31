@@ -19,6 +19,7 @@ lookAroundBuildings[terrain.tileTypes.lumber] = [terrain.tileTypes.lumber];
 // - maxSearch: radius (in unit tiles) of the search.
 // - valid: function taking a tile, returning false is the tile is inacceptable,
 //   returning null if the search should be stopped.
+// - forbiddenTiles: [{q,r}], see `dependencyBuilds()`.
 function findConstructionLocation(humanity, tile, b, options) {
   var valid = options.valid;
   var maxSearch = (options.maxSearch|0) || null;
@@ -27,7 +28,7 @@ function findConstructionLocation(humanity, tile, b, options) {
     var isTerrainValid = validConstructionLocation(humanity, tile, b);
     if (!isTerrainValid) { return false; }
     // Check that the build order succeeds.
-    if (dependencyBuilds(humanity, b, tile) != null) {
+    if (dependencyBuilds(humanity, b, tile, options.forbiddenTiles) != null) {
       if (valid != null) {
         return valid(tile);
       } else { return true; }
@@ -177,7 +178,6 @@ constructFromValuable[terrain.tileTypes.citrus] = terrain.tileTypes.university;
 // buildingPurpose: building type (see terrain.tileTypes). (Internal use.)
 // Returns a list of {tile: {q,r}, building: type} that needs to be
 // constructed, in the correct order (see terrain.tileTypes).
-// FIXME: don't destroy a building from an unfinished build project.
 function dependencyBuilds(humanity, b, tile, forbiddenTiles,
     override, buildingPurpose) {
   forbiddenTiles = forbiddenTiles || [];
@@ -505,7 +505,7 @@ Group.prototype = {
         // Can we get from that building to where we want to go?
         var pathFromBuilding = trajectory(building, target,
             { h:1, c:this.camp.id, o:item });
-        if (!pathFromBuilding || pathFromBuilding.length > 20) {
+        if (!pathFromBuilding || pathFromBuilding.length >= 20) {
           building = null;
         }
       }
@@ -759,6 +759,22 @@ Strategy.prototype = {
     return dependencyBuilds(this.humanity, b, tile, forbiddenTiles);
   },
 
+  // Return all tiles [{q,r}] from current build projects.
+  tilesFromBuildProjects: function() {
+    var tiles = [];
+    for (var i = 0; i < this.projects.length; i++) {
+      var project = this.projects[i];
+      if (project.type === projectType.build && project.builds != null) {
+        for (var j = 0; j < project.builds.length; j++) {
+          var build = project.builds[j];
+          tiles.push(build.tile);
+        }
+      }
+    }
+    return tiles;
+  },
+
+
   // Group creation below.
   //
 
@@ -814,7 +830,8 @@ Strategy.prototype = {
   cleanGroups: function(project) {
     for (var i = 0; i < project.groups.length; i++) {
       var humanityTile = this.humanity(project.groups[i].tile);
-      if (humanityTile == null || humanityTile.h <= 0) {
+      if (humanityTile == null || humanityTile.h <= 0
+          || humanityTile.c !== this.camp.id) {
         project.groups.splice(i, 1);
       }
     }
@@ -854,8 +871,10 @@ Strategy.prototype = {
     // Avoid searching too far away if it's not worth it.
     if (isManufacture) { maxSearch = 20; }
     // Find a tile where this can be constructed.
+    var forbiddenTiles = this.tilesFromBuildProjects();
     tile = this.findConstructionLocation(tile, buildingType,
-      { builtTiles: this.camp.builtTiles, maxSearch: maxSearch });
+      { builtTiles: this.camp.builtTiles, maxSearch: maxSearch,
+        forbiddenTiles: forbiddenTiles });
     if (isManufacture) {
       // We must only allow it if we know for certain we can get there.
       var traj, group;
@@ -868,7 +887,7 @@ Strategy.prototype = {
     }
     console.log('construction location:', tile);
     if (tile == null) { return; }
-    var builds = this.dependencyBuilds(buildingType, tile);
+    var builds = this.dependencyBuilds(buildingType, tile, forbiddenTiles);
     console.log('builds:', builds);
     if (builds == null) { return; }
     // Find the nearest group around that tile.
