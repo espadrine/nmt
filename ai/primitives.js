@@ -492,9 +492,12 @@ Group.prototype = {
     var building = this.closestManufacture(b, target);
     // Can we get to `target` from that spot?
     if (owner != null) {
-      var pathFromOwner = trajectory(owner, target,
-          this.strategy.humanity(owner));
-      if (!pathFromOwner || pathFromOwner.length > 20) { owner = null; }
+      var humanityOwner = this.strategy.humanity(owner);
+      var pathFromOwner = trajectory(owner, target, humanityOwner);
+      if (!pathFromOwner
+          || pathFromOwner.length >= (humanityOwner.f * humanityOwner.h)) {
+        owner = null;
+      }
     }
     if (building != null) {
       // If the building is on a tile needed to get to it, don't do it.
@@ -550,21 +553,20 @@ Group.prototype = {
   // path (optional): output of trajectory(), going from the intended
   // tile to move from, to the ultimate tile to get to.
   moveFrom: function(tile, path) {
-    var tilesMap = this.tileListToMap(this.camp.inhabitedTiles);
-    var newGroupLocation = closestTowardsAmong(tilesMap, tile);
-    // When a group will be there, this group will be that group.
-    this.switchGroupTo(tile);
-    this.trajectory = path;
-    // Add a project to move there with a group at that location.
-    this.strategy.warProject(tile, this.camp.id);
+    // Add a project to move there from our group's tile.
+    this.strategy.warProject(this.tile, this.camp.id);
     // The strategy is at the end. Put it at the beginning.
     var project = this.strategy.projects.pop();
+    project.target = tile;  // from `this.tile` to `tile`.
     this.strategy.projects.unshift(project);
-    // Try to compute the trajectory.
+    // Try to compute the trajectory. (Note: group.tile === this.tile.)
     var group = project.groups[0];
     var humanityTile = this.strategy.humanity(group.tile);
     var traj = trajectory(group.tile, project.target, humanityTile);
     if (traj != null) { group.trajectory = traj; }
+    // When the group will be at `tile`, this group will be that group.
+    this.switchGroupTo(tile);
+    this.trajectory = path;
   },
 
   // Create a project to build something (see terrain.tileTypes),
