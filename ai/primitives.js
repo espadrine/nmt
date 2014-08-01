@@ -402,6 +402,8 @@ function Group(tile, strategy) {
   this.trajectory = [];
   // Whether we should start by forking the group on this location.
   this.fork = false;
+  // Whether the group is getting some refreshing food.
+  this.goingToAFarm = false;
 }
 
 Group.prototype = {
@@ -451,12 +453,20 @@ Group.prototype = {
 
   // Return a valid plan that either moves people from "q:r" to "q:r" tiles,
   // or builds a farm, if they're out of food.
-  // FIXME: attempt to move to the nearest farm when food is needed.
   moveOrFood: function(from, to, humanityTile) {
+    var humansMoving = humanityTile.h;
+    // Should we fork the current group?
+    if (!!this.fork) {
+      humansMoving = (humansMoving / 2)|0;
+      if (humansMoving <= 0) { humansMoving = 1; }
+      this.fork = false;
+    }
+
+    var fromTile = terrain.tileFromKey(from);
+    // If foodless, make farms.
     if (humanityTile.f <= 0) {
       // If we are on water and need food, we're dead meat anyway.
-      var isNotOnWater =
-        terrain(terrain.tileFromKey(from)).type !== terrain.tileTypes.water;
+      var isNotOnWater = terrain(fromTile).type !== terrain.tileTypes.water;
       if (isNotOnWater) {
         return {
           at: from,
@@ -465,12 +475,29 @@ Group.prototype = {
         };
       }
     }
-    var humansMoving = humanityTile.h;
-    // Should we fork the current group?
-    if (!!this.fork) {
-      humansMoving = (humansMoving / 2)|0;
-      if (humansMoving <= 0) { humansMoving = 1; }
-      this.fork = false;
+    // When low on food, go to nearest farm around.
+    else if (humanityTile.f <= 4 && !this.goingToAFarm) {
+      var toTile = terrain.tileFromKey(to);
+      var humanity = this.strategy.humanity;
+      var nearestFarm = humanity.findNearest(toTile, function(tile){
+        var humanityTile = humanity(tile);
+        return humanityTile && (humanityTile.b === terrain.tileTypes.farm);
+      }, 20);
+      if (nearestFarm != null) {
+        var pathToFarm = trajectory(fromTile, nearestFarm, humanityTile, 10000);
+        if (pathToFarm != null) {
+          this.goingToAFarm = true;
+          this.trajectory = pathToFarm.slice(1);
+          return {
+            at: from,
+            do: terrain.planTypes.move,
+            to: pathToFarm[1],
+            h: humansMoving
+          };
+        }
+      }
+    } else if (humanityTile.f > 4) {
+      this.goingToAFarm = false;
     }
     return {
       at: from,
@@ -711,9 +738,12 @@ Group.prototype = {
       return null;
     }
     // Go there.
-    this.tile = toTile;
-    return this.moveOrFood(terrain.keyFromTile(fromTile),
+    var plan = this.moveOrFood(terrain.keyFromTile(fromTile),
         terrain.keyFromTile(toTile), fromHumanityTile);
+    if (plan.to != null) {
+      this.tile = terrain.tileFromKey(plan.to);
+    }
+    return plan;
   },
 
 };
