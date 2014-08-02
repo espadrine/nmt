@@ -40,8 +40,8 @@ function findConstructionLocation(humanity, tile, b, options) {
   if (lookAtPlaces[b] != null) {
     var places = humanity.getPlaces();
     for (var tileKey in places) {
-      var tile = terrain.tileFromKey(tileKey);
-      tilesWithThatBuilding.push(tile);
+      var tileWithBuilding = terrain.tileFromKey(tileKey);
+      tilesWithThatBuilding.push(tileWithBuilding);
     }
   }
   // Should we look up around certain buildings first?
@@ -58,11 +58,19 @@ function findConstructionLocation(humanity, tile, b, options) {
       }
     }
   }
-  var tb = null;
+  var closestBuilding = null;
+  var buildingDistance = MAX_INT;
   for (var i = 0; i < tilesWithThatBuilding.length; i++) {
-    tb = humanity.findNearest(tilesWithThatBuilding[i], isValid, 2);
+    var tb = humanity.findNearest(tilesWithThatBuilding[i], isValid, 2);
+    if (tb !== null) {
+      var distance = distanceBetweenTiles(tile, tb);
+      if (distance < buildingDistance) {
+        closestBuilding = tb;
+        buildingDistance = distance;
+      }
+    }
   }
-  if (tb !== null) { return tb; }
+  if (closestBuilding !== null) { return closestBuilding; }
   // Look around the given tile.
   return humanity.findNearest(tile, isValid, maxSearch);
 }
@@ -463,6 +471,7 @@ Group.prototype = {
     }
 
     var fromTile = terrain.tileFromKey(from);
+    var toTile = terrain.tileFromKey(to);
     // If foodless, make farms.
     if (humanityTile.f <= 0) {
       // If we are on water and need food, we're dead meat anyway.
@@ -477,7 +486,6 @@ Group.prototype = {
     }
     // When low on food, go to nearest farm around.
     else if (humanityTile.f <= 4 && !this.goingToAFarm) {
-      var toTile = terrain.tileFromKey(to);
       var humanity = this.strategy.humanity;
       var nearestFarm = humanity.findNearest(toTile, function(tile){
         var humanityTile = humanity(tile);
