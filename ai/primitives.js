@@ -437,12 +437,13 @@ Group.prototype = {
 
   // Return the closest manufacture {q,r} of a particular type `b`
   // to the tile `target` {q,r}.
-  closestManufacture: function(b, target) {
+  // filter: function(tile = {q,r}), true if the tile is authorized.
+  closestManufacture: function(b, target, filter) {
     var tiles = this.camp.tilesWith(function(humanityTile) {
       return humanityTile.b === b;
     });
     if (tiles.length === 0) { return null; }
-    return closestTowardsAmong(this.tileListToMap(tiles), target);
+    return closestTowardsAmong(this.tileListToMap(tiles), target, filter);
   },
 
   // Return the closest tile {q,r} owned by this camp.
@@ -471,6 +472,7 @@ Group.prototype = {
     }
 
     var fromTile = terrain.tileFromKey(from);
+    if (to == null) { debugger; }
     var toTile = terrain.tileFromKey(to);
     // If foodless, make farms.
     if (humanityTile.f <= 0) {
@@ -524,7 +526,12 @@ Group.prototype = {
     var item = terrain.manufactureFromBuilding(b);
     if (item == null) { return; }
     var owner = this.tileWithManufacture(item, target);
-    var building = this.closestManufacture(b, target);
+    var self = this;
+    var building = this.closestManufacture(b, target, function(tile) {
+      // If the building is on a tile needed to get to it, don't do it.
+      return !inaccessibleForManufactureBuilding(b,
+          terrain(tile), self.strategy.humanity(tile));
+    });
     // Can we get to `target` from that spot?
     if (owner != null) {
       var humanityOwner = this.strategy.humanity(owner);
@@ -535,17 +542,11 @@ Group.prototype = {
       }
     }
     if (building != null) {
-      // If the building is on a tile needed to get to it, don't do it.
-      if (inaccessibleForManufactureBuilding(b,
-          terrain(building), this.strategy.humanity(building))) {
+      // Can we get from that building to where we want to go?
+      var pathFromBuilding = trajectory(building, target,
+          { h:1, c:this.camp.id, o:item });
+      if (!pathFromBuilding || pathFromBuilding.length >= 20) {
         building = null;
-      } else {
-        // Can we get from that building to where we want to go?
-        var pathFromBuilding = trajectory(building, target,
-            { h:1, c:this.camp.id, o:item });
-        if (!pathFromBuilding || pathFromBuilding.length >= 20) {
-          building = null;
-        }
       }
     }
     //debugger;
@@ -1186,6 +1187,7 @@ function distanceBetweenTiles(a, b) {
 
 // Return the closest tile we can go to from atTile {q,r}
 // in order to go to the target toTile {q,r}.
+// filter: function(tile = {q,r}), true if the tile is authorized.
 function closestTowards(atTile, toTile, filter) {
   var accessibleTiles = terrain.humanTravel(atTile);
   if (filter != null) {
@@ -1209,20 +1211,22 @@ function closestTowards(atTile, toTile, filter) {
 
 // Given a target location {q,r}, and a map from "q:r" to truthy values,
 // return the closest tile {q,r} to the target.
-function closestTowardsAmong(tiles, toTile) {
+// filter: function(tile = {q,r}), true if the tile is authorized.
+function closestTowardsAmong(tiles, toTile, filter) {
   var closest;
   var shortestDistanceYet = Infinity;
   for (var tileKey in tiles) {
-    if (closest === undefined) { closest = tileKey; continue; }
     var tile = terrain.tileFromKey(tileKey);
+    if (filter != null && !filter(tile)) { continue; }
+    if (closest === undefined) { closest = tile; continue; }
     var thisDistance = distanceBetweenTiles(tile, toTile);
     if (thisDistance < shortestDistanceYet) {
       shortestDistanceYet = thisDistance;
-      closest = tileKey;
+      closest = tile;
     }
   }
   if (closest === undefined) { debugger; return null; }
-  return terrain.tileFromKey(closest);
+  return closest;
 }
 
 
