@@ -89,6 +89,7 @@ function judgePlan(playerId, plan, cheatMode, cb) {
     });
   }
 
+  var travelPath;
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
     // Check camp.
     var humanityTile = humanity(terrain.tileFromKey(plan.at));
@@ -99,11 +100,12 @@ function judgePlan(playerId, plan, cheatMode, cb) {
       // Check plan.
       if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
        && plan.do === terrain.planTypes.move
-       && terrain.travel(terrain.tileFromKey(plan.at),
-                         terrain.tileFromKey(plan.to)).length > 1
+       && (travelPath =
+          terrain.travel(terrain.tileFromKey(plan.at),
+                         terrain.tileFromKey(plan.to))).length > 1
        && (plan.h > 0 || plan.h <= humanityTile.h)) {
         // Is the move valid?
-        process.nextTick(function() { applyPlan(plan); cb(); });
+        process.nextTick(function() { applyPlan(plan, travelPath); cb(); });
       } else if ((typeof plan.b === 'number' || plan.b === null)
              && plan.do === terrain.planTypes.build
              && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at),
@@ -119,7 +121,7 @@ var updatedHumanity = {};
 var warTiles = [];
 var surrenderTiles = [];
 
-function applyPlan(plan) {
+function applyPlan(plan, travelPath) {
   var tileFrom = terrain.tileFromKey(plan.at);
   var humanityFrom = humanity.copy(humanity(tileFrom));
   var currentCamp = humanity.campFromId(humanityFrom.c);
@@ -128,6 +130,8 @@ function applyPlan(plan) {
     //console.log('Plan: moving people from', plan.at, 'to', plan.to);
     var tileTo = terrain.tileFromKey(plan.to);
     var humanityTo = humanity.copy(humanity(tileTo));
+    var terrainTileFrom = terrain(tileFrom);
+    var terrainTileTo = terrain(tileTo);
 
     // Do we have enough food?
     if (humanityFrom.f <= 0) {
@@ -155,8 +159,6 @@ function applyPlan(plan) {
       if ((humanityTo.o & terrain.manufacture.gun) !== 0) {
         theirForces *= 2;
       }
-      var terrainTileFrom = terrain(tileFrom);
-      var terrainTileTo = terrain(tileTo);
       if (terrainTileTo.vegetation) {
         theirForces *= 1.5;
       }
@@ -206,6 +208,10 @@ function applyPlan(plan) {
     // Ownership is the intersection of what each group owns.
     if (!emptyTarget) { humanityTo.o &= humanityFrom.o; }
     else { humanityTo.o = humanityFrom.o; }
+    // Build roads.
+    if (travelPath != null) {
+      buildRoads(travelPath, updatedHumanity, humanityFrom, terrainTileTo);
+    }
 
     // Collecting from the land.
     collectFromTile(plan.to, humanityTo, emptyTarget);
@@ -320,6 +326,27 @@ function runAiNTimes(n) {
 //  var minTime = 40;
 //  setTimeout(autoAi, (Math.random() * 500 + minTime)|0)
 //}, 1000);
+
+// Build roads along the `travelPath` [{q,r}], and on `humanityFrom`.
+// Mutates `updatedHumanity`.
+// If `terrainTileTo` (output of `terrain()`) is water, don't build the road.
+function buildRoads(travelPath, updatedHumanity, humanityFrom, terrainTileTo) {
+  // Don't build roads over water.
+  if (terrainTileTo.type === terrain.tileTypes.water) { return; }
+  if (humanityFrom.b == null) {
+    humanityFrom.b = terrain.tileTypes.road;
+  }
+  for (var i = 0; i < travelPath.length; i++) {
+    var tileKey = travelPath[i];
+    var tile = terrain.tileFromKey(tileKey);
+    var humanityTile = humanity(tile);
+    if (humanityTile == null || humanityTile.b == null) {
+      var newHumanityTile = humanity.copy(humanityTile);
+      newHumanityTile.b = terrain.tileTypes.road;
+      updatedHumanity[tileKey] = newHumanityTile;
+    }
+  }
+}
 
 var maxFood = 20;
 
