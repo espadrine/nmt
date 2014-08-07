@@ -1,5 +1,7 @@
+var terrain = new Terrain();
+
 onmessage = function workerRecv(e) {
-  if (e.data.centerPoint) { centerPoint = e.data.centerPoint; return; }
+  if (e.data.centerTile) { terrain.setCenterTile(e.data.centerTile); return; }
   if (e.data.type === 'raw') {
     paintTilesRaw(e.data.image, e.data.size, e.data.origin);
   } else if (e.data.type === 'rainfall') {
@@ -66,7 +68,10 @@ function paintTilesRaw(imgdata, size, origin) {
     var data = new Uint8ClampedArray(arraySize);
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
-        var t = terrain({ x: (x + origin.x0)/size , y: (y + origin.y0)/size });
+        var t = terrain.tile({
+          x: (x + origin.x0)/size,
+          y: (y + origin.y0)/size
+        });
         var color = [0,0,0];
         var fromRed = 0, toRed = 0, fromGreen = 0, toGreen = 0;
         var heightMin = -1, heightMax = 1;
@@ -145,7 +150,7 @@ function paintRainfall(imgdata, size, origin) {
   for (var y = 0; y < height; y++) {
     for (var x = 0; x < width; x++) {
       var tile = tileFromPixel({ x: x , y: y }, origin, size);
-      var t = terrain(tile);
+      var t = terrain.tile(tile);
       var grey = (1 - t.rain) / 2;
       var greyMin = 10;
       var greySpan = 157;

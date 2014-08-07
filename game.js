@@ -1,17 +1,10 @@
 // Thaddée Tyl. AGPLv3.
-var terrain = require('./terrain-gen');
-var humanity = require('./humanity');
+var World = require('./save-world.js');
 var treasure = require('./treasure');
 var AI = require('./ai/ai');
 var ai;
 
 var cheatMode = false;
-
-// Tiles that are in use by a user / a bot.
-// Map from tileKey to camp values.
-var lockedTiles = {};
-// Map from playerId to tileKey.
-var lockedTileFromPlayerId = {};
 
 // Send and receive data from players.
 
@@ -22,7 +15,7 @@ function actWSStart(socket) {
               'entered the game.');
   socket.on('message', makeActWSRecv(playerId));
   socket.on('close', function() {
-    delete lockedTiles[lockedTileFromPlayerId[playerId]];
+    delete humanity.lockedTiles[humanity.lockedTileFromPlayerId[playerId]];
   });
   socket.send(JSON.stringify(humanity.data()));
   var camp = campFromId(playerId);
@@ -36,7 +29,7 @@ function actWSStart(socket) {
     campNames: humanity.campNames(),
     resources: humanity.getResources(),
   }));
-  socket.send(JSON.stringify({lockedTiles:lockedTiles}));
+  socket.send(JSON.stringify({lockedTiles:humanity.lockedTiles}));
 }
 
 function makeActWSRecv(playerId) {
@@ -76,13 +69,13 @@ function judgePlan(playerId, plan, cheatMode, cb) {
   //console.log('Suggested ' + (playerId === 0? 'AI ': '') + 'plan:', plan);
   if (playerId !== 0 && plan.to != null) {
     if (plan.at != null) {
-      delete lockedTiles[plan.at];
+      delete humanity.lockedTiles[plan.at];
     }
-    lockedTiles[plan.to] = campFromIds[playerId];
-    lockedTileFromPlayerId[playerId] = plan.to;
+    humanity.lockedTiles[plan.to] = campFromIds[playerId];
+    humanity.lockedTileFromPlayerId[playerId] = plan.to;
     actChannel.clients.forEach(function (client) {
       try {
-        client.send(JSON.stringify({lockedTiles:lockedTiles}));
+        client.send(JSON.stringify({lockedTiles:humanity.lockedTiles}));
       } catch(e) {
         console.error('Tried to send data to nonexistent client.');
       }
@@ -92,7 +85,7 @@ function judgePlan(playerId, plan, cheatMode, cb) {
   var travelPath;
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
     // Check camp.
-    var humanityTile = humanity(terrain.tileFromKey(plan.at));
+    var humanityTile = humanity.tile(terrain.tileFromKey(plan.at));
     if (cheatMode ||
         (humanityTile !== undefined && humanityTile.c === campFromId(playerId)
          && humanityTile.h > 0)) {
@@ -101,7 +94,7 @@ function judgePlan(playerId, plan, cheatMode, cb) {
       if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
        && plan.do === terrain.planTypes.move
        && (travelPath =
-          terrain.travel(terrain.tileFromKey(plan.at),
+          terrain.humanTravelPath(terrain.tileFromKey(plan.at),
                          terrain.tileFromKey(plan.to))).length > 1
        && (plan.h > 0 || plan.h <= humanityTile.h)) {
         // Is the move valid?
@@ -123,15 +116,15 @@ var surrenderTiles = [];
 
 function applyPlan(plan, travelPath) {
   var tileFrom = terrain.tileFromKey(plan.at);
-  var humanityFrom = humanity.copy(humanity(tileFrom));
+  var humanityFrom = humanity.copy(humanity.tile(tileFrom));
   var currentCamp = humanity.campFromId(humanityFrom.c);
   currentCamp.nActions++;
   if (plan.do === terrain.planTypes.move) {
     //console.log('Plan: moving people from', plan.at, 'to', plan.to);
     var tileTo = terrain.tileFromKey(plan.to);
-    var humanityTo = humanity.copy(humanity(tileTo));
-    var terrainTileFrom = terrain(tileFrom);
-    var terrainTileTo = terrain(tileTo);
+    var humanityTo = humanity.copy(humanity.tile(tileTo));
+    var terrainTileFrom = terrain.tile(tileFrom);
+    var terrainTileTo = terrain.tile(tileTo);
 
     // Do we have enough food?
     if (humanityFrom.f <= 0) {
@@ -305,7 +298,7 @@ function applyPlan(plan, travelPath) {
 function runAiNTimes(n) {
   if (n <= 0) { return; }
   var aiPlan = ai.run(humanity);
-  if (aiPlan != null && lockedTiles[aiPlan.at] === undefined) {
+  if (aiPlan != null && humanity.lockedTiles[aiPlan.at] === undefined) {
     // The plan exists and doesn't bother users.
     aiPlan.ai = true;
     judgePlan(0, aiPlan, true, function() { runAiNTimes(n-1); });
@@ -329,7 +322,8 @@ function runAiNTimes(n) {
 
 // Build roads along the `travelPath` [{q,r}], and on `humanityFrom`.
 // Mutates `updatedHumanity`.
-// If `terrainTileTo` (output of `terrain()`) is water, don't build the road.
+// If `terrainTileTo` (output of `terrain.tile()`) is water,
+// don't build the road.
 function buildRoads(travelPath, updatedHumanity, humanityFrom, terrainTileTo) {
   // Don't build roads over water.
   if (terrainTileTo.type === terrain.tileTypes.water) { return; }
@@ -339,7 +333,7 @@ function buildRoads(travelPath, updatedHumanity, humanityFrom, terrainTileTo) {
   for (var i = 0; i < travelPath.length; i++) {
     var tileKey = travelPath[i];
     var tile = terrain.tileFromKey(tileKey);
-    var humanityTile = humanity(tile);
+    var humanityTile = humanity.tile(tile);
     if (humanityTile == null || humanityTile.b == null) {
       var newHumanityTile = humanity.copy(humanityTile);
       newHumanityTile.b = terrain.tileTypes.road;
@@ -399,8 +393,8 @@ function surrender(tileKey, camp) {
   // How many people around.
   var surrounded = 0;
   for (var i = 0; i < 6; i++) {
-    var neighbor =
-      humanity(terrain.neighborFromTile(terrain.tileFromKey(tileKey), i));
+    var neighbor = humanity.tile(
+        terrain.neighborFromTile(terrain.tileFromKey(tileKey), i));
     if (neighbor && neighbor.c === camp && neighbor.h > 0) {
       surrounded++;
     }
@@ -488,7 +482,8 @@ function addPopulation(updatedHumanity) {
       var nSkyscraperHomes = humanity.homePerHouse.skyscraper;
       // Start with the most recent homes.
       for (var i = skyscraperHomes.length - 1; i >= 0; i--) {
-        var humanityTile = humanity(terrain.tileFromKey(skyscraperHomes[i]));
+        var humanityTile = humanity.tile(
+            terrain.tileFromKey(skyscraperHomes[i]));
         if (humanityTile == null) { debugger; continue; }
         var freeHomes = nSkyscraperHomes - humanityTile.h;
         if (freeHomes > 0) {
@@ -499,7 +494,8 @@ function addPopulation(updatedHumanity) {
         }
       }
       for (var i = residenceHomes.length - 1; i >= 0; i--) {
-        var humanityTile = humanity(terrain.tileFromKey(residenceHomes[i]));
+        var humanityTile = humanity.tile(
+            terrain.tileFromKey(residenceHomes[i]));
         if (humanityTile == null) { debugger; continue; }
         var freeHomes = nResidenceHomes - humanityTile.h;
         if (freeHomes > 0) {
@@ -517,10 +513,10 @@ function addPopulation(updatedHumanity) {
 function addFolk(homes, index, number) {
   var randomHome = homes[index];
   var tile = terrain.tileFromKey(randomHome);
-  var randomHomeTile = humanity(tile);
+  var randomHomeTile = humanity.tile(tile);
   randomHomeTile.h += number;
   randomHomeTile.f = maxFood;
-  var terrainTile = terrain(tile);
+  var terrainTile = terrain.tile(tile);
   if (terrainTile.type === terrain.tileTypes.mountain) {
     getManufacture(randomHomeTile, terrain.manufacture.car);
   } else if (terrainTile.type === terrain.tileTypes.taiga) {
@@ -532,7 +528,6 @@ function addFolk(homes, index, number) {
 
 // Starting the game.
 
-var centerTile;
 function startGame() {
   centerTile = humanity.setSpawn();
   console.log('center:', centerTile);
@@ -544,9 +539,19 @@ function startGameLoop() {
   setTimeout(gameTurn, gameTurnTime);
 }
 
+var worldFile = process.argv[3] || './world.json';
+
 var actChannel;
+var world;
+var terrain;
+var humanity;
+var centerTile;
+
 function start(camp) {
-  centerTile = humanity.start(terrain);
+  world = new World(worldFile);
+  terrain = world.terrain;
+  humanity = world.humanity;
+  centerTile = humanity.centerTile;
   console.log('center:', centerTile);
   startGameLoop();
   actChannel = camp.ws('act', actWSStart);

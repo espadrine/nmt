@@ -1,6 +1,7 @@
 // Interface between game management and the AI entities.
 
 var aiPrimitives = require('./primitives');
+var cp = require('child_process');
 
 function AI(humanity) {
   this.strategy = [];

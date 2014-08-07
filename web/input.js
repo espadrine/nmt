@@ -60,11 +60,9 @@ function socketMessage(e) {
     }
     if (change.centerTile !== undefined) {
       // Set the places.
-      var centerTile = change.centerTile;
-      centerPoint.x = ((Math.sqrt(3) * (centerTile.q + centerTile.r / 2))|0);
-      centerPoint.y = (3/2 * centerTile.r);
+      terrain.setCenterTile(change.centerTile);
       for (var i = 0; i < workerPool.length; i++) {
-        workerPool[i].postMessage({centerPoint: centerPoint});
+        workerPool[i].postMessage({centerTile: terrain.centerTile});
       }
       delete change.centerTile;
     }
@@ -118,10 +116,10 @@ connectSocket();
 var registerMoves = Object.create(null);
 function sendMove(from, to, humans) {
   if (!from || !to) { return; }
-  var keyTo = keyFromTile(to);
+  var keyTo = terrain.keyFromTile(to);
   registerMoves[keyTo] = from;
   if (socket.readyState === 1) {
-    var keyFrom = keyFromTile(from);
+    var keyFrom = terrain.keyFromTile(from);
     socket.send(JSON.stringify({
       at: keyFrom,
       do: planTypes.move,
@@ -133,8 +131,8 @@ function sendMove(from, to, humans) {
 
 function sendPos(at, to) {
   socket.send(JSON.stringify({
-    at: at? keyFromTile(at): null,
-    to: keyFromTile(to)
+    at: at? terrain.keyFromTile(at): null,
+    to: terrain.keyFromTile(to)
   }));
 }
 
@@ -142,7 +140,7 @@ function sendBuild(at, building) {
   if (!at) { return; }
   if (socket.readyState === 1) {
     socket.send(JSON.stringify({
-      at: keyFromTile(at),
+      at: terrain.keyFromTile(at),
       do: planTypes.build,
       b: building
     }));
@@ -166,7 +164,7 @@ function insertPlaces(places) {
     aSep.classList.add('separator');
     placesPanel.appendChild(aSep);
     // Add the place block.
-    var tile = tileFromKey(place);
+    var tile = terrain.tileFromKey(place);
     aPlace.setAttribute('data-tilekey', place);
     aPlace.innerHTML = '<div style="position:absolute;">→</div> <br>' + places[place];
     aPlace.addEventListener('click', (function(t) {
@@ -219,7 +217,8 @@ function orientPlacesArrow() {
         x: gs.origin.x0 + ((gs.width / 2)|0),
         y: gs.origin.y0 + ((gs.height / 2)|0)
       };
-      var tileCenter = pixelFromTile(tileFromKey(block.getAttribute('data-tilekey')),
+      var tileCenter = pixelFromTile(
+          terrain.tileFromKey(block.getAttribute('data-tilekey')),
           {x0:0,y0:0}, gs.hexSize);
       var angle = -orientation(screenCenter, tileCenter);
       var arrow = block.firstChild;
@@ -276,11 +275,15 @@ var resources = {
 };
 var campResources;
 
-// Takes a tile = {q, r}, returns the humanity information for that tile.
-// (See above for humanity information.)
-function humanity(tile) {
-  return humanityData[tile.q + ':' + tile.r];
-}
+var humanity = {
+  // Takes a tile = {q, r}, returns the humanity information for that tile.
+  // (See above for humanity information.)
+  tile: function humanity(tile) {
+    return humanityData[tile.q + ':' + tile.r];
+  },
+};
+
+var terrain = new Terrain(humanity);
 
 function changeHumanity(humanityData, change) {
   for (var tileKey in change) {
@@ -384,7 +387,7 @@ function pixelFromTile(p, px0, size) {
 // `tile` {q,r} is given as input to the randomness.
 // The result will be the same for each tile.
 function noisyPixel(size, tile) {
-  var t = terrain(tile);
+  var t = terrain.tile(tile);
   var c = { x: 0, y: 0 };
   c.x += (tile.q ^ tile.r ^ ((t.rain*128)|0)) % size;
   c.y +=  (tile.q ^ tile.r ^ ((t.rain*256)|0)) % size;
@@ -448,19 +451,19 @@ function pathAlongTiles(gs, tiles) {
   ctx.beginPath();
   if (tiles.length < 2) { return; }
   var penultimate;
-  var cp = pixelFromTile(tileFromKey(tiles[0]), origin, size);
+  var cp = pixelFromTile(terrain.tileFromKey(tiles[0]), origin, size);
   var cx = cp.x|0;
   var cy = cp.y|0;
   ctx.moveTo(cp.x|0, cp.y|0);
   for (var i = 0; i < tiles.length - 1; i++) {
-    cpNext = pixelFromTile(tileFromKey(tiles[i+1]), origin, size);
+    cpNext = pixelFromTile(terrain.tileFromKey(tiles[i+1]), origin, size);
     var avgPoint = averagePoint(cp, cpNext);
     ctx.quadraticCurveTo(cp.x|0, cp.y|0, avgPoint.x|0, avgPoint.y|0);
     if (i === tiles.length - 2) { penultimate = cp; }
     cp = cpNext;
   }
   // Arrow at the end.
-  cp = pixelFromTile(tileFromKey(tiles[tiles.length-1]), origin, size);
+  cp = pixelFromTile(terrain.tileFromKey(tiles[tiles.length-1]), origin, size);
   var arrowOffsetX = (penultimate.x - cp.x) / 10;
   var arrowOffsetY = (penultimate.y - cp.y) / 10;
   ctx.lineTo(cp.x + arrowOffsetX, cp.y + arrowOffsetY);
@@ -495,15 +498,15 @@ function straightPathFromTiles(gs, tiles, hexHorizDistance, hexVertDistance) {
   var ctx = gs.ctx; var size = gs.hexSize; var origin = gs.origin;
   ctx.beginPath();
   for (var tileKey in tiles) {
-    var tile = tileFromKey(tileKey);
+    var tile = terrain.tileFromKey(tileKey);
     var cp = pixelFromTile(tile, origin, size);
     var cx = cp.x;
     var cy = cp.y;
     var mask = 0|0;
     for (var f = 0; f < 6; f++) {
       // For each, face, set the mask.
-      var neighbor = neighborFromTile(tile, f);
-      mask |= (((tiles[keyFromTile(neighbor)] !== undefined)|0) << f);
+      var neighbor = terrain.neighborFromTile(tile, f);
+      mask |= (((tiles[terrain.keyFromTile(neighbor)] !== undefined)|0) << f);
     }
     partialPathFromHex(gs, cp, mask, hexHorizDistance, hexVertDistance);
   }
@@ -518,12 +521,12 @@ function pathFromTiles(gs, tiles,
   ctx.beginPath();
   var vertices = [];
   for (var tileKey in tiles) {
-    var tile = tileFromKey(tileKey);
+    var tile = terrain.tileFromKey(tileKey);
     var cp = pixelFromTile(tile, origin, size);
     for (var f = 0; f < 6; f++) {
       // For each face, add the vertices.
-      var neighbor = neighborFromTile(tile, f);
-      if (tiles[keyFromTile(neighbor)] === undefined) {
+      var neighbor = terrain.neighborFromTile(tile, f);
+      if (tiles[terrain.keyFromTile(neighbor)] === undefined) {
         vertices = vertices.concat(vertexFromFace(tileKey, f));
       }
     }
@@ -541,12 +544,12 @@ function straightPolygonPathFromTiles(gs, tiles) {
   ctx.beginPath();
   var vertices = [];
   for (var tileKey in tiles) {
-    var tile = tileFromKey(tileKey);
+    var tile = terrain.tileFromKey(tileKey);
     var cp = pixelFromTile(tile, origin, size);
     for (var f = 0; f < 6; f++) {
       // For each face, add the vertices.
-      var neighbor = neighborFromTile(tile, f);
-      if (tiles[keyFromTile(neighbor)] === undefined) {
+      var neighbor = terrain.neighborFromTile(tile, f);
+      if (tiles[terrain.keyFromTile(neighbor)] === undefined) {
         vertices = vertices.concat(vertexFromFace(tileKey, f));
       }
     }
@@ -574,13 +577,17 @@ function vertexFromFace(tileKey, face) {
 // "q:r:1" for the top right vertex of tile "q:r".
 function vertexFromTileKey(tileKey, vertex) {
   if (vertex === 0) {
-    return keyFromTile(neighborFromTile(tileFromKey(tileKey), 2)) + ":0";
+    return terrain.keyFromTile(terrain.neighborFromTile(
+          terrain.tileFromKey(tileKey), 2)) + ":0";
   } else if (vertex === 1) {
-    return keyFromTile(neighborFromTile(tileFromKey(tileKey), 3)) + ":1";
+    return terrain.keyFromTile(terrain.neighborFromTile(
+          terrain.tileFromKey(tileKey), 3)) + ":1";
   } else if (vertex === 2) {
-    return keyFromTile(neighborFromTile(tileFromKey(tileKey), 3)) + ":0";
+    return terrain.keyFromTile(terrain.neighborFromTile(
+          terrain.tileFromKey(tileKey), 3)) + ":0";
   } else if (vertex === 3) {
-    return keyFromTile(neighborFromTile(tileFromKey(tileKey), 4)) + ":1";
+    return terrain.keyFromTile(terrain.neighborFromTile(
+          terrain.tileFromKey(tileKey), 4)) + ":1";
   } else if (vertex === 4) {
     return tileKey + ":0";
   } else if (vertex === 5) {
@@ -594,7 +601,7 @@ function pointFromVertex(gs, vertex, hexHorizDistance, noisy) {
   var size = gs.hexSize; var origin = gs.origin;
   var vertexSide = +vertex.slice(-1);
   var tileKey = vertex.slice(0, -2);
-  var tile = tileFromKey(tileKey);
+  var tile = terrain.tileFromKey(tileKey);
   var cp = pixelFromTile(tile, origin, size);
   var cx = cp.x|0;
   var cy = cp.y|0;
@@ -859,14 +866,14 @@ function paintSprite(gs, cx, cy, sprite, rotation) {
 // gs is the GraphicState.
 function paintBuilding(gs, cx, cy, tilePos, rotation) {
   var ctx = gs.ctx; var size = gs.hexSize;
-  var human = humanity(tilePos);
+  var human = humanity.tile(tilePos);
   if (human != null && human.b != null) {
     if (human.b === tileTypes.road || human.b === tileTypes.wall
      || human.b === tileTypes.airland) {
       // Orient roads, walls and airlands.
       var oriented = false;
       for (var i = 0; i < 6; i++) {
-        var neighbor = humanity(neighborFromTile(tilePos, i));
+        var neighbor = humanity.tile(terrain.neighborFromTile(tilePos, i));
         if (neighbor &&
             // Orient roads along other roads, walls against walls.
             (((human.b === tileTypes.road || human.b === tileTypes.wall)
@@ -908,7 +915,7 @@ function paintBuildingsSprited(gs) {
     while (cx - hexHorizDistance < width) {
       tilePos = tileFromPixel({ x:cx, y:cy }, gs.origin, size);
       // Draw building.
-      var t = terrain(tilePos);
+      var t = terrain.tile(tilePos);
       var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
       paintBuilding(gs, cx, cy, tilePos, rotation);
       cx += hexHorizDistance;
@@ -931,7 +938,7 @@ function paintBuildingsSprited(gs) {
 // gs is the GraphicState.
 function paintTerrain(gs, cx, cy, hexHorizDistance, hexVertDistance, tilePos) {
   var ctx = gs.ctx; var size = gs.hexSize;
-  var t = terrain(tilePos);
+  var t = terrain.tile(tilePos);
   // Draw terrain.
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
   paintSprite(gs, cx, cy, t.type, rotation);
@@ -976,7 +983,7 @@ function paintTilesSprited(gs) {
       while (cy - hexVertDistance < height) {
         while (cx - hexHorizDistance < width) {
           tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
-          var t = terrain(tilePos);
+          var t = terrain.tile(tilePos);
           if (t.type === i) {
             // Draw tile.
             paintTerrain(gsBuffer, cx, cy,
@@ -984,8 +991,8 @@ function paintTilesSprited(gs) {
           } else if (i === 8 && t.type === tileTypes.water) {
             // Overlay sprites (beaches, …).
             for (var f = 0; f < 6; f++) {
-              var neighbor = neighborFromTile(tilePos, f);
-              var neighborTile = terrain(neighbor);
+              var neighbor = terrain.neighborFromTile(tilePos, f);
+              var neighborTile = terrain.tile(neighbor);
               if (neighborTile.type !== tileTypes.water
                   && neighborTile.type !== tileTypes.swamp) {
                 paintSprite(gsBuffer, cx, cy, tileTypes.beach, (f) % 6);
@@ -1051,7 +1058,7 @@ function paintTilesRaw(gs) {
   for (var y = 0; y < height; y++) {
     for (var x = 0; x < width; x++) {
       var tilePos = tileFromPixel({ x:x, y:y }, origin, size);
-      var t = terrain(tilePos);
+      var t = terrain.tile(tilePos);
       var color = [180, 0, 0];
       if (t.steepness == tileTypes.water) {
         color = [50, 50, 180];
@@ -1194,7 +1201,7 @@ function updateCachedPaint(gs, tiles) {
   var size = gs.hexSize;
   var origin = gs.origin;
   for (var changedTile in tiles) {
-    var tile = tileFromKey(changedTile);
+    var tile = terrain.tileFromKey(changedTile);
     var centerPixel = pixelFromTile(tile, origin, size);
     // We consider the size of the tile.
     // We can have up to 4 caches to draw.
@@ -1302,7 +1309,7 @@ function paintIntermediateUI(gs) {
   if (size < 5) { drawMapPlaces(gs); }
   // Show tiles controlled by a player.
   for (var tileKey in lockedTiles) {
-    paintTileHexagon(gs, tileFromKey(tileKey),
+    paintTileHexagon(gs, terrain.tileFromKey(tileKey),
         campHsl(lockedTiles[tileKey]), 1);
   }
   if (currentTile != null && playerCamp != null) {
@@ -1317,12 +1324,13 @@ function paintIntermediateUI(gs) {
       (selectionMode === selectionModes.travel ||
        selectionMode === selectionModes.split)) {
     // Paint the path that the selected folks would take.
-    paintAlongTiles(gs,
-        pathFromParents(keyFromTile(targetTile), accessibleTiles));
+    paintAlongTiles(gs, terrain.pathFromParents(
+          terrain.keyFromTile(targetTile), accessibleTiles));
   }
   // Paint the path that folks will take.
   for (var to in registerMoves) {
-    paintAlongTiles(gs, humanTravelPath(registerMoves[to], tileFromKey(to)));
+    paintAlongTiles(gs,
+        terrain.humanTravelPath(registerMoves[to], terrain.tileFromKey(to)));
   }
   paintTileMessages(gs);
   if (gameOver !== undefined) {
@@ -1452,7 +1460,7 @@ function paintHumans(gs, humanityData) {
     var q = +tileKeyCoord[0];
     var r = +tileKeyCoord[1];
     var human = humanityData[tileKey];
-    var tile = terrain(tileFromKey(tileKey));
+    var tile = terrain.tile(terrain.tileFromKey(tileKey));
     var centerPixel = pixelFromTile({ q:q, r:r }, origin, size);
     var cx = centerPixel.x;
     var cy = centerPixel.y;
@@ -1511,7 +1519,7 @@ function listVisibleHumans(gs) {
   // Go through all of humanity. Pick the ones we can see.
   var visibleHumans = [];
   for (var tileKey in humanityData) {
-    tile = tileFromKey(tileKey);
+    tile = terrain.tileFromKey(tileKey);
     if (tile.q >= minQ && tile.q <= maxQ && tile.r >= minR && tile.r <= maxR
         && humanityData[tileKey].c != null) {
       visibleHumans.push(tileKey);
@@ -1541,7 +1549,7 @@ function paintCamps(gs) {
     for (var i = 0; i < numberOfCamps; i++) {
       var visibleCamp = visibleCamps[i];
       for (var key in visibleCamp) {
-        var px = pixelFromTile(tileFromKey(key), origin, size);
+        var px = pixelFromTile(terrain.tileFromKey(key), origin, size);
         ctx.fillRect(px.x - bSize, px.y - bSize, 2 * bSize, 2 * bSize);
       }
     }
@@ -1549,7 +1557,7 @@ function paintCamps(gs) {
       ctx.fillStyle = campHsl(i);
       var visibleCamp = visibleCamps[i];
       for (var key in visibleCamp) {
-        var px = pixelFromTile(tileFromKey(key), origin, size);
+        var px = pixelFromTile(terrain.tileFromKey(key), origin, size);
         ctx.fillRect(px.x - size, px.y - size, 2 * size, 2 * size);
       }
     }
@@ -1751,7 +1759,7 @@ function paintMessage(gs, tileKey, msg) {
   ctx.font = '14px "Linux Biolinum", sans-serif';
   var msgSize = ctx.measureText(msg).width;
   // Find the pixel to start from.
-  var center = pixelFromTile(tileFromKey(tileKey), origin, size);
+  var center = pixelFromTile(terrain.tileFromKey(tileKey), origin, size);
   var x = center.x + size/4;
   var y = center.y - size/4;
   ctx.beginPath();
@@ -1805,9 +1813,9 @@ var currentTile;    // {q,r}.
 
 // For a mouse event, give the information of the tile under the cursor.
 function showTileInformation(tile) {
-  var t = terrain(tile);
+  var t = terrain.tile(tile);
   var info = 'a ' + tileNames[t.type];
-  var h = humanity(tile);
+  var h = humanity.tile(tile);
   if (h != null) {
     if (h.b != null) {
       info = (tileNames[h.b][0] === 'a'? 'an ': 'a ') + tileNames[h.b]
@@ -1840,7 +1848,7 @@ var buildSelectionButtons = document.querySelectorAll('p.buildSelection');
 function indicateValidConstructions(currentTile) {
   var valid;
   for (var i = 0; i < buildingTypes.length; i++) {
-    if (validConstruction(buildingTypes[i], currentTile, resources)) {
+    if (terrain.validConstruction(buildingTypes[i], currentTile, resources)) {
       buildSelectionButtons[i].classList.add('validSelection');
     } else {
       buildSelectionButtons[i].classList.remove('validSelection');
@@ -1864,7 +1872,7 @@ function updateCurrentTileInformation() {
     // Tile information.
     showTileInformation(currentTile);
     // Accessible tiles.
-    accessibleTiles = humanTravelFrom(currentTile);
+    accessibleTiles = terrain.humanTravelFrom(currentTile);
     // Valid constructions.
     indicateValidConstructions(currentTile);
   }
@@ -1966,7 +1974,7 @@ splitInputWidget.addEventListener('input', function changeSplitPortion() {
 
 // Update the number of people who move and stay in the split panel UI.
 function splitPanelSetMoveStay() {
-  var humanityTile = humanity(currentTile);
+  var humanityTile = humanity.tile(currentTile);
   var move = ((humanityTile.h * splitInputWidget.value / 100)|0);
   var stay = humanityTile.h - move;
   splitPanelPortionMove.textContent = '' + move;
@@ -2055,19 +2063,19 @@ function mouseSelection(event) {
 
   if ((selectionMode === selectionModes.travel
     || selectionMode === selectionModes.split)
-    && currentTile !== undefined && humanity(currentTile) !== undefined) {
-    var humanityTile = humanity(currentTile);
+    && currentTile !== undefined && humanity.tile(currentTile) !== undefined) {
+    var humanityTile = humanity.tile(currentTile);
     var numberOfPeople = humanityTile.h;
     if (selectionMode === selectionModes.split) {
       numberOfPeople = (numberOfPeople * splitInputWidget.value / 100)|0;
     }
     // Send travel information.
     var startTile = posTile;
-    if (humanTravelPath(currentTile, startTile).length > 1
+    if (terrain.humanTravelPath(currentTile, startTile).length > 1
         && humanityTile.c === playerCamp) {
       if (humanityTile.f <= 0) {
         var starveMessage = {};
-        starveMessage[keyFromTile(currentTile)] = humanityTile;
+        starveMessage[terrain.keyFromTile(currentTile)] = humanityTile;
         addStarveMessages(starveMessage);
       }
       sendMove(currentTile, startTile, numberOfPeople);

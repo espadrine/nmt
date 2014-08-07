@@ -1,6 +1,7 @@
 // A few polynomial-time primitives for the AI.
 
-var terrain = require('terrain-gen');
+var Terrain = require('terrain-gen');
+var terrain = new Terrain();
 
 // The following buildings are built on a place.
 var lookAtPlaces = Object.create(null);
@@ -51,7 +52,7 @@ function findConstructionLocation(humanity, tile, b, options) {
     for (var bti = 0; bti < buildingTypes.length; bti++) {
       var buildingType = buildingTypes[bti];
       for (var i = 0; i < builtTiles.length; i++) {
-        var humanityTile = humanity(builtTiles[i]);
+        var humanityTile = humanity.tile(builtTiles[i]);
         if (humanityTile && humanityTile.b === buildingType) {
           tilesWithThatBuilding.push(builtTiles[i]);
         }
@@ -82,8 +83,8 @@ function validConstructionLocation(humanity, tile, b) {
   var dependencies = terrain.buildingDependencies[b];
   dependencies = dependencies || [];
   var sameTileDependency = terrain.buildingTileDependency[b];
-  var terrainTile = terrain(tile);
-  var humanityTile = humanity(tile);
+  var terrainTile = terrain.tile(tile);
+  var humanityTile = humanity.tile(tile);
 
   // This tile must not hold water.
   if (terrainTile.type === terrain.tileTypes.water) { return false; }
@@ -119,8 +120,8 @@ function validConstructionLocation(humanity, tile, b) {
     var count = 0;
     for (var j = 0; j < 6; j++) {
       var neighbor = terrain.neighborFromTile(tile, j);
-      var humanityNeighbor = humanity(neighbor);
-      if (terrain(neighbor).type === dependencyType
+      var humanityNeighbor = humanity.tile(neighbor);
+      if (terrain.tile(neighbor).type === dependencyType
         || (humanityNeighbor && humanityNeighbor.b === dependencyType)) {
         count++;
       }
@@ -189,7 +190,7 @@ constructFromValuable[terrain.tileTypes.citrus] = terrain.tileTypes.university;
 function dependencyBuilds(humanity, b, tile, forbiddenTiles,
     override, buildingPurpose) {
   forbiddenTiles = forbiddenTiles || [];
-  var humanityTile = humanity(tile);
+  var humanityTile = humanity.tile(tile);
 
   // Don't destroy buildings of the type we're creating.
   if (buildingPurpose == null) {
@@ -198,7 +199,7 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
     if (humanityTile && humanityTile.b === buildingPurpose) { return null; }
   }
   // Don't build manufactures on tiles which require their items to get to.
-  var terrainTile = terrain(tile);
+  var terrainTile = terrain.tile(tile);
   if (inaccessibleForManufactureBuilding(buildingPurpose,
       terrainTile, humanityTile)) {
     return null;
@@ -218,7 +219,7 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
     if (override[tileKey] != null) {
       return override[tileKey];
     }
-    var humanityTile = humanity(tile);
+    var humanityTile = humanity.tile(tile);
     if (humanityTile == null) { return null; }
     return humanityTile.b;
   };
@@ -239,7 +240,7 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
     // Is what we are looking for already built there?
     for (var j = 0; j < 6; j++) {
       var neighbor = terrain.neighborFromTile(tile, j);
-      var neighborTerrain = terrain(neighbor);
+      var neighborTerrain = terrain.tile(neighbor);
       if (buildingOnTile(neighbor) === buildingType
         || neighborTerrain.type === buildingType) {
         forbiddenTiles = forbiddenTiles.concat(neighbor);
@@ -259,11 +260,11 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
       var n = (j + startingNeighbor) % 6;
       var neighbor = terrain.neighborFromTile(tile, n);
       // Is this neighbor constructible?
-      var neighborTerrain = terrain(neighbor);
+      var neighborTerrain = terrain.tile(neighbor);
       if (!validConstructionLocation(humanity, neighbor, buildingType)) {
         continue;
       }
-      var neighborHumanity = humanity(neighbor);
+      var neighborHumanity = humanity.tile(neighbor);
       // Don't destroy a building which type you're currently building.
       if (neighborHumanity &&
           neighborHumanity.b === buildingPurpose) { continue; }
@@ -300,7 +301,7 @@ function dependencyBuilds(humanity, b, tile, forbiddenTiles,
 function findNearestEmpty(humanity, tile, size) {
   // Check whether the tile contains buildings.
   var builtTerrain = function builtTerrain(tile) {
-    var human = humanity(tile);
+    var human = humanity.tile(tile);
     if (human === undefined) { return false; }
     if (human.b == null) { return false; }
     return true;
@@ -477,7 +478,8 @@ Group.prototype = {
     // If foodless, make farms.
     if (humanityTile.f <= 0) {
       // If we are on water and need food, we're dead meat anyway.
-      var isNotOnWater = terrain(fromTile).type !== terrain.tileTypes.water;
+      var isNotOnWater =
+        terrain.tile(fromTile).type !== terrain.tileTypes.water;
       if (isNotOnWater) {
         return {
           at: from,
@@ -490,7 +492,7 @@ Group.prototype = {
     else if (humanityTile.f <= 4 && !this.goingToAFarm) {
       var humanity = this.strategy.humanity;
       var nearestFarm = humanity.findNearest(toTile, function(tile){
-        var humanityTile = humanity(tile);
+        var humanityTile = humanity.tile(tile);
         return humanityTile && (humanityTile.b === terrain.tileTypes.farm);
       }, 20);
       if (nearestFarm != null) {
@@ -530,11 +532,11 @@ Group.prototype = {
     var building = this.closestManufacture(b, target, function(tile) {
       // If the building is on a tile needed to get to it, don't do it.
       return !inaccessibleForManufactureBuilding(b,
-          terrain(tile), self.strategy.humanity(tile));
+          terrain.tile(tile), self.strategy.humanity.tile(tile));
     });
     // Can we get to `target` from that spot?
     if (owner != null) {
-      var humanityOwner = this.strategy.humanity(owner);
+      var humanityOwner = this.strategy.humanity.tile(owner);
       var pathFromOwner = trajectory(owner, target, humanityOwner);
       if (!pathFromOwner
           || pathFromOwner.length >= (humanityOwner.f * humanityOwner.h)) {
@@ -597,7 +599,7 @@ Group.prototype = {
     this.strategy.projects.unshift(project);
     // Try to compute the trajectory. (Note: group.tile === this.tile.)
     var group = project.groups[0];
-    var humanityTile = this.strategy.humanity(group.tile);
+    var humanityTile = this.strategy.humanity.tile(group.tile);
     var traj = trajectory(group.tile, project.target, humanityTile);
     if (traj != null) { group.trajectory = traj; }
     // When the group will be at `tile`, this group will be that group.
@@ -622,9 +624,9 @@ Group.prototype = {
   //    we want to put away.
   putOwnPeopleAway: function(blockingTile, fromTile, humanityTile) {
     if (humanityTile == null) {
-      humanityTile = this.strategy.humanity(blockingTile);
+      humanityTile = this.strategy.humanity.tile(blockingTile);
     }
-    var accessibleTiles = terrain.humanTravel(blockingTile);
+    var accessibleTiles = terrain.humanTravelFrom(blockingTile);
     // Remove blockingTile and fromTile.
     for (var tileKey in accessibleTiles) {
       var filterTile = terrain.tileFromKey(tileKey);
@@ -652,7 +654,7 @@ Group.prototype = {
     var toTileKey = this.trajectory[1];
     // If there is a group there, move it.
     var toTile = terrain.tileFromKey(toTileKey);
-    var nextHumanityTile = this.strategy.humanity(toTile);
+    var nextHumanityTile = this.strategy.humanity.tile(toTile);
     if (nextHumanityTile && nextHumanityTile.c === this.camp.id
         && nextHumanityTile.h > 0) {
       // We are blocked by a silly group in front of us.
@@ -662,7 +664,7 @@ Group.prototype = {
     }
     // Remove current tile, going to the next tile.
     this.trajectory.shift();
-    var fromHumanityTile = this.strategy.humanity(fromTile);
+    var fromHumanityTile = this.strategy.humanity.tile(fromTile);
     var plan = this.moveOrFood(fromTileKey, toTileKey, fromHumanityTile);
     // If this move changes our tile, register our group's new tile.
     if (plan.to == null && plan.b != null) {
@@ -682,8 +684,8 @@ Group.prototype = {
     if (computedTrajectory != null) { return computedTrajectory; }
     // No known trajectory.
     var fromTile = this.tile;
-    var fromHumanityTile = humanity(fromTile);
-    var terrainType = terrain(fromTile);
+    var fromHumanityTile = humanity.tile(fromTile);
+    var terrainType = terrain.tile(fromTile);
     // Are we too hungry to go forward?
     if (fromHumanityTile.f <= 0
         // If we're on water, we can die.
@@ -698,7 +700,7 @@ Group.prototype = {
     // which would make us lose ours.
     var ourManufacture = fromHumanityTile.o;
     var toTile = closestTowards(fromTile, target, function(filterTile) {
-      var humanityTile = humanity(filterTile);
+      var humanityTile = humanity.tile(filterTile);
       if (humanityTile == null) { return true; }
       if (humanityTile.h === 0) { return true; }
       var theirManufacture = humanityTile.o;
@@ -721,8 +723,8 @@ Group.prototype = {
         around[terrain.keyFromTile(neighbor)] = true;
       }
       var blockingTile = closestTowardsAmong(around, target);
-      var nextTerrain = terrain(blockingTile);
-      var nextHumanityTile = humanity(blockingTile);
+      var nextTerrain = terrain.tile(blockingTile);
+      var nextHumanityTile = humanity.tile(blockingTile);
       // Based on what blocks us, switch group to one which can go through.
       if (nextTerrain.type === terrain.tileTypes.water) {
         // We need to go to a dock close by or we need to build one.
@@ -762,6 +764,7 @@ Group.prototype = {
 function Strategy(camp, humanity) {
   this.camp = camp;
   this.humanity = humanity;
+  terrain.humanity = humanity;
   terrain.setCenterTile(humanity.getCenterTile());
   // Active projects.
   // Each project is {type, groups, target, builds, camp}.
@@ -849,7 +852,7 @@ Strategy.prototype = {
       // Groups we already control.
       if (groupFromKey[tileKey] !== undefined) {
         // If there is more than one, we can we can fork them.
-        var humanityTile = this.humanity(terrain.tileFromKey(tileKey));
+        var humanityTile = this.humanity.tile(terrain.tileFromKey(tileKey));
         if (!stealGroup && humanityTile.h < 2) { continue; }
       }
       // FIXME: don't include tiles controlled by players.
@@ -870,7 +873,7 @@ Strategy.prototype = {
   // Remove empty groups from a project.
   cleanGroups: function(project) {
     for (var i = 0; i < project.groups.length; i++) {
-      var humanityTile = this.humanity(project.groups[i].tile);
+      var humanityTile = this.humanity.tile(project.groups[i].tile);
       if (humanityTile == null || humanityTile.h <= 0
           || humanityTile.c !== this.camp.id) {
         project.groups.splice(i, 1);
@@ -921,7 +924,7 @@ Strategy.prototype = {
       var traj, group;
       group = this.addGroup(tile);
       var fromTile = group.tile;
-      var humanityTile = this.humanity(fromTile);
+      var humanityTile = this.humanity.tile(fromTile);
       traj = trajectory(fromTile, tile, humanityTile);
       // We could not find an accessible construction spot → we lack people.
       if (!traj) { return this.warProject(tile, this.camp.id); }
@@ -985,7 +988,7 @@ Strategy.prototype = {
     var tile;
     var campTiles = this.humanity.campFromId(campId).builtTiles;
     for (var i = 0; i < campTiles.length; i++) {
-      if (this.humanity(campTiles[i]).b === tileType) {
+      if (this.humanity.tile(campTiles[i]).b === tileType) {
         tile = campTiles[i];
         break;
       }
@@ -1050,7 +1053,7 @@ Strategy.prototype = {
       }
       var campTiles = this.humanity.campFromId(campId).builtTiles;
       var tileType =
-        this.humanity(campTiles[(campTiles.length*Math.random())|0]).b;
+        this.humanity.tile(campTiles[(campTiles.length*Math.random())|0]).b;
       this.conquerProject(tileType, campId);
     } else if (type === projectType.war) {
       // Random camp, find a tile it owns.
@@ -1079,13 +1082,13 @@ Strategy.prototype = {
       return project.builds.length === 0;
     } else if (project.type === projectType.conquer) {
       // We own the target.
-      var humanityTile = this.humanity(project.target);
+      var humanityTile = this.humanity.tile(project.target);
       if (humanityTile == null) { return false; }
       return humanityTile.c === this.camp.id;
     } else if (project.type === projectType.war) {
       // We have arrived to the target
       // (potentially killing enemies along the way).
-      var humanityTile = this.humanity(project.target);
+      var humanityTile = this.humanity.tile(project.target);
       if (humanityTile == null) { return false; }
       return (humanityTile.c === this.camp.id)
         && (humanityTile.h > 0);
@@ -1137,7 +1140,7 @@ Strategy.prototype = {
     if (project.builds && project.builds.length > 0) {
       var build = project.builds[0];
       // If we're on the tile, build it and be done with it.
-      var humanityTile = this.humanity(build.tile);
+      var humanityTile = this.humanity.tile(build.tile);
       if (humanityTile && humanityTile.c === this.camp.id
         && humanityTile.h > 0) {
         project.builds.shift();
@@ -1189,7 +1192,7 @@ function distanceBetweenTiles(a, b) {
 // in order to go to the target toTile {q,r}.
 // filter: function(tile = {q,r}), true if the tile is authorized.
 function closestTowards(atTile, toTile, filter) {
-  var accessibleTiles = terrain.humanTravel(atTile);
+  var accessibleTiles = terrain.humanTravelFrom(atTile);
   if (filter != null) {
     // Filter those tiles.
     for (var tileKey in accessibleTiles) {
