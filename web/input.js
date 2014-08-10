@@ -1225,6 +1225,11 @@ function updateCachedPaint(gs, tiles) {
 // gs is the GraphicState.
 function paintTilesFromCache(gs, cb) {
   var ctx = gs.ctx; var origin = gs.origin;
+  // Double-buffering context.
+  var doubleBufCanvas = document.createElement('canvas');
+  doubleBufCanvas.width = gs.width;
+  doubleBufCanvas.height = gs.height;
+  var doubleBufContext = doubleBufCanvas.getContext('2d');
   // We assume that the window width does not change.
   // We can have up to 4 caches to draw.
   var width = gs.width;
@@ -1242,13 +1247,16 @@ function paintTilesFromCache(gs, cb) {
   var makeDraw = function makeDraw(x, y) {
     return function draw(cache) {
       if (countDone <= 4) {
-        ctx.drawImage(cache, x, y);
+        doubleBufContext.drawImage(cache, x, y);
       } else {
         paintTilesFromCurrentCache(gs);
       }
       // We have four jobs to make in total.
       countDone++;
-      if (countDone >= 4) { cb(); }
+      if (countDone === 4) {
+        ctx.drawImage(doubleBufCanvas, 0, 0);
+        cb();
+      }
     }
   };
   getCachedPaint(gs, left, top, makeDraw(-x, -y));
