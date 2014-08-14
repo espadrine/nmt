@@ -56,6 +56,9 @@ function campFromId(playerId) {
 // The following should be constant. It is used for defaults.
 var emptyFunction = function(){};
 
+// Map from tileKey to a plan.
+var planFromTile = {};
+
 // Accept or reject a plan.
 // A plan is {do, at, to, b}.
 // do: see terrain.planTypes.
@@ -98,13 +101,16 @@ function judgePlan(playerId, plan, cheatMode, cb) {
                          terrain.tileFromKey(plan.to))).length > 1
        && (plan.h > 0 || plan.h <= humanityTile.h)) {
         // Is the move valid?
-        process.nextTick(function() { applyPlan(plan, travelPath); cb(); });
+        plan.travelPath = travelPath;
+        planFromTile[plan.at] = plan;
+        cb();
       } else if ((typeof plan.b === 'number' || plan.b === null)
              && plan.do === terrain.planTypes.build
              && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at),
                camp.resources)) {
         // Is the move valid?
-        process.nextTick(function() { applyPlan(plan); cb(); });
+        planFromTile[plan.at] = plan;
+        cb();
       } else cb('Plan denied.');
     } else cb('Camp denied or no camp detected.');
   } else cb('Plan invalid.');
@@ -114,7 +120,7 @@ var updatedHumanity = {};
 var warTiles = [];
 var surrenderTiles = [];
 
-function applyPlan(plan, travelPath) {
+function applyPlan(plan) {
   var tileFrom = terrain.tileFromKey(plan.at);
   var humanityFrom = humanity.copy(humanity.tile(tileFrom));
   var currentCamp = humanity.campFromId(humanityFrom.c);
@@ -202,8 +208,8 @@ function applyPlan(plan, travelPath) {
     if (!emptyTarget) { humanityTo.o &= humanityFrom.o; }
     else { humanityTo.o = humanityFrom.o; }
     // Build roads.
-    if (travelPath != null) {
-      buildRoads(travelPath, updatedHumanity, humanityFrom, terrainTileTo);
+    if (plan.travelPath != null) {
+      buildRoads(plan.travelPath, updatedHumanity, humanityFrom, terrainTileTo);
     }
 
     // Collecting from the land.
@@ -305,21 +311,6 @@ function runAiNTimes(n) {
   }
 }
 
-// Uncomment the following to make the AI play constantly.
-//setTimeout(function autoAi() {
-//  var aiPlan = ai.runCamp(humanity, humanity.campFromId(0));
-//  console.log('ai plan:', aiPlan);
-//  //debugger;
-//  if (aiPlan != null) {
-//    aiPlan.ai = true;
-//    judgePlan(0, aiPlan, true, function(msg) {
-//      if (msg != null) { console.log(msg); debugger; }
-//    });
-//  }
-//  var minTime = 40;
-//  setTimeout(autoAi, (Math.random() * 500 + minTime)|0)
-//}, 1000);
-
 // Build roads along the `travelPath` [{q,r}], and on `humanityFrom`.
 // Mutates `updatedHumanity`.
 // If `terrainTileTo` (output of `terrain.tile()`) is water,
@@ -411,6 +402,14 @@ var maxMetal = 13;  // Winning amount of metal for an Industrial Victory.
 var maxAcquiredUniversities = 3;
 
 function gameTurn() {
+  // Uncomment the following to make the AI play constantly.
+  runAi();
+  // Apply all plans.
+  for (var tileKey in planFromTile) {
+    var plan = planFromTile[tileKey];
+    applyPlan(plan);
+  }
+  planFromTile = {};
   // Send new humanity to all.
   if (Object.keys(updatedHumanity).length > 0) {
     humanity.change(updatedHumanity);
@@ -462,6 +461,19 @@ function gameTurn() {
     startGame();
   } else {
     setTimeout(gameTurn, gameTurnTime);
+  }
+}
+
+function runAi() {
+  for (var i = 0; i < humanity.numberOfCamps; i++) {
+    var aiPlan = ai.runCamp(humanity, humanity.campFromId(i));
+    console.log('ai plan:', aiPlan);
+    if (aiPlan != null) {
+      aiPlan.ai = true;
+      judgePlan(0, aiPlan, true, function(msg) {
+        if (msg != null) { console.log(msg); debugger; }
+      });
+    }
   }
 }
 
