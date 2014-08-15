@@ -1100,12 +1100,16 @@ Strategy.prototype = {
     this.recursionLimit++;
     return this.runProject();
   },
-  returnPlan: function(plan) {
+  // Return a list of plans.
+  returnPlan: function(plans) {
     this.recursionLimit = 0;
-    return plan;
+    return plans;
   },
 
   // Return an atomic operation to send to the server.
+  // FIXME: be able to process multiple projects in parallel,
+  // so as to execute them during the same game turn.
+  // This function would then return a list.
   runProject: function() {
     // Implementation note: when returning from this function,
     // use `this.runProjectAgain` to recurse over this function,
@@ -1149,24 +1153,24 @@ Strategy.prototype = {
           return this.runProjectAgain();
         }
         // Send the construction information.
-        return this.returnPlan({
+        return this.returnPlan([{
           at: terrain.keyFromTile(build.tile),
           do: terrain.planTypes.build,
           b: build.building
-        });
+        }]);
       }
       // We need to go towards this building tile.
       var group = project.groups[(project.groups.length * Math.random())|0];
       var plan = group.moveTowards(this.humanity, build.tile);
       if (plan == null) { debugger; this.recursionLimit++; return this.runProject(); }
-      return this.returnPlan(plan);
+      return this.returnPlan([plan]);
     }
     // Go to the target.
     // FIXME: give availability to choose between groups to move forward.
     var group = project.groups[(project.groups.length * Math.random())|0];
     var plan = group.moveTowards(this.humanity, project.target);
     if (plan == null) { debugger; this.recursionLimit++; return this.runProject(); }
-    return this.returnPlan(plan);
+    return this.returnPlan([plan]);
   },
 
 };

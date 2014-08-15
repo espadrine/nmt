@@ -296,7 +296,7 @@ function applyPlan(plan) {
     }
     // Exact half the handicap.
     //console.log('exacting handicap = ' + ((handicap / 2)|0));
-    runAiNTimes((handicap / 2)|0);
+    //runAiNTimes((handicap / 2)|0);
   }
 }
 
@@ -425,6 +425,8 @@ function gameTurn() {
         console.error('Tried to send data to nonexistent client.');
       }
     });
+    // Also send this information to the AI.
+    ai.updateHumanity(updatedHumanity);
   }
   terrain.clearPlans();
   updatedHumanity = {};
@@ -466,14 +468,7 @@ function gameTurn() {
 
 function runAi() {
   for (var i = 0; i < humanity.numberOfCamps; i++) {
-    var aiPlan = ai.runCamp(humanity, humanity.campFromId(i));
-    console.log('ai plan:', aiPlan);
-    if (aiPlan != null) {
-      aiPlan.ai = true;
-      judgePlan(0, aiPlan, true, function(msg) {
-        if (msg != null) { console.log(msg); debugger; }
-      });
-    }
+    ai.runCamp(humanity, humanity.campFromId(i));
   }
 }
 
@@ -547,7 +542,17 @@ function startGame() {
 }
 
 function startGameLoop() {
-  ai = new AI(humanity);
+  ai = new AI(humanity, function checkAiPlans(plans) {
+    for (var i = 0; i < plans.length; i++) {
+      var aiPlan = plans[i];
+      if (aiPlan != null && humanity.lockedTiles[aiPlan.at] === undefined) {
+        aiPlan.ai = true;
+        judgePlan(0, aiPlan, true, function(msg) {
+          if (msg != null) { console.log(msg); debugger; }
+        });
+      }
+    }
+  });
   setTimeout(gameTurn, gameTurnTime);
 }
 
