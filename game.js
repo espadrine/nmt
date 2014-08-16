@@ -4,7 +4,10 @@ var treasure = require('./treasure');
 var AI = require('./ai/ai');
 var ai;
 
+// Lets you play as the opponent.
 var cheatMode = false;
+// Uncomment the following to make the AI play constantly.
+var realtimeAI = true;
 
 // Send and receive data from players.
 
@@ -88,16 +91,17 @@ function judgePlan(playerId, plan, cheatMode, cb) {
   var travelPath;
   if (plan.do !== undefined && (typeof plan.at === 'string')) {
     // Check camp.
-    var humanityTile = humanity.tile(terrain.tileFromKey(plan.at));
-    if (cheatMode ||
-        (humanityTile !== undefined && humanityTile.c === campFromId(playerId)
-         && humanityTile.h > 0)) {
+    var terrainTile = terrain.tileFromKey(plan.at);
+    var humanityTile = humanity.tile(terrainTile);
+    if (humanityTile !== undefined
+        && (cheatMode? true: (humanityTile.c === campFromId(playerId)))
+        && humanityTile.h > 0) {
       var camp = humanity.campFromId(humanityTile.c);
       // Check plan.
       if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
        && plan.do === terrain.planTypes.move
        && (travelPath =
-          terrain.humanTravelPath(terrain.tileFromKey(plan.at),
+          terrain.humanTravelPath(terrainTile,
                          terrain.tileFromKey(plan.to))).length > 1
        && (plan.h > 0 || plan.h <= humanityTile.h)) {
         // Is the move valid?
@@ -106,7 +110,7 @@ function judgePlan(playerId, plan, cheatMode, cb) {
         cb();
       } else if ((typeof plan.b === 'number' || plan.b === null)
              && plan.do === terrain.planTypes.build
-             && terrain.validConstruction(plan.b, terrain.tileFromKey(plan.at),
+             && terrain.validConstruction(plan.b, terrainTile,
                camp.resources)) {
         // Is the move valid?
         planFromTile[plan.at] = plan;
@@ -275,40 +279,6 @@ function applyPlan(plan) {
     updatedHumanity[plan.at] = humanityFrom;
     collectFromTile(plan.at, humanityFrom, true);
   }
-  // Run ai.
-  if (!plan.ai) {
-    // Find out the gap between the camp that did most actions and the others.
-    var maxActions = 0;
-    var maxActionId = 0;
-    for (var i = 0; i < humanity.numberOfCamps; i++) {
-      var nActions = humanity.campFromId(i).nActions;
-      if (maxActions < nActions) {
-        maxActions = nActions;
-        maxActionId = i;
-      }
-    }
-    // Compute handicap = Σi (max - nAction[i]).
-    var handicap = 0;
-    for (var i = 0; i < humanity.numberOfCamps; i++) {
-      if (i !== maxActionId) {
-        handicap += maxActions - humanity.campFromId(i).nActions;
-      }
-    }
-    // Exact half the handicap.
-    //console.log('exacting handicap = ' + ((handicap / 2)|0));
-    //runAiNTimes((handicap / 2)|0);
-  }
-}
-
-// Run the AI algorithm `n` times. May span multiple ticks.
-function runAiNTimes(n) {
-  if (n <= 0) { return; }
-  var aiPlan = ai.run(humanity);
-  if (aiPlan != null && humanity.lockedTiles[aiPlan.at] === undefined) {
-    // The plan exists and doesn't bother users.
-    aiPlan.ai = true;
-    judgePlan(0, aiPlan, true, function() { runAiNTimes(n-1); });
-  }
 }
 
 // Build roads along the `travelPath` [{q,r}], and on `humanityFrom`.
@@ -402,12 +372,12 @@ var maxMetal = 13;  // Winning amount of metal for an Industrial Victory.
 var maxAcquiredUniversities = 3;
 
 function gameTurn() {
-  // Uncomment the following to make the AI play constantly.
-  runAi();
+  var includeHumanMove = false;
   // Apply all plans.
   for (var tileKey in planFromTile) {
     var plan = planFromTile[tileKey];
     applyPlan(plan);
+    if (!plan.ai) { includeHumanMove = true; }
   }
   planFromTile = {};
   // Send new humanity to all.
@@ -427,6 +397,9 @@ function gameTurn() {
     });
     // Also send this information to the AI.
     ai.updateHumanity(updatedHumanity);
+    if (includeHumanMove || realtimeAI) {
+      runAi();
+    }
   }
   terrain.clearPlans();
   updatedHumanity = {};
@@ -467,9 +440,11 @@ function gameTurn() {
 }
 
 function runAi() {
-  for (var i = 0; i < humanity.numberOfCamps; i++) {
-    ai.runCamp(humanity, humanity.campFromId(i));
-  }
+  //ai.runCamp(humanity.campFromId(0));
+  ai.runCamp(humanity.campFromId((humanity.numberOfCamps * Math.random())|0));
+  //for (var i = 0; i < humanity.numberOfCamps; i++) {
+  //  ai.runCamp(humanity.campFromId(i));
+  //}
 }
 
 // Birth. Add folks on home tiles.
@@ -545,14 +520,19 @@ function startGameLoop() {
   ai = new AI(humanity, function checkAiPlans(plans) {
     for (var i = 0; i < plans.length; i++) {
       var aiPlan = plans[i];
-      if (aiPlan != null && humanity.lockedTiles[aiPlan.at] === undefined) {
+      if (aiPlan != null) {
+        console.log('AI plan:', plans[i]);
         aiPlan.ai = true;
         judgePlan(0, aiPlan, true, function(msg) {
-          if (msg != null) { console.log(msg); debugger; }
+          if (msg != null) {
+            console.log(msg);
+            if (realtimeAI) { runAi(); }
+          }
         });
       }
     }
   });
+  if (realtimeAI) { runAi(); }
   setTimeout(gameTurn, gameTurnTime);
 }
 

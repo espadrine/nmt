@@ -13,20 +13,31 @@ function makeStrategyReceiver(campId, receivePlans) {
 function AI(humanity, receivePlans) {
   this.strategy = [];
   this.humanity = humanity;
-  this.numberOfCamps = humanity.numberOfCamps;
-  for (var i = 0; i < this.numberOfCamps; i++) {
-    //this.strategy.push(
-    //    new aiProc.Strategy(humanity.campFromId(i), humanity));
-    this.strategy.push(cp.fork(__dirname + '/process.js'));
-    this.strategy[i].on('message', makeStrategyReceiver(i, receivePlans));
-    this.strategy[i].send({ humanityChange: { camp:i } });
+  this.receivePlans = receivePlans;
+  for (var i = 0; i < this.humanity.numberOfCamps; i++) {
+    this.makeStrategy(i);
   }
 }
 
 AI.prototype = {
   strategy: [],
-  numberOfCamps: 0,
   humanity: null,
+  receivePlans: function(){},
+
+  makeStrategy: function(campId) {
+    var child = cp.fork(__dirname + '/process.js');
+    child.on('message', makeStrategyReceiver(campId, this.receivePlans));
+    child.send({ humanityChange: this.humanity.data() });
+    child.send({ humanityChange: {
+      population: this.humanity.population(),
+      camp: campId,
+      places: this.humanity.getPlaces(),
+      centerTile: this.humanity.centerTile,
+      campNames: this.humanity.campNames(),
+      resources: this.humanity.getResources(),
+    }});
+    this.strategy[campId] = child;
+  },
 
   updateHumanity: function(change) {
     for (var i = 0; i < this.humanity.numberOfCamps; i++) {
@@ -34,37 +45,35 @@ AI.prototype = {
     }
   },
 
-  run: function(humanity) {
+  run: function() {
     // Choose the camp we will help.
-    var leastCamp = humanity.campFromId(0);
-    for (var i = 1; i < humanity.numberOfCamps; i++) {
-      var camp = humanity.campFromId(i);
+    var leastCamp = this.humanity.campFromId(0);
+    for (var i = 1; i < this.humanity.numberOfCamps; i++) {
+      var camp = this.humanity.campFromId(i);
       if (camp.nActions < leastCamp.nActions) {
         leastCamp = camp;
       }
     }
 
     // Run the strategy for it.
-    return this.runCamp(humanity, leastCamp);
+    return this.runCamp(leastCamp);
   },
 
   // Given a Camp object (see humanity.js),
   // return a plan (see game.js).
-  runCamp: function(humanity, camp) {
+  runCamp: function(camp) {
     // Run the strategy for it.
-    //if (this.strategy[camp.id] === undefined) {
-    //  this.strategy[camp.id]
-    //    = new aiProc.Strategy(camp, humanity);
-    //}
+    if (this.strategy[camp.id] === undefined) {
+      this.makeStrategy(camp.id);
+    }
     try {
       this.strategy[camp.id].send({ run: true });
-      //return this.strategy[camp.id].runProject();
     } catch(e) {
       // Reset.
       console.error(e);
       debugger;
-      //delete this.strategy[camp.id];
-      //return this.runCamp(humanity, camp);
+      this.strategy[camp.id].kill();
+      delete this.strategy[camp.id];
     }
   },
 
