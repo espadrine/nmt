@@ -6,8 +6,6 @@ var ai;
 
 // Lets you play as the opponent.
 var cheatMode = false;
-// Uncomment the following to make the AI play constantly.
-var realtimeAI = true;
 
 // Send and receive data from players.
 
@@ -72,7 +70,6 @@ var planFromTile = {};
 // If the plan isn't applied, the callback has an `err` parameter to explain.
 function judgePlan(playerId, plan, cheatMode, cb) {
   cb = cb || emptyFunction;
-  //console.log('Suggested ' + (playerId === 0? 'AI ': '') + 'plan:', plan);
   if (playerId !== 0 && plan.to != null) {
     if (plan.at != null) {
       delete humanity.lockedTiles[plan.at];
@@ -388,16 +385,17 @@ function gameTurn() {
     updatedHumanity.war = warTiles;
     updatedHumanity.surrender = surrenderTiles;
     updatedHumanity.resources = humanity.getResources();
+    var jsonUpdatedHumanity = JSON.stringify(updatedHumanity);
     actChannel.clients.forEach(function (client) {
       try {
-        client.send(JSON.stringify(updatedHumanity));
+        client.send(jsonUpdatedHumanity);
       } catch(e) {
         console.error('Tried to send data to nonexistent client.');
       }
     });
     // Also send this information to the AI.
-    ai.updateHumanity(updatedHumanity);
-    if (includeHumanMove || realtimeAI) {
+    ai.updateHumanity(jsonUpdatedHumanity);
+    if (includeHumanMove) {
       runAi();
     }
   }
@@ -441,10 +439,10 @@ function gameTurn() {
 
 function runAi() {
   //ai.runCamp(humanity.campFromId(0));
-  ai.runCamp(humanity.campFromId((humanity.numberOfCamps * Math.random())|0));
-  //for (var i = 0; i < humanity.numberOfCamps; i++) {
-  //  ai.runCamp(humanity.campFromId(i));
-  //}
+  //ai.runCamp(humanity.campFromId((humanity.numberOfCamps * Math.random())|0));
+  for (var i = 0; i < humanity.numberOfCamps; i++) {
+    ai.runCamp(humanity.campFromId(i));
+  }
 }
 
 // Birth. Add folks on home tiles.
@@ -517,6 +515,7 @@ function startGame() {
 }
 
 function startGameLoop() {
+  if (ai !== undefined) { ai.kill(); }
   ai = new AI(humanity, function checkAiPlans(plans) {
     for (var i = 0; i < plans.length; i++) {
       var aiPlan = plans[i];
@@ -524,15 +523,13 @@ function startGameLoop() {
         console.log('AI plan:', plans[i]);
         aiPlan.ai = true;
         judgePlan(0, aiPlan, true, function(msg) {
-          if (msg != null) {
-            console.log(msg);
-            if (realtimeAI) { runAi(); }
-          }
+          if (msg != null) { console.log(msg); }
         });
       }
     }
   });
-  if (realtimeAI) { runAi(); }
+  // Uncomment the following to make the AI play constantly.
+  //ai.realtime();
   setTimeout(gameTurn, gameTurnTime);
 }
 

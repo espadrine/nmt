@@ -11,36 +11,35 @@ function makeStrategyReceiver(campId, receivePlans) {
 }
 
 function AI(humanity, receivePlans) {
-  this.strategy = [];
   this.humanity = humanity;
   this.receivePlans = receivePlans;
-  for (var i = 0; i < this.humanity.numberOfCamps; i++) {
-    this.makeStrategy(i);
-  }
+  this.strategy = new Array(this.humanity.numberOfCamps);
 }
 
 AI.prototype = {
   strategy: [],
   humanity: null,
   receivePlans: function(){},
+  realtimeAiTimeout: 500,
 
   makeStrategy: function(campId) {
     var child = cp.fork(__dirname + '/process.js');
     child.on('message', makeStrategyReceiver(campId, this.receivePlans));
-    child.send({ humanityChange: this.humanity.data() });
-    child.send({ humanityChange: {
+    child.send({ humanityChange: JSON.stringify(this.humanity.data()) });
+    child.send({ humanityChange: JSON.stringify({
       population: this.humanity.population(),
       camp: campId,
       places: this.humanity.getPlaces(),
       centerTile: this.humanity.centerTile,
       campNames: this.humanity.campNames(),
       resources: this.humanity.getResources(),
-    }});
+    })});
     this.strategy[campId] = child;
   },
 
   updateHumanity: function(change) {
     for (var i = 0; i < this.humanity.numberOfCamps; i++) {
+      if (this.strategy[i] === undefined) { this.makeStrategy(i); }
       this.strategy[i].send({ humanityChange: change });
     }
   },
@@ -63,9 +62,7 @@ AI.prototype = {
   // return a plan (see game.js).
   runCamp: function(camp) {
     // Run the strategy for it.
-    if (this.strategy[camp.id] === undefined) {
-      this.makeStrategy(camp.id);
-    }
+    if (this.strategy[camp.id] === undefined) { this.makeStrategy(camp.id); }
     try {
       this.strategy[camp.id].send({ run: true });
     } catch(e) {
@@ -75,6 +72,24 @@ AI.prototype = {
       this.strategy[camp.id].kill();
       delete this.strategy[camp.id];
     }
+  },
+
+  kill: function() {
+    for (var i = 0; i < this.strategy.length; i++) {
+      if (this.strategy[i] != null) {
+        this.strategy[i].kill();
+        delete this.strategy[i];
+      }
+    }
+  },
+
+  realtime: function() {
+    setTimeout(function() {
+      for (var i = 0; i < this.strategy.length; i++) {
+        this.runCamp(this.humanity.campFromId(i));
+      }
+      this.realtime();
+    }.bind(this), this.realtimeAiTimeout);
   },
 
 };
