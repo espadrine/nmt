@@ -122,12 +122,14 @@ Humanity.prototype = {
   },
 
   patch: function patch(change) {
-    if (change.lockedTiles) {
-      this.lockedTiles = change.lockedTiles;
-    } else if (change.winners) {
+    if (change.winners) {
     } else {
       if (change.camp !== undefined) {
         delete change.camp;
+      }
+      if (change.lockedTiles !== undefined) {
+        this.lockedTiles = change.lockedTiles;
+        delete change.lockedTiles;
       }
       if (change.resources !== undefined) {
         for (var i = 0; i < this.numberOfCamps; i++) {

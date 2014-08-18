@@ -855,7 +855,8 @@ Strategy.prototype = {
         var humanityTile = this.humanity.tile(terrain.tileFromKey(tileKey));
         if (!stealGroup && humanityTile.h < 2) { continue; }
       }
-      // FIXME: don't include tiles controlled by players.
+      // Don't include tiles controlled by players.
+      if (this.humanity.lockedTiles[tileKey] !== undefined) { continue; }
       // Locate the closest group to the target tile.
       var distance = distanceBetweenTiles(tile, tiles[i]);
       if (distance < closest) {

@@ -17,9 +17,7 @@ function connectSocket(cb) {
 }
 function socketMessage(e) {
   var change = JSON.parse(e.data);
-  if (change.lockedTiles) {
-    lockedTiles = change.lockedTiles;
-  } else if (change.winners) {
+  if (change.winners) {
     // The game is over.
     gameOver = {};
     gameOver.winners = change.winners;
@@ -35,6 +33,10 @@ function socketMessage(e) {
     if (change.camp !== undefined) {
       playerCamp = change.camp;
       delete change.camp;
+    }
+    if (change.lockedTiles !== undefined) {
+      lockedTiles = change.lockedTiles;
+      delete change.lockedTiles;
     }
     if (change.resources !== undefined) {
       campResources = change.resources;

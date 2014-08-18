@@ -33,6 +33,7 @@ AI.prototype = {
       centerTile: this.humanity.centerTile,
       campNames: this.humanity.campNames(),
       resources: this.humanity.getResources(),
+      lockedTiles: this.humanity.lockedTiles,
     })});
     this.strategy[campId] = child;
   },

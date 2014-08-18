@@ -76,13 +76,6 @@ function judgePlan(playerId, plan, cheatMode, cb) {
     }
     humanity.lockedTiles[plan.to] = campFromIds[playerId];
     humanity.lockedTileFromPlayerId[playerId] = plan.to;
-    actChannel.clients.forEach(function (client) {
-      try {
-        client.send(JSON.stringify({lockedTiles:humanity.lockedTiles}));
-      } catch(e) {
-        console.error('Tried to send data to nonexistent client.');
-      }
-    });
   }
 
   var travelPath;
@@ -385,6 +378,7 @@ function gameTurn() {
     updatedHumanity.war = warTiles;
     updatedHumanity.surrender = surrenderTiles;
     updatedHumanity.resources = humanity.getResources();
+    updatedHumanity.lockedTiles = humanity.lockedTiles;
     var jsonUpdatedHumanity = JSON.stringify(updatedHumanity);
     actChannel.clients.forEach(function (client) {
       try {
