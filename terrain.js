@@ -163,7 +163,7 @@ Terrain.prototype = {
 
   // Returns true if it is part of the continent.
   continent: function continent(x, y) {
-    var size = 1100;
+    var size = 1700;
     var hm = heatmap(x, y, simplex1, 4/5*size, 8);
     var center = this.centerPoint;
     hm = (hm + 1) / 2;
@@ -209,7 +209,7 @@ Terrain.prototype = {
         + 1/8 * simplex2.noise2D(8*x/factor, 8*y/factor)
         + 1/16 * simplex2.noise2D(16*x/factor, 16*y/factor);
     var height = heightNoise - riverNoise;
-    var continentLimit = 0.35;
+    var continentLimit = 0.33;
     var continentNoise = this.continent(x, y);
     if (continentNoise > continentLimit) {
       var steepness = (
