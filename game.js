@@ -433,7 +433,6 @@ function gameTurn() {
 
 function runAi() {
   //ai.runCamp(humanity.campFromId(0));
-  //ai.runCamp(humanity.campFromId((humanity.numberOfCamps * Math.random())|0));
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     ai.runCamp(humanity.campFromId(i));
   }
