@@ -97,7 +97,8 @@ var manufacture = {
   boat: 1,
   car: 2,
   plane: 4,
-  gun: 8
+  artillery: 8,
+  gun: 16
 };
 
 // The index is the tileTypes id.

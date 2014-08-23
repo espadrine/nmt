@@ -193,6 +193,9 @@ function applyPlan(plan) {
       humanityTo.h += plan.h;
       humanityFrom.h -= plan.h;
     }
+    // We survived there so far. Receive artillery fire.
+    var artilleryFire = artilleryDamage(tileTo);
+    humanityTo.h -= artilleryFire;
     // Camp
     humanityTo.c = humanityFrom.c;
     // Food.
@@ -308,6 +311,8 @@ function collectFromTile(tileKey, humanityTile, addBuilding) {
     getManufacture(humanityTile, terrain.manufacture.plane);
   } else if (humanityTile.b === terrain.tileTypes.gunsmith) {
     getManufacture(humanityTile, terrain.manufacture.gun);
+  } else if (humanityTile.b === terrain.tileTypes.arsenal) {
+    getManufacture(humanityTile, terrain.manufacture.artillery);
   }
 }
 
@@ -340,17 +345,35 @@ function clearBit(a) {
 }
 
 // Are the people in tileKey = "q:r" surrounded by camp?
-function surrender(tileKey, camp) {
+function surrender(tileKey, campId) {
   // How many people around.
   var surrounded = 0;
   for (var i = 0; i < 6; i++) {
     var neighbor = humanity.tile(
         terrain.neighborFromTile(terrain.tileFromKey(tileKey), i));
-    if (neighbor && neighbor.c === camp && neighbor.h > 0) {
+    if (neighbor && neighbor.c === campId && neighbor.h > 0) {
       surrounded++;
     }
   }
   return surrounded >= 2;
+}
+
+var artilleryRange = 4;
+
+// Take damage for nearby artillery.
+// tile: {q,r}
+// campId: number, index of camp.
+function artilleryDamage(tile, campId) {
+  var totalArtillery = 0;
+  humanity.findNearest(tile, function(aTile) {
+    var humanityTile = humanity.tile(aTile);
+    if (humanityTile && humanityTile.c !== campId
+      && (humanityTile.o & terrain.manufacture.artillery) !== 0) {
+      totalArtillery += humanityTile.h;
+    }
+    return false;  // We want to explore all the circle.
+  }, artilleryRange);
+  return (totalArtillery/4)|0;
 }
 
 
