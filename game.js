@@ -194,7 +194,7 @@ function applyPlan(plan) {
       humanityFrom.h -= plan.h;
     }
     // We survived there so far. Receive artillery fire.
-    var artilleryFire = artilleryDamage(tileTo);
+    var artilleryFire = artilleryDamage(tileTo, humanityFrom.c);
     humanityTo.h -= artilleryFire;
     // Camp
     humanityTo.c = humanityFrom.c;
