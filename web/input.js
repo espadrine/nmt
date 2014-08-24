@@ -1498,6 +1498,10 @@ function paintHumans(gs, humanityData) {
       } else if ((human.o & manufacture.car) !== 0) {
         ctx.fillStyle = '#420';
         ctx.fillRect(animx, animy, 3*pixel, 2*pixel);
+      } else if ((human.o & manufacture.artillery) !== 0) {
+        ctx.fillStyle = '#425';
+        ctx.fillRect(animx - 2*pixel, animy, 5*pixel, 2*pixel);
+        ctx.fillRect(animx, animy - 1*pixel, 5*pixel, 1*pixel);
       } else {
         ctx.fillRect(animx, animy, pixel, 2*pixel);
       }
