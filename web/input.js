@@ -1474,38 +1474,68 @@ function paintHumans(gs, humanityData) {
     var centerPixel = pixelFromTile({ q:q, r:r }, origin, size);
     var cx = centerPixel.x;
     var cy = centerPixel.y;
-    // Paint people.
-    var number = human.h;
-    if (number > humanAnimation.length) { number = humanAnimation.length; }
-    for (var i = 0; i < number; i++) {
-      var animation = humanAnimation[Math.abs(i+q^r^human.f) % humanAnimation.length];
-      var animx = (cx - size + animation.x * 2 * size)|0;
-      var animy = (cy - size + animation.y * 2 * size)|0;
-      var pixel = size/20;
-      ctx.fillStyle = 'black';
-      if ((tile.type === tileTypes.water || tile.type === tileTypes.swamp)
-          && (human.o & manufacture.boat) !== 0) {
-        ctx.fillStyle = '#aaf';
-        ctx.fillRect(animx - pixel, animy - pixel, pixel, pixel);
-        ctx.fillRect(animx, animy, 7*pixel, pixel);
-        ctx.fillRect(animx + 7*pixel, animy - pixel, pixel, pixel);
-      } else if ((human.o & manufacture.plane) !== 0) {
-        ctx.fillStyle = '#edf';
-        ctx.fillRect(animx - pixel, animy - pixel, 2*pixel, pixel);
-        ctx.fillRect(animx, animy, 9*pixel, pixel);
-        ctx.fillRect(animx + 5*pixel, animy - pixel, pixel, pixel);
-        ctx.fillRect(animx + 3*pixel, animy + pixel, pixel, pixel);
-      } else if ((human.o & manufacture.car) !== 0) {
-        ctx.fillStyle = '#420';
-        ctx.fillRect(animx, animy, 3*pixel, 2*pixel);
-      } else if ((human.o & manufacture.artillery) !== 0) {
-        ctx.fillStyle = '#425';
-        ctx.fillRect(animx - 2*pixel, animy, 5*pixel, 2*pixel);
-        ctx.fillRect(animx, animy - 1*pixel, 5*pixel, 1*pixel);
-      } else {
-        ctx.fillRect(animx, animy, pixel, 2*pixel);
+    // Count different manufacture to show.
+    var ownManufacture = [];
+    var manufactures = [2,4,8,16,32,64];
+    for (var mi = 0; mi < manufactures.length; mi++) {
+      if ((human.o & manufactures[mi]) !== 0) {
+        ownManufacture.push(manufactures[mi]);
       }
     }
+    var onABoat = (tile.type === tileTypes.water
+        || tile.type === tileTypes.swamp)
+        && (human.o & manufacture.boat) !== 0;
+    var flyingOverWater = (tile.type === tileTypes.water
+        || tile.type === tileTypes.swamp)
+        && (human.o & manufacture.plane) !== 0;
+    var number = human.h;
+    if (number > humanAnimation.length) { number = humanAnimation.length; }
+    // Paint people.
+    for (var i = 0; i < number; i++) {
+      var animation = humanAnimation[
+        Math.abs(i+q^r^human.f) % humanAnimation.length];
+      var animx = (cx - size + animation.x * 2 * size)|0;
+      var animy = (cy - size + animation.y * 2 * size)|0;
+      var shownManufacture = -1;
+      if (onABoat) {
+        shownManufacture = manufacture.boat;
+      } else if (flyingOverWater) {
+        shownManufacture = manufacture.plane;
+      } else if (ownManufacture.length > 0) {
+        shownManufacture = ownManufacture[i % ownManufacture.length];
+      }
+      paintHuman(gs, shownManufacture, tile, animx, animy, size);
+    }
+  }
+}
+
+function paintHuman(gs, shownManufacture, tile, animx, animy) {
+  var ctx = gs.ctx; var size = gs.hexSize;
+  var pixel = size/20;
+  if (shownManufacture < 0) {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(animx, animy, pixel, 2*pixel);
+  } else if (shownManufacture === manufacture.boat) {
+    ctx.fillStyle = '#aaf';
+    ctx.fillRect(animx - pixel, animy - pixel, pixel, pixel);
+    ctx.fillRect(animx, animy, 7*pixel, pixel);
+    ctx.fillRect(animx + 7*pixel, animy - pixel, pixel, pixel);
+  } else if (shownManufacture === manufacture.car) {
+    ctx.fillStyle = '#420';
+    ctx.fillRect(animx, animy, 3*pixel, 2*pixel);
+  } else if (shownManufacture === manufacture.plane) {
+    ctx.fillStyle = '#edf';
+    ctx.fillRect(animx - pixel, animy - pixel, 2*pixel, pixel);
+    ctx.fillRect(animx, animy, 9*pixel, pixel);
+    ctx.fillRect(animx + 5*pixel, animy - pixel, pixel, pixel);
+    ctx.fillRect(animx + 3*pixel, animy + pixel, pixel, pixel);
+  } else if (shownManufacture === manufacture.artillery) {
+    ctx.fillStyle = '#425';
+    ctx.fillRect(animx - 2*pixel, animy, 5*pixel, 2*pixel);
+    ctx.fillRect(animx, animy - 1*pixel, 5*pixel, 1*pixel);
+  } else if (shownManufacture === manufacture.gun) {
+    ctx.fillStyle = '#440';
+    ctx.fillRect(animx, animy, pixel, 2*pixel);
   }
 }
 
