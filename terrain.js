@@ -35,7 +35,8 @@ var tileTypes = {
   beach:        25,
   arsenal:      26
 };
-var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24 ];
+var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
+    26 ];
 
 var resourceTypes = {
   lumber:   -1,
@@ -121,14 +122,17 @@ var buildingDependencies = [,,,,,,,,
     [[1, resourceTypes.lumber], [1, tileTypes.factory]],
     [[10, resourceTypes.farm], [1, tileTypes.mine], [5, tileTypes.road]],
     ,
-    [[1, resourceTypes.metal], [20, resourceTypes.farm], [2, tileTypes.wall]]
+    [[1, resourceTypes.metal], [20, resourceTypes.farm], [2, tileTypes.wall]],
+    ,
+    [[1, tileTypes.gunsmith], [1, resourceTypes.metal]]
 ];
 
 // What the current tile must hold to allow a building to be constructed.
 var buildingTileDependency = [,,,,,,,, ,,,,,,,,,,,,
     [tileTypes.forest, tileTypes.taiga],         // Lumber [20]
     [tileTypes.metal],,,
-    [tileTypes.citrus]
+    [tileTypes.citrus],
+    [tileTypes.steppe]
 ];
 
 var planTypes = {
