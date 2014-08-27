@@ -153,6 +153,10 @@ Humanity.prototype = {
         // Surrender messages. ["q:r"]
         delete change.surrender;
       }
+      if (change.artilleryFire !== undefined) {
+        // Artillery Fire. {"q:r":["q:r"]}
+        delete change.artilleryFire;
+      }
       if (change.goto !== undefined) {
         // goto is the spawn tile.
         delete change.goto;

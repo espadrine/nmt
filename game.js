@@ -113,6 +113,8 @@ function judgePlan(playerId, plan, cheatMode, cb) {
 var updatedHumanity = {};
 var warTiles = [];
 var surrenderTiles = [];
+// Map from "q:r" of sender to "q:r" of receiver.
+var artilleryFire = {};
 
 function applyPlan(plan) {
   var tileFrom = terrain.tileFromKey(plan.at);
@@ -358,18 +360,24 @@ function surrender(tileKey, campId) {
   return surrounded >= 2;
 }
 
-var artilleryRange = 4;
+var artilleryRange = 5;
 
 // Take damage for nearby artillery.
 // tile: {q,r}
 // campId: number, index of camp.
 function artilleryDamage(tile, campId) {
+  var tileKey = terrain.keyFromTile(tile);
+  if (artilleryFire[tileKey] === undefined) {
+    artilleryFire[tileKey] = [];
+  }
+  // Find all artillery in range.
   var totalArtillery = 0;
   humanity.findNearest(tile, function(aTile) {
     var humanityTile = humanity.tile(aTile);
     if (humanityTile && humanityTile.c !== campId
       && (humanityTile.o & terrain.manufacture.artillery) !== 0) {
       totalArtillery += humanityTile.h;
+      artilleryFire[tileKey].push(terrain.keyFromTile(aTile));
     }
     return false;  // We want to explore all the circle.
   }, artilleryRange);
@@ -400,6 +408,7 @@ function gameTurn() {
     updatedHumanity.population = humanity.population();
     updatedHumanity.war = warTiles;
     updatedHumanity.surrender = surrenderTiles;
+    updatedHumanity.artilleryFire = artilleryFire;
     updatedHumanity.resources = humanity.getResources();
     updatedHumanity.lockedTiles = humanity.lockedTiles;
     var jsonUpdatedHumanity = JSON.stringify(updatedHumanity);
@@ -420,6 +429,7 @@ function gameTurn() {
   updatedHumanity = {};
   warTiles = [];
   surrenderTiles = [];
+  artilleryFire = {};
   // The game ends if one of the camps is empty, or is too high.
   var gameOver = false;
   var winType;

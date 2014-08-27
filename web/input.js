@@ -55,6 +55,11 @@ function socketMessage(e) {
       addHumanMessages(surrenderTiles, change.surrender, surrenderMessages);
       delete change.surrender;
     }
+    if (change.artilleryFire !== undefined) {
+      // Artillery Fire. {"q:r":["q:r"]}
+      addShells(movementAnimations, change.artilleryFire);
+      delete change.artilleryFire;
+    }
     if (change.goto !== undefined) {
       // goto is the spawn tile.
       gotoPlace(change.goto);
@@ -1542,8 +1547,96 @@ function paintHuman(gs, shownManufacture, tile, animx, animy) {
 function animateHumans() {
   paintHumans(gs, humanityData);
   updateHumans();
+  paintMovementAnimations();
 }
 var humanAnimationTimeout = setInterval(animateHumans, 100);
+
+// from:{x,y}, to:{x,y}, velocity, drawFunction: function(){}.
+function InterpolationAnimation(gs, from, to, velocity, drawFunction) {
+  this.gs = gs;
+  this.from = from; this.to = to;
+  this.pos = { x: this.from.x, y: this.from.y };
+  this.velocity = velocity;
+  this.deltaX = to.x - from.x;
+  this.deltaY = to.y - from.y;
+  this.length =
+    Math.sqrt(this.deltaX * this.deltaX + this.deltaY * this.deltaY);
+  this.portions = this.length / velocity;
+  this.usedPortions = 0;
+  this.dx = this.deltaX / this.portions;
+  this.dy = this.deltaY / this.portions;
+  this.normalizedDx = this.deltaX / this.length;
+  this.normalizedDy = this.deltaY / this.length;
+  this.drawFunction = drawFunction;
+}
+InterpolationAnimation.prototype = {
+  draw: function() {
+    this.drawFunction();
+    this.pos.x += this.dx;
+    this.pos.y += this.dy;
+    this.usedPortions++;
+    // If we're past our final location, we clear this up.
+    if (this.usedPortions > this.portions) {
+      var animationIndex = movementAnimations.indexOf(this);
+      movementAnimations.splice(animationIndex, 1);
+    }
+  }
+};
+
+function paintMovementAnimations() {
+  for (var i = 0; i < movementAnimations.length; i++) {
+    movementAnimations[i].draw();
+  }
+}
+
+// List of InterpolationAnimation instances.
+var movementAnimations = [];
+var animationVelocity = 32; // pixels
+
+function drawShell() {
+  var ctx = this.gs.ctx;
+  ctx.lineWidth = 2;
+  var segments = Math.min(this.usedPortions, 8);
+  var x = this.pos.x;
+  var y = this.pos.y;
+  var segmentSize = 4; // pixels
+  var incrx = segmentSize * this.normalizedDx;
+  var incry = segmentSize * this.normalizedDy;
+  for (var i = 9; i > (8 - segments); i--) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    x -= incrx;
+    y -= incry;
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = 'rgba(0,0,0,0.' + i + ')';
+    ctx.stroke();
+  }
+}
+
+// artilleryFire: map from a "q:r" target to a list of "q:r" artilleries.
+function addShells(movementAnimations, artilleryFire) {
+  var visibleHumans = listVisibleHumans(gs);
+  for (var targetTileKey in artilleryFire) {
+    var tileKeys = artilleryFire[targetTileKey];
+    for (var i = 0; i < tileKeys.length; i++) {
+      var tileKey = tileKeys[i];
+      // Check that we can see it.
+      if (visibleHumans.indexOf(tileKey) >= 0
+       || visibleHumans.indexOf(targetTileKey) >= 0) {
+        var fromTile = terrain.tileFromKey(tileKey);
+        var toTile = terrain.tileFromKey(targetTileKey);
+        var from = pixelFromTile(fromTile, gs.origin, gs.hexSize);
+        var to = pixelFromTile(toTile, gs.origin, gs.hexSize);
+        var shellAnimation = new InterpolationAnimation(
+          gs, from, to, animationVelocity, drawShell
+        );
+        movementAnimations.push(shellAnimation);
+      }
+    }
+  }
+}
+
+
 
 
 // Return a list of tileKeys for each tile with a visible human.
