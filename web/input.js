@@ -1970,6 +1970,9 @@ function showTileInformation(tile) {
             (usedLocomotion = true, 'in'): 'with')
           + ' a boat ';
       }
+      if ((h.o & manufacture.artillery) !== 0) {
+        ownership += 'with cannons ';
+      }
       if ((h.o & manufacture.car) !== 0) {
         ownership += (usedLocomotion? 'with': 'in') + ' a car ';
       }
