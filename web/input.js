@@ -85,20 +85,7 @@ function socketMessage(e) {
       delete change.campNames;
     }
     if (humanityPopulation) {
-      var humanityFarm = humanityResource(function(a) {return a.farm - a.usedFarm;});
-      var humanityWood = humanityResource(function(a) {return a.lumber - a.usedLumber;});
-      var humanityMetal = humanityResource(function(a) {return a.metal - a.usedMetal;});
-      var humanityUniv = humanityResource(function(a) {return Object.keys(a.acquiredUniversitiesMap).length;});
-      setResourcePanel(humanityPopulation,
-          populationPanel, populationMaxPanel, populationMaxCampPanel);
-      setResourcePanel(humanityFarm,
-          farmPanel, farmMaxPanel, farmMaxCampPanel);
-      setResourcePanel(humanityWood,
-          woodPanel, woodMaxPanel, woodMaxCampPanel);
-      setResourcePanel(humanityMetal,
-          metalPanel, metalMaxPanel, metalMaxCampPanel);
-      setResourcePanel(humanityUniv,
-          uniPanel, uniMaxPanel, uniMaxCampPanel);
+      setResourcesTable();
     }
     addStarveMessages(change);
     changeHumanity(humanityData, change);
@@ -184,27 +171,36 @@ function insertPlaces(places) {
   }
 }
 
-function setResourcePanel(resourceList, panel, maxPanel, maxCampPanel) {
-  panel.value = resourceList[playerCamp];
-  var maxResourceIndex = 0;
-  var maxResource = 0;
-  for (var i = 0; i < resourceList.length; i++) {
-    if (resourceList[i] > maxResource) {
-      maxResourceIndex = i;
-      maxResource = resourceList[i];
+var resourceFromName = {
+  Folks:    campResourcePopulation,
+  Farm:     campResourceFarm,
+  Wood:     campResourceWood,
+  Metal:    campResourceMetal,
+  Univ:     campResourceUniv
+};
+function setResourcesTable() {
+  // Make the header.
+  var header = '<th></th>';
+  for (var i = 0; i < numberOfCamps; i++) {
+    header += '<th style="color:' + campHsl(i) +'">■</th>';
+  }
+  header = '<tr>' + header + '</tr>';
+  // Make the body.
+  var content = '';
+  ['Folks', 'Farm', 'Wood', 'Metal', 'Univ'].forEach(function(resourceName) {
+    var row = '';
+    row += '<th>' + resourceName + '</th>';
+    for (var i = 0; i < numberOfCamps; i++) {
+      var resource = resourceFromName[resourceName](i);
+      row += '<td>' + resource + '</td>';
     }
-  }
-  maxPanel.value = maxResource;
-  maxCampPanel.value = campNames[maxResourceIndex];
-  maxCampPanel.style.color = campHsl(maxResourceIndex);
-}
-
-function humanityResource(resource) {
-  var humanityResource = [];
-  for (var i = 0; i < campResources.length; i++) {
-    humanityResource[i] = resource(campResources[i]);
-  }
-  return humanityResource;
+    row = '<tr class="' + resourceName + '">' + row + '</tr>';
+    content += row;
+  });
+  var thead = '<thead>' + header + '<thead>';
+  var tbody = '<tbody>' + content + '<tbody>';
+  var table = '<table>' + thead + tbody + '</table>';
+  resourcesPanel.innerHTML = table;
 }
 
 // Focus the screen on tile t = {q, r}.
@@ -281,6 +277,16 @@ var resources = {
   usedMetal: 0
 };
 var campResources;
+function campResourcePopulation(c) { return humanityPopulation[c]; }
+function campResourceFarm(c) {
+  var r = campResources[c]; return r.farm - r.usedFarm; }
+function campResourceWood(c) {
+  var r = campResources[c]; return r.lumber - r.usedLumber; }
+function campResourceMetal(c) {
+  var r = campResources[c]; return r.metal - r.usedMetal; }
+function campResourceUniv(c) {
+  var r = campResources[c];
+  return Object.keys(r.acquiredUniversitiesMap).length; }
 
 var humanity = {
   // Takes a tile = {q, r}, returns the humanity information for that tile.

@@ -151,8 +151,9 @@ iframe#helpPane {
   z-index: -2;
   box-shadow: #999 1px 1px inset, #999 -1px -1px inset;
 }
-div.populationPanel { color: pink; }
-div.farmPanel { color: #dd0; }
-div.woodPanel { color: #ea0; }
-div.metalPanel { color: #99f; }
-div.uniPanel { color: #e5f; }
+#resourcesPanel td { text-align: center; }
+.Folks { color: pink; }
+.Farm { color: #dd0; }
+.Wood { color: #ea0; }
+.Metal { color: #99f; }
+.Univ { color: #e5f; }
