@@ -281,8 +281,10 @@ function applyPlan(plan) {
 // If `terrainTileTo` (output of `terrain.tile()`) is water,
 // don't build the road.
 function buildRoads(travelPath, updatedHumanity, humanityFrom, terrainTileTo) {
+  var terrainTileFrom = terrain.tile(travelPath[0]);
   // Don't build roads over water.
-  if (terrainTileTo.type === terrain.tileTypes.water) { return; }
+  if (terrainTileFrom.type === terrain.tileTypes.water
+   && terrainTileTo.type === terrain.tileTypes.water) { return; }
   if (humanityFrom.b == null) {
     humanityFrom.b = terrain.tileTypes.road;
   }
