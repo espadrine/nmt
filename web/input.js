@@ -1149,21 +1149,24 @@ function paintTiles(gs, cb) {
 var cachedPaint = {};
 var cachePending = {};  // map from 'x:y' to truthy values.
 // gs is the GraphicState.
-// Note: the callback `cb(canvas)` may be called several times.
-function getCachedPaint(gs, cacheX, cacheY, cb) {
+// cacheX, cacheY: pixel positions on the map.
+// cb(canvas) returns a canvas with the correct paint on it.
+// blackcb(canvas) returns a black canvas if this is the first access
+// to that cache.
+function getCachedPaint(gs, cacheX, cacheY, cb, blackcb) {
   var pos = cacheX + ':' + cacheY;
   var cache = cachedPaint[pos];
   if (cache == null) {
     var canvasBuffer = document.createElement('canvas');
     canvasBuffer.width = gs.width;
     canvasBuffer.height = gs.height;
-    if (cache === undefined) {
+    if ((cache === undefined) && (blackcb instanceof Function)) {
       // The cache was never there; it wasn't invalidated.
       // Paint it black immediately.
       var ctxBuffer = canvasBuffer.getContext('2d');
       ctxBuffer.fillStyle = 'black';
       ctxBuffer.fillRect(0, 0, gs.width, gs.height);
-      cb(canvasBuffer);
+      blackcb(canvasBuffer);
     }
     // Deferred actual painting.
     if (cachePending[pos] === undefined) {
@@ -1257,25 +1260,34 @@ function paintTilesFromCache(gs, cb) {
   var top    = origin.y0 - y;
   var bottom = origin.y0 + height - y;
   var countDone = 0;
-  var makeDraw = function makeDraw(x, y) {
+  var makeDraw = function makeDraw(x, y, callcb) {
     return function draw(cache) {
-      if (countDone <= 4) {
-        doubleBufContext.drawImage(cache, x, y);
-      } else {
-        paintTilesFromCurrentCache(gs);
-      }
+      doubleBufContext.drawImage(cache, x, y);
       // We have four jobs to make in total.
-      countDone++;
-      if (countDone === 4) {
+      if (callcb) {
+        countDone++;
+        if (countDone === 4) {
+          ctx.drawImage(doubleBufCanvas, 0, 0);
+          cb();
+        }
+      } else {
         ctx.drawImage(doubleBufCanvas, 0, 0);
-        cb();
+        paintTilesFromCurrentCache(gs);
       }
     }
   };
-  getCachedPaint(gs, left, top, makeDraw(-x, -y));
-  getCachedPaint(gs, right, top, makeDraw(width-x, -y));
-  getCachedPaint(gs, left, bottom, makeDraw(-x, height-y));
-  getCachedPaint(gs, right, bottom, makeDraw(width-x, height-y));
+  var leftTopDraw = makeDraw(-x, -y, true);
+  var rightTopDraw = makeDraw(width-x, -y, true);
+  var leftBottomDraw = makeDraw(-x, height-y, true);
+  var rightBottomDraw = makeDraw(width-x, height-y, true);
+  var leftTopDrawBlack = makeDraw(-x, -y, false);
+  var rightTopDrawBlack = makeDraw(width-x, -y, false);
+  var leftBottomDrawBlack = makeDraw(-x, height-y, false);
+  var rightBottomDrawBlack = makeDraw(width-x, height-y, false);
+  getCachedPaint(gs, left, top, leftTopDraw, leftTopDrawBlack);
+  getCachedPaint(gs, right, top, rightTopDraw, rightTopDrawBlack);
+  getCachedPaint(gs, left, bottom, leftBottomDraw, leftBottomDrawBlack);
+  getCachedPaint(gs, right, bottom, rightBottomDraw, rightBottomDrawBlack);
 }
 
 // Same as paintTilesFromCache, but won't update the cache.
