@@ -25,6 +25,13 @@ AI.prototype = {
   makeStrategy: function(campId) {
     var child = cp.fork(__dirname + '/process.js');
     child.on('message', makeStrategyReceiver(campId, this.receivePlans));
+    var that = this;
+    child.on('exit', function(code) {
+      if (code === 1) {
+        console.log('unlawful exit', (new Error()).stack);
+        delete that.strategy[campId];
+      }
+    });
     child.send({ humanityChange: JSON.stringify(this.humanity.data()) });
     child.send({ humanityChange: JSON.stringify({
       population: this.humanity.population(),
