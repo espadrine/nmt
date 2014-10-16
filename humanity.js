@@ -88,7 +88,7 @@ Humanity.prototype = {
   // Set f and o when the tile doesn't contain humans.
   makeCoherentTile: function makeCoherentTile(tile) {
     if (tile.h <= 0) {
-      tile.f = 0; tile.o = 0;
+      tile.f = 0; tile.o = 0; tile.h = 0;
       if (tile.b === null || tile.b === this.terrain.tileTypes.road) {
         tile.c = null;
       }
