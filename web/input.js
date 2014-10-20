@@ -108,6 +108,7 @@ function socketError(e) {
 connectSocket();
 
 var registerMoves = Object.create(null);
+var registerBuilds = Object.create(null);
 function sendMove(from, to, humans) {
   if (!from || !to) { return; }
   var keyTo = terrain.keyFromTile(to);
@@ -132,9 +133,11 @@ function sendPos(at, to) {
 
 function sendBuild(at, building) {
   if (!at) { return; }
+  var keyAt = terrain.keyFromTile(at);
+  registerBuilds[keyAt] = building;
   if (socket.readyState === 1) {
     socket.send(JSON.stringify({
-      at: terrain.keyFromTile(at),
+      at: keyAt,
       do: planTypes.build,
       b: building
     }));
@@ -302,6 +305,7 @@ function changeHumanity(humanityData, change) {
   for (var tileKey in change) {
     humanityData[tileKey] = change[tileKey];
     delete registerMoves[tileKey];
+    delete registerBuilds[tileKey];
   }
 }
 
@@ -875,37 +879,45 @@ function paintSprite(gs, cx, cy, sprite, rotation) {
 
 // tilePos = {q, r} is the tile's hexagonal coordinates,
 // cx and cy are the hexagon's center pixel coordinates on the screen,
+// building is a tileTypes.
 // rotation = {0…5} is the orientation where to orient the building.
 // gs is the GraphicState.
-function paintBuilding(gs, cx, cy, tilePos, rotation) {
-  var ctx = gs.ctx; var size = gs.hexSize;
-  var human = humanity.tile(tilePos);
-  if (human != null && human.b != null) {
-    if (human.b === tileTypes.road || human.b === tileTypes.wall
-     || human.b === tileTypes.airland) {
+function paintBuilding(gs, cx, cy, tilePos, building, rotation) {
+  if (building != null) {
+    if (building === tileTypes.road || building === tileTypes.wall
+     || building === tileTypes.airland) {
       // Orient roads, walls and airlands.
       var oriented = false;
       for (var i = 0; i < 6; i++) {
         var neighbor = humanity.tile(terrain.neighborFromTile(tilePos, i));
         if (neighbor &&
             // Orient roads along other roads, walls against walls.
-            (((human.b === tileTypes.road || human.b === tileTypes.wall)
-              && neighbor.b === human.b)
+            (((building === tileTypes.road || building === tileTypes.wall)
+              && neighbor.b === building)
             // Orient airlands towards airports.
-          || (human.b === tileTypes.airland
+          || (building === tileTypes.airland
               && neighbor.b === tileTypes.airport))) {
-          paintSprite(gs, cx, cy, human.b, i);
+          paintSprite(gs, cx, cy, building, i);
           oriented = true;
         }
       }
-      if (!oriented) { paintSprite(gs, cx, cy, human.b, 0); }
-    } else if (human.b === tileTypes.airport || human.b === tileTypes.factory
-        || human.b > tileTypes.wall) {
-      paintSprite(gs, cx, cy, human.b, 0);
+      if (!oriented) { paintSprite(gs, cx, cy, building, 0); }
+    } else if (building === tileTypes.airport || building === tileTypes.factory
+        || building > tileTypes.wall) {
+      paintSprite(gs, cx, cy, building, 0);
     } else {
-      paintSprite(gs, cx, cy, human.b, rotation);
+      paintSprite(gs, cx, cy, building, rotation);
     }
   }
+}
+
+// tilePos = {q, r} is the tile's hexagonal coordinates,
+// gs is the GraphicState.
+function paintLoneBuilding(gs, tilePos, building) {
+  var cp = pixelFromTile(tilePos, gs.origin, gs.hexSize);
+  var t = terrain.tile(tilePos);
+  var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
+  paintBuilding(gs, cp.x, cp.y, tilePos, building, rotation);
 }
 
 // gs is the GraphicState.
@@ -930,7 +942,8 @@ function paintBuildingsSprited(gs) {
       // Draw building.
       var t = terrain.tile(tilePos);
       var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
-      paintBuilding(gs, cx, cy, tilePos, rotation);
+      var human = humanity.tile(tilePos);
+      paintBuilding(gs, cx, cy, tilePos, (human? human.b: null), rotation);
       cx += hexHorizDistance;
     }
     cy += hexVertDistance;
@@ -949,14 +962,12 @@ function paintBuildingsSprited(gs) {
 // tilePos = {q, r} is the tile's hexagonal coordinates,
 // cx and cy are the hexagon's center pixel coordinates on the screen.
 // gs is the GraphicState.
-function paintTerrain(gs, cx, cy, hexHorizDistance, hexVertDistance, tilePos) {
-  var ctx = gs.ctx; var size = gs.hexSize;
+function paintTerrain(gs, cx, cy, tilePos) {
   var t = terrain.tile(tilePos);
   // Draw terrain.
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
   paintSprite(gs, cx, cy, t.type, rotation);
 }
-
 
 // From 'size:x:y' to cached terrain, centered on the map origin.
 var cachedTerrainPaint = {};
@@ -999,8 +1010,7 @@ function paintTilesSprited(gs) {
           var t = terrain.tile(tilePos);
           if (t.type === i) {
             // Draw tile.
-            paintTerrain(gsBuffer, cx, cy,
-                hexHorizDistance, hexVertDistance, tilePos);
+            paintTerrain(gsBuffer, cx, cy, tilePos);
           } else if (i === 8 && t.type === tileTypes.water) {
             // Overlay sprites (beaches, …).
             for (var f = 0; f < 6; f++) {
@@ -1361,9 +1371,13 @@ function paintIntermediateUI(gs) {
           terrain.keyFromTile(targetTile), accessibleTiles));
   }
   // Paint the path that folks will take.
-  for (var to in registerMoves) {
-    paintAlongTiles(gs,
-        terrain.humanTravelPath(registerMoves[to], terrain.tileFromKey(to)));
+  for (var keyTo in registerMoves) {
+    var to = terrain.tileFromKey(keyTo);
+    paintAlongTiles(gs, terrain.humanTravelPath(registerMoves[keyTo], to));
+  }
+  for (var keyAt in registerBuilds) {
+    var at = terrain.tileFromKey(keyAt);
+    paintLoneBuilding(gs, at, registerBuilds[keyAt]);
   }
   paintTileMessages(gs);
   if (gameOver !== undefined) {
