@@ -176,7 +176,7 @@ function insertPlaces(places) {
 
 var resourceFromName = {
   Folks:    campResourcePopulation,
-  Farm:     campResourceFarm,
+  Wealth:   campResourceWealth,
   Wood:     campResourceWood,
   Metal:    campResourceMetal,
   Univ:     campResourceUniv
@@ -190,7 +190,7 @@ function setResourcesTable() {
   header = '<tr>' + header + '</tr>';
   // Make the body.
   var content = '';
-  ['Folks', 'Farm', 'Wood', 'Metal', 'Univ'].forEach(function(resourceName) {
+  ['Folks', 'Wealth', 'Wood', 'Metal', 'Univ'].forEach(function(resourceName) {
     var row = '';
     row += '<th>' + resourceName + '</th>';
     for (var i = 0; i < numberOfCamps; i++) {
@@ -272,8 +272,8 @@ var humanityData = {};
 var humanityPopulation;
 var playerCamp;
 var resources = {
-  farm: 0,
-  usedFarm: 0,
+  wealth: 0,
+  usedWealth: 0,
   lumber: 0,
   usedLumber: 0,
   metal: 0,
@@ -281,8 +281,8 @@ var resources = {
 };
 var campResources;
 function campResourcePopulation(c) { return humanityPopulation[c]; }
-function campResourceFarm(c) {
-  var r = campResources[c]; return r.farm - r.usedFarm; }
+function campResourceWealth(c) {
+  var r = campResources[c]; return r.wealth - r.usedWealth; }
 function campResourceWood(c) {
   var r = campResources[c]; return r.lumber - r.usedLumber; }
 function campResourceMetal(c) {

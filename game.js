@@ -264,11 +264,11 @@ function applyPlan(plan) {
       // Metal cost.
       currentCamp.usedMetal++;
     }
-    // Farm cost.
+    // Wealth cost.
     if (plan.b === terrain.tileTypes.university) {
-      currentCamp.usedFarm += 20;
+      currentCamp.usedWealth += 20;
     } else if (plan.b === terrain.tileTypes.industry) {
-      currentCamp.usedFarm += 10;
+      currentCamp.usedWealth += 10;
     }
     humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;

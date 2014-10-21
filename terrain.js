@@ -41,12 +41,12 @@ var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
 var resourceTypes = {
   lumber:   -1,
   metal:    -2,
-  farm:     -3
+  wealth:   -3
 };
 var listOfResourceTypes = [
   resourceTypes.lumber,
   resourceTypes.metal,
-  resourceTypes.farm
+  resourceTypes.wealth
 ];
 
 var tileVegetationTypeFromSteepness = [];
@@ -120,9 +120,9 @@ var buildingDependencies = [,,,,,,,,
     ,
     [[1, tileTypes.residence]],
     [[1, resourceTypes.lumber], [1, tileTypes.factory]],
-    [[10, resourceTypes.farm], [1, tileTypes.mine], [5, tileTypes.road]],
+    [[10, resourceTypes.wealth], [1, tileTypes.mine], [5, tileTypes.road]],
     ,
-    [[1, resourceTypes.metal], [20, resourceTypes.farm], [2, tileTypes.wall]],
+    [[1, resourceTypes.metal], [20, resourceTypes.wealth], [2, tileTypes.wall]],
     ,
     [[1, tileTypes.gunsmith], [1, resourceTypes.metal]]
 ];
@@ -508,7 +508,7 @@ Terrain.prototype = {
 
   // Given a building (see tileTypes) and a tile = {q, r},
   // check whether the building can be built there.
-  // resources = {lumber, usedLumber, metal, usedMetal, farm, usedFarm}
+  // resources = {lumber, usedLumber, metal, usedMetal, wealth, usedWealth}
   // is the resources available for use in the current camp.
   validConstruction: function validConstruction(building, tile, resources) {
     if (building == null) { return true; }   // Destruction is always valid.
@@ -516,7 +516,7 @@ Terrain.prototype = {
     var tileInfo = this.tile(tile);
     var spareLumber = resources.lumber - resources.usedLumber;
     var spareMetal = resources.metal - resources.usedMetal;
-    var spareFarm = resources.farm - resources.usedFarm;
+    var spareFarm = resources.wealth - resources.usedWealth;
     if (!humanityTile || humanityTile.h <= 0) { return false; }
     // Requirements on the current tile.
     if (tileInfo.type === tileTypes.water &&
@@ -558,7 +558,7 @@ Terrain.prototype = {
             } else if (requiredDependencies[j][1] === resourceTypes.metal
                 && spareMetal < requiredDependencies[j][0]) {
               return false;
-            } else if (requiredDependencies[j][1] === resourceTypes.farm
+            } else if (requiredDependencies[j][1] === resourceTypes.wealth
                 && spareFarm < requiredDependencies[j][0]) {
               return false;
             }

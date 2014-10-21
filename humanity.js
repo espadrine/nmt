@@ -495,11 +495,10 @@ function Camp(id, humanity) {
   this.populationCap = 0;   // Max. number of people, based on number of houses.
   this.population = 0;      // Number of people.
   this.populationLimit = universityPopulationLimit;
-  this.farm = {};           // Maps from tileKey to number of homes.
-  this.residence = {};
+  this.residence = {};      // Maps from tileKey to number of homes.
   this.skyscraper = {};
-  this.farm = 0;
-  this.usedFarm = 0;        // Never decreases.
+  this.wealth = 0;
+  this.usedWealth = 0;        // Never decreases.
   this.lumber = 1;          // Number of lumber spots occupied.
   this.usedLumber = 0;      // Never decreases.
   this.metal = 0;           // Number of lumber spots occupied.
@@ -513,11 +512,10 @@ Camp.prototype = {
   populationCap: 0,   // Max. number of people, based on number of houses.
   population: 0,      // Number of people.
   populationLimit: universityPopulationLimit,
-  farm: {},           // Maps from tileKey to number of homes.
-  residence: {},
+  residence: {},      // Maps from tileKey to number of homes.
   skyscraper: {},
-  farm: 0,
-  usedFarm: 0,        // Never decreases.
+  wealth: 0,
+  usedWealth: 0,      // Never decreases.
   lumber: 1,          // Number of lumber spots occupied.
   usedLumber: 0,      // Never decreases.
   metal: 0,           // Number of lumber spots occupied.
@@ -536,7 +534,7 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.skyscraper) {
       delete this.skyscraper[tileKey];
     } else if (b === this.terrain.tileTypes.farm) {
-      this.farm--;
+      this.wealth--;
     } else if (b === this.terrain.tileTypes.lumber) {
       this.lumber--;
       if (this.terrain.tile(this.terrain.tileFromKey(tileKey)).type
@@ -561,7 +559,7 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.skyscraper) {
       this.skyscraper[tileKey] = homes;
     } else if (b === this.terrain.tileTypes.farm) {
-      this.farm++;
+      this.wealth++;
     } else if (b === this.terrain.tileTypes.lumber) {
       this.lumber++;
       if (this.terrain.tile(this.terrain.tileFromKey(tileKey)).type
@@ -577,8 +575,8 @@ Camp.prototype = {
   },
   get resources () {
     return {
-      farm: this.farm,
-      usedFarm: this.usedFarm,
+      wealth: this.wealth,
+      usedWealth: this.usedWealth,
       lumber: this.lumber,
       usedLumber: this.usedLumber,
       metal: this.metal,
@@ -588,13 +586,13 @@ Camp.prototype = {
   },
   get usedResources () {
     return {
-      usedFarm: this.usedFarm,
+      usedWealth: this.usedWealth,
       usedLumber: this.usedLumber,
       usedMetal: this.usedMetal,
       acquiredUniversitiesMap: this.acquiredUniversitiesMap,
     };
   },
-  get leftFarm () { return this.farm - this.usedFarm; },
+  get leftFarm () { return this.wealth - this.usedWealth; },
   get leftLumber () { return this.lumber - this.usedLumber; },
   get leftMetal () { return this.metal - this.usedMetal; },
   // Number of universities won from enemies.
