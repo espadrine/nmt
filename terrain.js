@@ -169,14 +169,21 @@ Terrain.prototype = {
 
   // Returns true if it is part of the continent.
   continent: function continent(x, y) {
-    var size = 1700;
-    var hm = heatmap(x, y, simplex1, 4/5*size, 8);
+    var size = 2500;
+    var hm = heatmap(x, y, simplex1, 3/5*size, 8);
     var center = this.centerPoint;
+    var squareDistanceFromCenter = (x - center.x) * (x - center.x)
+                                 + (y - center.y) * (y - center.y);
+    var innerSize = 300;
     hm = (hm + 1) / 2;
-    hm = hm * Math.exp((-(x - center.x) * (x - center.x)
-                        -(y - center.y) * (y - center.y)) / (size * size));
+    hm = hm * Math.exp(-squareDistanceFromCenter / (size * size))
+      // Keep the center above ocean level.
+      + hm * Math.exp(-squareDistanceFromCenter / (innerSize * innerSize));
+    hm = Math.min(1, hm);
     return hm;
   },
+
+  continentLimit: 0.42,
 
   // Get information about the tile at hexagonal coordinates `coord` {q, r}.
   // Returns
@@ -215,15 +222,24 @@ Terrain.prototype = {
         + 1/8 * simplex2.noise2D(8*x/factor, 8*y/factor)
         + 1/16 * simplex2.noise2D(16*x/factor, 16*y/factor);
     var height = heightNoise - riverNoise;
-    var continentLimit = 0.33;
     var continentNoise = this.continent(x, y);
-    if (continentNoise > continentLimit) {
+
+    if (continentNoise > this.continentLimit) {
+      var seaHeight = -1.3, seaHeightX;
       var steepness = (
       // Rivers are thinner in mountains.
       (((heightNoise > 0.6)? false: (riverNoise > 0.98))
       // Seas are smaller in mountains.
       || seaNoise*3/4 + heightNoise/4 < -0.7) ?
-          (height = ((continentNoise - 2) + seaNoise / 8 - 1.5) / 2,
+          // Inverse of oceanHeight.
+          // sea height = X * 1 + Y
+          // limit height = X * continentLimit + Y
+          // => X = sea height - Y
+          //    limit height = X * continentLimit + sea height - X
+          // => limit height = X * (continentLimit - 1) + sea height
+          // => X = (limit height - sea height) / (continentLimit - 1)
+          (seaHeightX = (-1.5 - seaHeight) / (this.continentLimit - 1),
+           height = (continentNoise * seaHeightX) + seaHeight - seaHeightX,
            tileTypes.water):
       (vegetationNoise < -1.0)?
           tileTypes.hill:
@@ -241,8 +257,9 @@ Terrain.prototype = {
       var steepness = tileTypes.water;
       var vegetation = false;
       // When continentNoise is at maximum (continentLimit),
-      // height must be at -1.5 (continentLimit - 1.5).
-      height = ((continentNoise - 2) + seaNoise / 8 - 1.5) / 2;
+      // height must be at -1.5 (-continentLimit - 1.5).
+      var oceanHeight = continentNoise - 1.92;
+      height = oceanHeight;
     }
 
     var tile = {
