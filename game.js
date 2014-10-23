@@ -187,7 +187,10 @@ function applyPlan(plan) {
       }
       // If it is a university, we acquired it.
       if (humanityTo.b === terrain.tileTypes.university) {
-        currentCamp.acquiredUniversitiesMap[plan.to] = true;
+        var universityConquests = currentCamp.acquiredUniversitiesMap[plan.to];
+        universityConquests = universityConquests || 0;
+        universityConquests++;
+        currentCamp.acquiredUniversitiesMap[plan.to] = universityConquests;
       }
     } else {
       // Joining forces.

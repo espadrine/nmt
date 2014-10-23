@@ -498,12 +498,14 @@ function Camp(id, humanity) {
   this.residence = {};      // Maps from tileKey to number of homes.
   this.skyscraper = {};
   this.wealth = 0;
-  this.usedWealth = 0;        // Never decreases.
+  this.usedWealth = 0;      // Never decreases.
   this.lumber = 1;          // Number of lumber spots occupied.
   this.usedLumber = 0;      // Never decreases.
-  this.metal = 0;           // Number of lumber spots occupied.
+  this.metal = 0;           // Number of mines occupied.
   this.usedMetal = 0;       // Never decreases.
-  this.acquiredUniversitiesMap = {};// From tileKey to truthy value.
+  this.health = 1;
+  this.usedHealth = 0;      // Never decreases.
+  this.acquiredUniversitiesMap = {};// From tileKey to number of conquests.
   this.spawn = { q:0, r:0 };// Starting spot.
   this.nActions = 0;        // Number of actions.
 }
@@ -520,7 +522,9 @@ Camp.prototype = {
   usedLumber: 0,      // Never decreases.
   metal: 0,           // Number of lumber spots occupied.
   usedMetal: 0,       // Never decreases.
-  acquiredUniversitiesMap: {},// From tileKey to truthy value.
+  health: 1,
+  usedHealth: 0,      // Never decreases.
+  acquiredUniversitiesMap: {},// From tileKey to number of conquests.
   spawn: { q:0, r:0 },// Starting spot.
   nActions: 0,        // Number of actions.
 
@@ -546,6 +550,7 @@ Camp.prototype = {
       this.metal--;
     } else if (b === this.terrain.tileTypes.university) {
       this.populationLimit -= universityPopulationLimit;
+      this.health -= this.acquiredUniversitiesMap[tileKey] - 1;
     }
   },
   winHomes: function winHomes(tileKey, b) {
@@ -571,6 +576,10 @@ Camp.prototype = {
       this.metal++;
     } else if (b === this.terrain.tileTypes.university) {
       this.populationLimit += universityPopulationLimit;
+      if (!this.acquiredUniversitiesMap[tileKey]) {
+        this.acquiredUniversitiesMap[tileKey] = 1;
+      }
+      this.health += this.acquiredUniversitiesMap[tileKey];
     }
   },
   get resources () {
@@ -581,6 +590,8 @@ Camp.prototype = {
       usedLumber: this.usedLumber,
       metal: this.metal,
       usedMetal: this.usedMetal,
+      health: this.health,
+      usedHealth: this.usedHealth,
       acquiredUniversitiesMap: this.acquiredUniversitiesMap,
     };
   },
@@ -589,12 +600,14 @@ Camp.prototype = {
       usedWealth: this.usedWealth,
       usedLumber: this.usedLumber,
       usedMetal: this.usedMetal,
+      usedHealth: this.usedHealth,
       acquiredUniversitiesMap: this.acquiredUniversitiesMap,
     };
   },
   get leftFarm () { return this.wealth - this.usedWealth; },
   get leftLumber () { return this.lumber - this.usedLumber; },
   get leftMetal () { return this.metal - this.usedMetal; },
+  get leftHealth () { return this.health - this.usedHealth; },
   // Number of universities won from enemies.
   get acquiredUniversities () {
     return Object.keys(this.acquiredUniversitiesMap).length;

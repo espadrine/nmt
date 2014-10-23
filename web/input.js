@@ -179,7 +179,7 @@ var resourceFromName = {
   Wealth:   campResourceWealth,
   Wood:     campResourceWood,
   Metal:    campResourceMetal,
-  Univ:     campResourceUniv
+  Health:   campResourceHealth
 };
 function setResourcesTable() {
   // Make the header.
@@ -190,7 +190,7 @@ function setResourcesTable() {
   header = '<tr>' + header + '</tr>';
   // Make the body.
   var content = '';
-  ['Folks', 'Wealth', 'Wood', 'Metal', 'Univ'].forEach(function(resourceName) {
+  ['Folks', 'Wealth', 'Wood', 'Metal', 'Health'].forEach(function(resourceName) {
     var row = '';
     row += '<th>' + resourceName + '</th>';
     for (var i = 0; i < numberOfCamps; i++) {
@@ -287,9 +287,8 @@ function campResourceWood(c) {
   var r = campResources[c]; return r.lumber - r.usedLumber; }
 function campResourceMetal(c) {
   var r = campResources[c]; return r.metal - r.usedMetal; }
-function campResourceUniv(c) {
-  var r = campResources[c];
-  return Object.keys(r.acquiredUniversitiesMap).length; }
+function campResourceHealth(c) {
+  var r = campResources[c]; return r.health - r.usedHealth; }
 
 var humanity = {
   // Takes a tile = {q, r}, returns the humanity information for that tile.
