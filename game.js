@@ -91,7 +91,7 @@ function judgePlan(playerId, plan, cheatMode, cb) {
       if ((typeof plan.to === 'string') && (typeof plan.h === 'number')
        && plan.do === terrain.planTypes.move
        && (travelPath =
-          terrain.humanTravelPath(terrainTile,
+          terrain.humanTravelSpeedPath(terrainTile,
                          terrain.tileFromKey(plan.to))).length > 1
        && (plan.h > 0 || plan.h <= humanityTile.h)) {
         // Is the move valid?

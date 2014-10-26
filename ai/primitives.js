@@ -368,7 +368,7 @@ function inaccessibleForManufactureBuilding(b, terrainTile, humanityTile) {
 // through as tiles "q:r", or null if it failed.
 function trajectory(from, to, human, maxTiles) {
   maxTiles = maxTiles || 100000;  // 100 thousand tiles.
-  var travel = terrain.humanTravelTo(from, to, maxTiles, human);
+  var travel = terrain.humanTravelTo(from, to, false, maxTiles, human);
   if (travel == null) { return travel; }
   // Cut the path in walkable parts.
   var steps = [];

@@ -392,7 +392,8 @@ Terrain.prototype = {
   // - parents: map from "q:r" tiles to the "q:r" tile you would walk from
   //   to get there.
   // - costs: map from "q:r" tiles to the speed cost to get there.
-  travelTo: function travelTo(tstart, tend, speed, maxTiles, human) {
+  travelTo: function travelTo(tstart, tend, speed,
+                              limitToSpeed, maxTiles, human) {
     // Optional parameters.
     if (maxTiles == null) { maxTiles = MAX_INT; }
     if (human == null) { human = this.humanity.tile(tstart); }
@@ -426,6 +427,7 @@ Terrain.prototype = {
         else { maxTiles--; }
         // Here, we can go there.
         var newDistance = consideredTiles[current] + distanceCost;
+        if (!!limitToSpeed && speed < newDistance) { continue; }
         var neighborKey = this.keyFromTile(neighbor);
         if (consideredTiles[neighborKey] !== undefined &&
             newDistance < consideredTiles[neighborKey]) {
@@ -502,17 +504,24 @@ Terrain.prototype = {
     return tiles;
   },
 
-  humanTravelTo: function humanTravelTo(tpos, tend, maxTiles, h) {
+  humanTravelTo: function humanTravelTo(tpos, tend, limitToSpeed, maxTiles, h) {
     if (h == null) { h = this.humanity.tile(tpos); }
     if (!h || h.h <= 0) { return null; }
     this.setDistancesForHuman(h);
-    var tiles = this.travelTo(tpos, tend, this.speedFromHuman(h), maxTiles, h);
+    var tiles = this.travelTo(tpos, tend, this.speedFromHuman(h),
+        limitToSpeed, maxTiles, h);
     this.unsetDistancesForHuman(h);
     return tiles;
   },
 
   humanTravelPath: function humanTravelPath(tpos, tend) {
     var travel = this.humanTravelTo(tpos, tend);
+    if (travel == null) { return []; }
+    return this.pathFromParents(travel.endKey, travel.parents);
+  },
+
+  humanTravelSpeedPath: function humanTravelPath(tpos, tend) {
+    var travel = this.humanTravelTo(tpos, tend, true);
     if (travel == null) { return []; }
     return this.pathFromParents(travel.endKey, travel.parents);
   },

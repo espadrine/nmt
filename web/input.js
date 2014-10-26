@@ -1372,7 +1372,7 @@ function paintIntermediateUI(gs) {
   // Paint the path that folks will take.
   for (var keyTo in registerMoves) {
     var to = terrain.tileFromKey(keyTo);
-    paintAlongTiles(gs, terrain.humanTravelPath(registerMoves[keyTo], to));
+    paintAlongTiles(gs, terrain.humanTravelSpeedPath(registerMoves[keyTo], to));
   }
   for (var keyAt in registerBuilds) {
     var at = terrain.tileFromKey(keyAt);
@@ -2242,7 +2242,7 @@ function mouseSelection(event) {
     }
     // Send travel information.
     var startTile = posTile;
-    if (terrain.humanTravelPath(currentTile, startTile).length > 1
+    if (terrain.humanTravelSpeedPath(currentTile, startTile).length > 1
         && humanityTile.c === playerCamp) {
       if (humanityTile.f <= 0) {
         var starveMessage = {};
