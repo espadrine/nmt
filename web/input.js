@@ -2240,18 +2240,39 @@ function mouseSelection(event) {
     if (selectionMode === selectionModes.split) {
       numberOfPeople = (numberOfPeople * splitInputWidget.value / 100)|0;
     }
+
     // Send travel information.
-    var startTile = posTile;
-    if (terrain.humanTravelSpeedPath(currentTile, startTile).length > 1
+    var targetTile = posTile;
+    if (terrain.humanTravelSpeedPath(currentTile, targetTile).length > 1
         && humanityTile.c === playerCamp) {
       if (humanityTile.f <= 0) {
         var starveMessage = {};
         starveMessage[terrain.keyFromTile(currentTile)] = humanityTile;
         addStarveMessages(starveMessage);
       }
-      sendMove(currentTile, startTile, numberOfPeople);
+      sendMove(currentTile, targetTile, numberOfPeople);
+
+    } else if (numberOfPeople > 0) {
+      // Try to go as far in that direction as we can.
+      var minDist = MAX_INT;
+      var closestTargetTile;
+      for (var tileKey in accessibleTiles) {
+        var accessedTile = terrain.tileFromKey(tileKey);
+        var dist = terrain.distanceBetweenTiles(accessedTile, targetTile);
+        if (dist < minDist) {
+          closestTargetTile = accessedTile;
+          minDist = dist;
+        }
+      }
+      if (closestTargetTile != null) {
+        sendMove(currentTile, closestTargetTile, numberOfPeople);
+        // Put the cursor there instead of where we clicked.
+        posTile = closestTargetTile;
+      }
     }
+
     enterMode(selectionModes.normal);
+
   } else { sendPos(currentTile, posTile); }
 
   // Move there.

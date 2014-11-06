@@ -283,6 +283,14 @@ Terrain.prototype = {
     return d;
   },
 
+  // a and b are tiles = {q,r}.
+  distanceBetweenTiles: function distanceBetweenTiles(a, b) {
+    return (Math.abs(a.q - b.q) +
+            Math.abs(a.r - b.r) +
+            Math.abs(a.q + a.r - b.q - b.r)) / 2;
+  },
+
+
   // Find a neighboring tile.
   // `tile` is {q, r}.
   // `orientation` is 0 for right, 1 for top right, and
