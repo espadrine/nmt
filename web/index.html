@@ -4,7 +4,14 @@
 <!-- FIXME: insert payment system. -->
 
 <div id=controller>
-  <svg id=travelBut title='Travel &nbsp; t⃞' version='1.1'>
+  <svg id=settingsBut title='Settings' version='1.1'>
+    <path class='hex' d='M 42.3 35 l -17.3 10 l -17.3 -10' />
+    <rect style='display:none' x='7.7' y='35' width='34.6' height='1' />
+    <path class='hex' d='M 7.7 35 v -20 l 17.3 -10 l 17.3 10 v 20' />
+    <path class='gum' d='M 17.5 18.5 a 10 10 0 0 0 13 15 l -9 -6 l 4 -3 z' />
+    <path class='gum' d='M 19.5 16.5 a 10 10 0 0 1 13 15 l -6 -4 l 3 -3 z' />
+  </svg>
+  <svg id=travelBut title='Travel &nbsp; t⃞  f⃞' version='1.1'>
     <path class='hex' d='M 42.3 35 l -17.3 10 l -17.3 -10' />
     <rect style='display:none' x='7.7' y='35' width='34.6' height='1' />
     <path class='hex' d='M 7.7 35 v -20 l 17.3 -10 l 17.3 10 v 20' />
@@ -24,13 +31,6 @@
     <path class='dust' d='M 27 16.5 l 1 3' />
     <path class='dust' d='M 13 29.3 h 2' />
   </svg>
-  <svg id=splitBut title='Fork group &nbsp; f⃞' version='1.1'>
-    <path class='hex' d='M 42.3 35 l -17.3 10 l -17.3 -10' />
-    <rect style='display:none' x='7.7' y='35' width='34.6' height='1' />
-    <path class='hex' d='M 7.7 35 v -20 l 17.3 -10 l 17.3 10 v 20' />
-    <path class='gum' d='M 17.5 18.5 a 10 10 0 0 0 13 15 l -9 -6 l 4 -3 z' />
-    <path class='gum' d='M 19.5 16.5 a 10 10 0 0 1 13 15 l -6 -4 l 3 -3 z' />
-  </svg>
   <svg id=placesBut title='Places' version='1.1'>
     <path class='hex' d='M 42.3 35 l -17.3 10 l -17.3 -10' />
     <rect style='display:none' x='7.7' y='35' width='34.6' height='1' />
@@ -39,8 +39,15 @@
     <path class='gum' d='M 22.5 33.5 v -8 h 6 v 8z' />
     <path class='gum' d='M 30 16 l -1 5 l -3 -3 l -1 12 l 3 -6 l 3 3 l 4 -9' />
   </svg>
+  <div class=controlPanel id=settingsPanel>
+    No settings yet, move along.
+  </div>
   <div class=controlPanel id=travelPanel>
-    <p class=help> Select the spot where you want to move.
+    <p> Move <output id=splitPanelPortion>100</output>% of the group.
+    <br> (<output id=splitPanelPortionMove>20</output> move,
+          <output id=splitPanelPortionStay>0</output> stay.)
+    <input id=splitInputWidget type=range value=100><br>
+    Select how many people you want to move, and then click to move.
   </div>
   <div class=controlPanel id=buildPanel>
     <p class=help> What shall we build?
@@ -89,13 +96,6 @@
     <hr class=separator>
     <p class=buildSelection> Arsenal
     <br><span class=buildHelp> 1 metal, 1 gunsmith, on steppes </span>
-  </div>
-  <div class=controlPanel id=splitPanel>
-    <p> Move <output id=splitPanelPortion>50</output>% of the group.
-    <br> (<output id=splitPanelPortionMove>10</output> move,
-          <output id=splitPanelPortionStay>10</output> stay.)
-    <input id=splitInputWidget type=range><br>
-    Select how many people you want to move, and then click to move.
   </div>
   <div class=controlPanel id=placesPanel>
     <p> Cities and Treasures

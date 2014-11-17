@@ -339,7 +339,6 @@ function hideHelp() {
 }
 
 // Some links to help.
-travelPanel.onclick = function() { showHelp('welcome'); };
 buildPanel.firstElementChild.onclick = function() { showHelp('build'); };
 
 
@@ -1363,8 +1362,7 @@ function paintIntermediateUI(gs) {
   paintAroundTiles(gs, accessibleTiles);
   ctx.lineWidth = 1;
   if (currentTile != null && targetTile != null &&
-      (selectionMode === selectionModes.travel ||
-       selectionMode === selectionModes.split)) {
+      (selectionMode === selectionModes.travel)) {
     // Paint the path that the selected folks would take.
     paintAlongTiles(gs, terrain.pathFromParents(
           terrain.keyFromTile(targetTile), accessibleTiles));
@@ -2057,11 +2055,11 @@ function updateCurrentTileInformation() {
 //
 
 var selectionModes = {
-  normal: 1,
-  travel: 2,
-  build:  3,
-  split:  4,
-  places: 5
+  normal:   1,
+  settings: 2,
+  travel:   3,
+  build:    4,
+  places:   5
 };
 var selectionMode = selectionModes.normal;
 
@@ -2081,7 +2079,11 @@ function showPanel(panel, button) {
 function enterMode(newMode) {
   if (selectionMode === newMode) { return; }
   // Remove things from the previous mode.
-  if (selectionMode === selectionModes.travel) {
+  if (selectionMode === selectionModes.settings) {
+    hidePanel(settingsPanel, settingsBut);
+    settingsBut.removeEventListener('click', enterNormalMode);
+    settingsBut.addEventListener('click', enterSettingsMode);
+  } else if (selectionMode === selectionModes.travel) {
     hidePanel(travelPanel, travelBut);
     targetTile = null;
     travelBut.removeEventListener('click', enterNormalMode);
@@ -2090,26 +2092,22 @@ function enterMode(newMode) {
     hidePanel(buildPanel, buildBut);
     buildBut.removeEventListener('click', enterNormalMode);
     buildBut.addEventListener('click', enterBuildMode);
-  } else if (selectionMode === selectionModes.split) {
-    hidePanel(splitPanel, splitBut);
-    splitBut.removeEventListener('click', enterNormalMode);
-    splitBut.addEventListener('click', enterSplitMode);
   } else if (selectionMode === selectionModes.places) {
     hidePanel(placesPanel, placesBut);
     placesBut.removeEventListener('click', enterNormalMode);
     placesBut.addEventListener('click', enterPlacesMode);
   }
   // Add things from the new mode.
-  if (newMode === selectionModes.travel) {
+  if (newMode === selectionModes.settings) {
+    showPanel(settingsPanel, settingsBut);
+    settingsBut.addEventListener('click', enterNormalMode);
+  } else if (newMode === selectionModes.travel) {
+    splitPanelSetMoveStay();
     showPanel(travelPanel, travelBut);
     travelBut.addEventListener('click', enterNormalMode);
   } else if (newMode === selectionModes.build) {
     showPanel(buildPanel, buildBut);
     buildBut.addEventListener('click', enterNormalMode);
-  } else if (newMode === selectionModes.split) {
-    splitPanelSetMoveStay();
-    showPanel(splitPanel, splitBut);
-    splitBut.addEventListener('click', enterNormalMode);
   } else if (newMode === selectionModes.places) {
     orientPlacesArrow();
     showPanel(placesPanel, placesBut);
@@ -2129,13 +2127,13 @@ function enterMode(newMode) {
 // Control buttons.
 
 function enterNormalMode() { enterMode(selectionModes.normal); }
+function enterSettingsMode() { enterMode(selectionModes.settings); }
 function enterTravelMode() { enterMode(selectionModes.travel); }
 function enterBuildMode() { enterMode(selectionModes.build); }
-function enterSplitMode() { enterMode(selectionModes.split); }
 function enterPlacesMode() { enterMode(selectionModes.places); }
 travelBut.addEventListener('click', enterTravelMode);
 buildBut.addEventListener('click', enterBuildMode);
-splitBut.addEventListener('click', enterSplitMode);
+settingsBut.addEventListener('click', enterSettingsMode);
 placesBut.addEventListener('click', enterPlacesMode);
 
 splitInputWidget.addEventListener('input', function changeSplitPortion() {
@@ -2143,11 +2141,20 @@ splitInputWidget.addEventListener('input', function changeSplitPortion() {
   splitPanelSetMoveStay();
 });
 
-// Update the number of people who move and stay in the split panel UI.
+function splitPanelSlider(percent) {
+  splitInputWidget.value = ''+percent;
+  splitPanelPortion.textContent = ''+percent;
+}
+
+// Update the number of people who move and stay in the travel panel UI.
 function splitPanelSetMoveStay() {
   var humanityTile = humanity.tile(currentTile);
-  var move = ((humanityTile.h * splitInputWidget.value / 100)|0);
-  var stay = humanityTile.h - move;
+  var humans = 0;
+  if (humanityTile != null) {
+    humans = humanityTile.h;
+  }
+  var move = ((humans * splitInputWidget.value / 100)|0);
+  var stay = humans - move;
   splitPanelPortionMove.textContent = '' + move;
   splitPanelPortionStay.textContent = '' + stay;
 }
@@ -2200,11 +2207,13 @@ window.onkeydown = function keyInputManagement(event) {
     voidCache = true;
     redraw = true;
   } else if (event.keyCode === 84) {    // T
+    splitPanelSlider(100);
+    enterMode(selectionModes.travel);
+  } else if (event.keyCode === 70) {    // F
+    splitPanelSlider(50);
     enterMode(selectionModes.travel);
   } else if (event.keyCode === 67) {    // C
     enterMode(selectionModes.build);
-  } else if (event.keyCode === 70) {    // F
-    enterMode(selectionModes.split);
   } else if (event.keyCode === 192) {   // `
     sendBuild(currentTile, null);   // Destroy building.
   } else if (event.keyCode === 27) {    // ESC
@@ -2232,14 +2241,11 @@ function mouseSelection(event) {
   var posTile = tileFromPixel({ x: event.clientX, y: event.clientY },
         gs.origin, gs.hexSize);
 
-  if ((selectionMode === selectionModes.travel
-    || selectionMode === selectionModes.split)
+  if ((selectionMode === selectionModes.travel)
     && currentTile !== undefined && humanity.tile(currentTile) !== undefined) {
     var humanityTile = humanity.tile(currentTile);
     var numberOfPeople = humanityTile.h;
-    if (selectionMode === selectionModes.split) {
-      numberOfPeople = (numberOfPeople * splitInputWidget.value / 100)|0;
-    }
+    numberOfPeople = (numberOfPeople * splitInputWidget.value / 100)|0;
 
     // Send travel information.
     var targetTile = posTile;
@@ -2285,9 +2291,7 @@ var mousePosition;
 var targetTile;
 function showPath(event) {
   mousePosition = { x: event.clientX, y: event.clientY };
-  if (currentTile &&
-      (selectionMode === selectionModes.travel ||
-       selectionMode === selectionModes.split)) {
+  if (currentTile && (selectionMode === selectionModes.travel)) {
     targetTile = tileFromPixel(mousePosition, gs.origin, gs.hexSize);
     paint(gs);
     paintHumans(gs, humanityData);
