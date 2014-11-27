@@ -106,16 +106,16 @@ Humanity.prototype = {
       // Changed ownership.
       if (oldCamp && oldTile.b != null) {
         // The old ones lost homes.
-        oldCamp.loseHomes(tileKey, oldTile.b);
+        oldCamp.loseHomes(tileKey, oldTile);
       }
       if (newCamp && newTile.b != null) {
         // The new ones won homes.
-        newCamp.winHomes(tileKey, newTile.b);
+        newCamp.winHomes(tileKey, newTile);
       }
-    } else if (newCamp && oldTile.b !== newTile.b) {
-      // Same ownership, different building.
-      newCamp.loseHomes(tileKey, oldTile.b);
-      newCamp.winHomes(tileKey, newTile.b);
+    } else if (newCamp) {
+      // Same ownership.
+      newCamp.loseHomes(tileKey, oldTile);
+      newCamp.winHomes(tileKey, newTile);
     }
     if (oldCamp) { oldCamp.population -= oldTile.h; }
     if (newCamp) { newCamp.population += newTile.h; }
@@ -483,6 +483,11 @@ Humanity.prototype = {
 };
 
 
+var maxFarmImprovements = 2;
+var maxLumberImprovements = 4;
+var maxIndustryImprovements = 2;
+var maxMineImprovements = 8;
+
 
 // Camps.
 
@@ -528,7 +533,8 @@ Camp.prototype = {
   spawn: { q:0, r:0 },// Starting spot.
   nActions: 0,        // Number of actions.
 
-  loseHomes: function loseHomes(tileKey, b) {
+  loseHomes: function loseHomes(tileKey, oldTile) {
+    var b = oldTile.b;
     this.populationCap -=
       b === this.terrain.tileTypes.residence? homePerHouse.residence:
       b === this.terrain.tileTypes.skyscraper? homePerHouse.skyscraper:
@@ -538,22 +544,25 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.skyscraper) {
       delete this.skyscraper[tileKey];
     } else if (b === this.terrain.tileTypes.farm) {
-      this.wealth--;
+      this.wealth -= 1 + Math.min(oldTile.h, maxFarmImprovements);
     } else if (b === this.terrain.tileTypes.lumber) {
-      this.lumber--;
+      var improvements = 1 + Math.min(oldTile.h, maxLumberImprovements);
+      this.lumber -= improvements;
       if (this.terrain.tile(this.terrain.tileFromKey(tileKey)).type
           === this.terrain.tileTypes.taiga) {
-        this.lumber -= 4;
+        this.lumber -= improvements;
       }
-    } else if (b === this.terrain.tileTypes.mine
-            || b === this.terrain.tileTypes.industry) {
-      this.metal--;
+    } else if (b === this.terrain.tileTypes.mine) {
+      this.metal -= 1 + Math.min(oldTile.h, maxMineImprovements);
+    } else if (b === this.terrain.tileTypes.industry) {
+      this.metal -= 1 + Math.min(oldTile.h, maxIndustryImprovements);
     } else if (b === this.terrain.tileTypes.university) {
       this.populationLimit -= universityPopulationLimit;
       this.health -= this.acquiredUniversitiesMap[tileKey] - 1;
     }
   },
-  winHomes: function winHomes(tileKey, b) {
+  winHomes: function winHomes(tileKey, newTile) {
+    var b = newTile.b;
     var homes =
       b === this.terrain.tileTypes.residence? homePerHouse.residence:
       b === this.terrain.tileTypes.skyscraper? homePerHouse.skyscraper:
@@ -564,16 +573,18 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.skyscraper) {
       this.skyscraper[tileKey] = homes;
     } else if (b === this.terrain.tileTypes.farm) {
-      this.wealth++;
+      this.wealth += 1 + Math.min(newTile.h, maxFarmImprovements);
     } else if (b === this.terrain.tileTypes.lumber) {
-      this.lumber++;
+      var improvements = 1 + Math.min(newTile.h, maxLumberImprovements);
+      this.lumber += improvements;
       if (this.terrain.tile(this.terrain.tileFromKey(tileKey)).type
           === this.terrain.tileTypes.taiga) {
-        this.lumber += 4;
+        this.lumber += improvements;
       }
-    } else if (b === this.terrain.tileTypes.mine
-            || b === this.terrain.tileTypes.industry) {
-      this.metal++;
+    } else if (b === this.terrain.tileTypes.mine) {
+      this.metal += 1 + Math.min(newTile.h, maxMineImprovements);
+    } else if (b === this.terrain.tileTypes.industry) {
+      this.metal += 1 + Math.min(newTile.h, maxIndustryImprovements);
     } else if (b === this.terrain.tileTypes.university) {
       this.populationLimit += universityPopulationLimit;
       if (!this.acquiredUniversitiesMap[tileKey]) {
