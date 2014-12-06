@@ -31,16 +31,27 @@ function letterBasedName() {
 
 var words = ['back', 'bag', 'baker', 'bad', 'bar', 'bat', 'bath', 'beau', 'bec', 'bel', 'ben', 'bin', 'bir', 'black', 'boro', 'bos', 'brad', 'bridge', 'berg', 'burg', 'burn', 'camp', 'carol', 'casa', 'castle', 'cent', 'cester', 'char', 'cław', 'dam', 'dart', 'day', 'fast', 'field', 'ford', 'for', 'fré', 'gate', 'gham', 'grad', 'ham', 'hart', 'head', 'hiro', 'ita', 'jala', 'jiao', 'kan', 'king', 'land', 'las', 'lei', 'lings', 'long', 'mara', 'may', 'milli', 'mont', 'more', 'mouth', 'naga', 'new', 'novo', 'nurem', 'pan', 'pez', 'pit', 'pool', 'port', 'ports', 'pur', 'qing', 'que', 'rack', 'rest', 'richt', 'roch', 'salem', 'san', 'son', 'shiro', 'shima', 'shore', 'smith', 'sor', 'stock', 'tai', 'tela', 'tiago', 'tla', 'to', 'ton', 'vais', 'val', 'viva', 'water', 'wood', 'wor', 'win', 'wind', 'xia', 'yi', 'yoko', 'zaki', 'zao', 'zen'];
 
-function wordBasedName() {
-  var name = pick(words) + pick(words);
-  name = String.fromCharCode(name.charCodeAt(0) - 32)
+function capitalize(name) {
+  return String.fromCharCode(name.charCodeAt(0) - 32)
        + name.slice(1);
-  return name;
 }
 
+function wordBasedName() {
+  var name = pick(words) + pick(words);
+  return capitalize(name);
+}
 
-function genName() {
-  return wordBasedName();
+// Approach using random metals.
+var metals = ['copper', 'aluminium', 'iron', 'tin', 'lead', 'silver', 'chromium', 'lithium', 'sodium', 'magnesium', 'potassium', 'calcium', 'titanium', 'manganese', 'nickel', 'zinc', 'tungsten', 'mercury', 'phosphorus', 'sulfur', 'fluorine', 'selenium'];
+
+function genName(name) {
+  if (name === 'Mine') {
+    return capitalize(pick(metals)) + ' ' + name;
+  } else if (name != null) {
+    return wordBasedName() + ' ' + name;
+  } else {
+    return wordBasedName();
+  }
 }
 
 module.exports = genName;

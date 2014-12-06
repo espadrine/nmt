@@ -276,7 +276,7 @@ Humanity.prototype = {
     settlements[pos].b = type;
     updatedHumanity[pos] = this.copy(settlements[pos]);
     this.places[pos] = this.places[oldpos];
-    this.places[oldpos] = genName() + ' ' + name;
+    this.places[oldpos] = genName(name);
     this.change(settlements);
   },
 
