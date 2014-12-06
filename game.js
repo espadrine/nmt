@@ -116,11 +116,30 @@ var surrenderTiles = [];
 // Map from "q:r" of sender to "q:r" of receiver.
 var artilleryFire = {};
 
+var humanCampTimeoutLimit = 5000;  // 5 minutes
+var humanCampTimeout = [];
+var campIdIsPlayedByHuman = [];  // Falsy: played by AI.
+// Set camps as played by AI automatically.
+function campPlayedByHuman(camp) {
+  campIdIsPlayedByHuman[camp.id] = true;
+  clearTimeout(humanCampTimeout[camp.id]);
+  humanCampTimeout[camp.id] =
+    setTimeout(campPlayedByAi, humanCampTimeoutLimit, camp);
+}
+function campPlayedByAi(camp) {
+  campIdIsPlayedByHuman[camp.id] = false;
+}
+function campIsPlayedByHuman(camp) {
+  return campIdIsPlayedByHuman[camp.id];
+}
+
 function applyPlan(plan) {
   var tileFrom = terrain.tileFromKey(plan.at);
   var humanityFrom = humanity.copy(humanity.tile(tileFrom));
   var currentCamp = humanity.campFromId(humanityFrom.c);
   currentCamp.nActions++;
+  if (!plan.ai) { campPlayedByHuman(currentCamp); }
+
   if (plan.do === terrain.planTypes.move) {
     //console.log('Plan: moving people from', plan.at, 'to', plan.to);
     var tileTo = terrain.tileFromKey(plan.to);
@@ -472,7 +491,10 @@ function gameTurn() {
 function runAi() {
   //ai.runCamp(humanity.campFromId(0));
   for (var i = 0; i < humanity.numberOfCamps; i++) {
-    ai.runCamp(humanity.campFromId(i));
+    var camp = humanity.campFromId(i);
+    if (!campIsPlayedByHuman(camp)) {
+      ai.runCamp(camp);
+    }
   }
 }
 
