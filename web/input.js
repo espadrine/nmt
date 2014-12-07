@@ -68,9 +68,7 @@ function socketMessage(e) {
     if (change.centerTile !== undefined) {
       // Set the places.
       terrain.setCenterTile(change.centerTile);
-      for (var i = 0; i < workerPool.length; i++) {
-        workerPool[i].postMessage({centerTile: terrain.centerTile});
-      }
+      sendCenterTile(change.centerTile);
       delete change.centerTile;
     }
     if (change.places !== undefined) {
@@ -143,6 +141,13 @@ function sendBuild(at, building) {
     }));
   } else { connectSocket(function(){sendBuild(at, building);}); }
 }
+
+// Send the center tile to workers, etc.
+var sendCenterTile = function(centerTile) {
+  for (var i = 0; i < workerPool.length; i++) {
+    workerPool[i].postMessage({centerTile: centerTile});
+  }
+};
 
 // List of camp names, indexed by the camp ID.
 var campNames;
