@@ -157,3 +157,25 @@ iframe#helpPane {
 .Wood { color: #ea0; }
 .Metal { color: #99f; }
 .Health { color: #e5f; }
+
+.exclusion-box {
+  display: table;
+  border-radius: 5px;
+  margin: auto;
+}
+.exclusion-but { display: table-cell; }
+.exclusion-but > input { display: none; }
+.exclusion-but > label {
+  padding: 10px;
+  cursor: pointer;
+  box-shadow: 0 0 5px #4B1653;
+  transition: 0.3s box-shadow;
+}
+.exclusion-but > label:hover {
+  box-shadow: 0 0 5px #4B1653 inset, 0 0 5px #4B1653;
+}
+.exclusion-but > label:active,
+.exclusion-but > input:focus + label,
+.exclusion-but > input:checked + label {
+  box-shadow: 0 0 35px #4B1653 inset;
+}

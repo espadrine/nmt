@@ -48,6 +48,16 @@
           <output id=splitPanelPortionStay>0</output> stay.)
     <input id=splitInputWidget type=range value=100><br>
     Select how many people you want to move, and then click to move.
+    <form class=exclusion-box>
+      <div class=exclusion-but>
+        <input type=radio name=lay id=layRoadBox checked>
+        <label for=layRoadBox unselectable> Lay roads </label>
+      </div>
+      <div class=exclusion-but>
+        <input type=radio name=lay id=layWallsBox>
+        <label for=layWallsBox unselectable> Erect walls </label>
+      </div>
+    </form>
   </div>
   <div class=controlPanel id=buildPanel>
     <p class=help> What shall we build?

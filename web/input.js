@@ -113,11 +113,14 @@ function sendMove(from, to, humans) {
   registerMoves[keyTo] = from;
   if (socket.readyState === 1) {
     var keyFrom = terrain.keyFromTile(from);
+    var layType = layRoadBox.checked? terrain.tileTypes.road:
+      terrain.tileTypes.wall;
     socket.send(JSON.stringify({
       at: keyFrom,
       do: planTypes.move,
       to: keyTo,
-      h: humans
+      h: humans,
+      lay: layType
     }));
   } else { connectSocket(function(){sendMove(from, to, humans);}); }
 }
@@ -2410,4 +2413,3 @@ function inertiaDragMap() {
     }
   });
 }
-

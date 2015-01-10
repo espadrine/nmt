@@ -228,9 +228,9 @@ function applyPlan(plan) {
     // Ownership is the intersection of what each group owns.
     if (!emptyTarget) { humanityTo.o &= humanityFrom.o; }
     else { humanityTo.o = humanityFrom.o; }
-    // Build roads.
-    if (plan.travelPath != null) {
-      buildRoads(plan.travelPath, updatedHumanity, humanityFrom, terrainTileTo);
+    // Lay roads or walls.
+    if (plan.travelPath != null && plan.lay != null) {
+      lay(plan.lay, plan.travelPath, updatedHumanity, humanityFrom, terrainTileTo);
     }
 
     // Collecting from the land.
@@ -302,13 +302,13 @@ function applyPlan(plan) {
 // Mutates `updatedHumanity`.
 // If `terrainTileTo` (output of `terrain.tile()`) is water,
 // don't build the road.
-function buildRoads(travelPath, updatedHumanity, humanityFrom, terrainTileTo) {
+function lay(type, travelPath, updatedHumanity, humanityFrom, terrainTileTo) {
   var terrainTileFrom = terrain.tile(travelPath[0]);
   // Don't build roads over water.
   if (terrainTileFrom.type === terrain.tileTypes.water
    && terrainTileTo.type === terrain.tileTypes.water) { return; }
   if (humanityFrom.b == null) {
-    humanityFrom.b = terrain.tileTypes.road;
+    humanityFrom.b = type;
   }
   for (var i = 0; i < travelPath.length; i++) {
     var tileKey = travelPath[i];
@@ -316,7 +316,7 @@ function buildRoads(travelPath, updatedHumanity, humanityFrom, terrainTileTo) {
     var humanityTile = humanity.tile(tile);
     if (humanityTile == null || humanityTile.b == null) {
       var newHumanityTile = humanity.copy(humanityTile);
-      newHumanityTile.b = terrain.tileTypes.road;
+      newHumanityTile.b = type;
       updatedHumanity[tileKey] = newHumanityTile;
     }
   }
