@@ -370,28 +370,32 @@ function trajectory(from, to, human, maxTiles) {
   maxTiles = maxTiles || 100000;  // 100 thousand tiles.
   var travel = terrain.humanTravelTo(from, to, false, maxTiles, human);
   if (travel == null) { return travel; }
+  // Reverse the travel to go from start to end.
+  var path = [];
+  var parents = travel.parents;
+  var tileKey = travel.endKey;
+  path.push(tileKey);
+  while (parents[tileKey] !== null) {
+    tileKey = parents[tileKey];
+    path.push(tileKey);
+  }
+  path.reverse();
   // Cut the path in walkable parts.
   var steps = [];
-  var endKey = travel.endKey;
-  var parents = travel.parents;
+  tileKey = path[0];
   var costs = travel.costs;
   var humanSpeed = terrain.speedFromHuman(human);
   var speed = humanSpeed;
-  steps.push(endKey);
-  while (parents[endKey] !== null) {
-    var delta = costs[endKey] - costs[parents[endKey]];
-    speed -= delta;
-    endKey = parents[endKey];
+  steps.push(tileKey);
+  for (var i = 0; i < path.length; i++) {
+    tileKey = path[i];
+    speed -= costs[tileKey];
     if (speed <= 0) {
       speed = humanSpeed;
-      steps.push(endKey);
+      steps.push(tileKey);
     }
   }
-  // If the first jump does nothing, ignore it.
-  if (steps[steps.length - 1] !== endKey) {
-    steps.push(endKey);
-  }
-  return steps.reverse();
+  return steps;
 }
 
 

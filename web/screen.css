@@ -24,9 +24,9 @@ output#info {
 div#controller { position: absolute; z-index: 1; }
 div#controller > svg { width: 50px; height: 50px; float: left; }
 div#controller > svg > path { cursor: pointer; }
-path.hex { stroke: white; stroke-width: 1.8px; }
-path.gum { stroke: white; stroke-width: 1.5px; }
-path.dust { stroke: #aaa; }
+.hex { stroke: white; stroke-width: 1.8px; }
+.gum { stroke: white; stroke-width: 1.5px; }
+.dust { stroke: #aaa; }
 div.controlPanel {
   display: none;
   border: 2px solid white;
