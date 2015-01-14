@@ -1367,7 +1367,9 @@ function paintIntermediateUI(gs) {
   paintCamps(gs);
   // Paint the set of accessible tiles.
   ctx.lineWidth = 1.5;
+  ctx.setLineDash([2, 7]);
   paintAroundTiles(gs, accessibleTiles);
+  ctx.setLineDash([]);
   ctx.lineWidth = 1;
   if (currentTile != null && targetTile != null &&
       (selectionMode === selectionModes.travel)) {
@@ -2024,8 +2026,9 @@ function showTileInformation(tile) {
 var buildSelectionButtons = document.querySelectorAll('p.buildSelection');
 function indicateValidConstructions(currentTile) {
   var valid;
-  for (var i = 0; i < buildingTypes.length; i++) {
-    if (terrain.validConstruction(buildingTypes[i], currentTile, resources)) {
+  for (var i = 0; i < buildSelectionButtons.length; i++) {
+    var b = +buildSelectionButtons[i].dataset.b;
+    if (terrain.validConstruction(b, currentTile, resources)) {
       buildSelectionButtons[i].classList.add('validSelection');
     } else {
       buildSelectionButtons[i].classList.remove('validSelection');
@@ -2033,12 +2036,12 @@ function indicateValidConstructions(currentTile) {
   }
 }
 function hookBuildSelectionButtons() {
-  for (var i = 0; i < buildingTypes.length; i++) {
+  for (var i = 0; i < buildSelectionButtons.length; i++) {
     var hook = (function(b) { return function hookBuildSelectionButton() {
         sendBuild(currentTile, b);
         enterMode(selectionModes.normal);
       };
-    }(buildingTypes[i]));
+    }(+buildSelectionButtons[i].dataset.b));
     buildSelectionButtons[i].addEventListener('click', hook);
   }
 }
@@ -2172,8 +2175,8 @@ function splitPanelSetMoveStay() {
 
 var buildHotKeys = {
   48: tileTypes.airport,    // "0"
-  49: tileTypes.wall,       // "1"
-  50: tileTypes.road,       // "2"
+//  49: tileTypes.wall,       // "1"
+//  50: tileTypes.road,       // "2"
   51: tileTypes.farm,       // "3"
   52: tileTypes.residence,  // "4"
   53: tileTypes.skyscraper, // "5"
