@@ -42,7 +42,7 @@ function wordBasedName() {
 }
 
 // Approach using random metals.
-var metals = ['copper', 'aluminium', 'iron', 'tin', 'lead', 'silver', 'chromium', 'lithium', 'sodium', 'magnesium', 'potassium', 'calcium', 'titanium', 'manganese', 'nickel', 'zinc', 'tungsten', 'mercury', 'phosphorus', 'sulfur', 'fluorine', 'selenium'];
+var metals = ['copper', 'aluminium', 'iron', 'tin', 'lead', 'silver', 'chromium', 'lithium', 'sodium', 'magnesium', 'potassium', 'calcium', 'titanium', 'manganese', 'nickel', 'zinc', 'tungsten', 'mercury', 'phosphorus', 'sulfur', 'fluorine', 'selenium', 'coal', 'gold'];
 
 function genName(name) {
   if (name === 'Mine') {
