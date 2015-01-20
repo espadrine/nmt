@@ -2203,18 +2203,18 @@ window.onkeydown = function keyInputManagement(event) {
     redraw = true;
   } else if (event.keyCode === 187 || event.keyCode === 61) {  // +=
     // Zoom.
-    gs.hexSize *= 2;
-    gs.origin.x0 = gs.origin.x0 * 2 + (gs.width / 2)|0;
-    gs.origin.y0 = gs.origin.y0 * 2 + (gs.height / 2)|0;
+    gs.hexSize *= 4;
+    gs.origin.x0 = gs.origin.x0*4 + (gs.width*(3/2))|0;
+    gs.origin.y0 = gs.origin.y0*4 + (gs.height*(3/2))|0;
     voidCache = true;
     redraw = true;
   } else if (event.keyCode === 173 || event.keyCode === 189
           || event.keyCode === 109 || event.keyCode === 219
           || event.keyCode === 169) {   // -
     // Unzoom.
-    gs.hexSize = gs.hexSize / 2;
-    gs.origin.x0 = (gs.origin.x0 / 2 - gs.width / 4)|0;
-    gs.origin.y0 = (gs.origin.y0 / 2 - gs.height / 4)|0;
+    gs.hexSize /= 4;
+    gs.origin.x0 = ((gs.origin.x0/4)|0) - ((gs.width*(3/8))|0);
+    gs.origin.y0 = ((gs.origin.y0/4)|0) - ((gs.height*(3/8))|0);
     voidCache = true;
     redraw = true;
   } else if (event.keyCode === 84) {    // T
