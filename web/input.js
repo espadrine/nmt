@@ -2343,8 +2343,9 @@ gs.canvas.onmousedown = function mouseInputManagement(event) {
     gs.canvas.addEventListener('mousemove', mouseDrag);
     lastMousePosition.clientX = event.clientX;
     lastMousePosition.clientY = event.clientY;
-  } else if (event.button === 2) {
+  } else if (event.button === 2) {  // Right click.
     enterTravelMode();
+    splitPanelSlider(100);
     mouseSelection(event);
     enterNormalMode();
   }
