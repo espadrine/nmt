@@ -229,7 +229,9 @@ function applyPlan(plan) {
     if (!emptyTarget) { humanityTo.o &= humanityFrom.o; }
     else { humanityTo.o = humanityFrom.o; }
     // Lay roads or walls.
-    if (plan.travelPath != null && plan.lay != null) {
+    if (plan.travelPath != null &&
+        (plan.lay === terrain.tileTypes.road ||
+         plan.lay === terrain.tileTypes.wall)) {
       lay(plan.lay, plan.travelPath, updatedHumanity, humanityFrom, terrainTileTo);
     }
 
