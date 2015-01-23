@@ -508,7 +508,8 @@ Group.prototype = {
             at: from,
             do: terrain.planTypes.move,
             to: pathToFarm[1],
-            h: humansMoving
+            h: humansMoving,
+            lay: terrain.tileTypes.road
           };
         }
       }
@@ -519,7 +520,8 @@ Group.prototype = {
       at: from,
       do: terrain.planTypes.move,
       to: to,
-      h: humansMoving
+      h: humansMoving,
+      lay: terrain.tileTypes.road
     };
   },
 
