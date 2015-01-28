@@ -31,7 +31,7 @@ var tileTypes = {
   mine:         21,
   industry:     22,
   citrus:       23,
-  university:   24,
+  hospital:     24,
   beach:        25,
   arsenal:      26
 };
@@ -626,4 +626,3 @@ Terrain.prototype = {
 
 
 };
-

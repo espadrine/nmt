@@ -204,12 +204,12 @@ function applyPlan(plan) {
         humanityFrom.f -= 5;
         emptyTarget = true;
       }
-      // If it is a university, we acquired it.
-      if (humanityTo.b === terrain.tileTypes.university) {
-        var universityConquests = currentCamp.acquiredUniversitiesMap[plan.to];
-        universityConquests = universityConquests || 0;
-        universityConquests++;
-        currentCamp.acquiredUniversitiesMap[plan.to] = universityConquests;
+      // If it is a hospital, we acquired it.
+      if (humanityTo.b === terrain.tileTypes.hospital) {
+        var hospitalConquests = currentCamp.acquiredUniversitiesMap[plan.to];
+        hospitalConquests = hospitalConquests || 0;
+        hospitalConquests++;
+        currentCamp.acquiredUniversitiesMap[plan.to] = hospitalConquests;
       }
     } else {
       // Joining forces.
@@ -265,12 +265,12 @@ function applyPlan(plan) {
         spot, updatedHumanity, 'Mine');
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
-    } else if (plan.b === terrain.tileTypes.university) {
-      // It can be a university construction. Shocker, I know.
+    } else if (plan.b === terrain.tileTypes.hospital) {
+      // It can be a hospital construction. Shocker, I know.
       var spot = humanity.findMeadow(
         humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
       humanity.moveTreasure(terrain.tileTypes.citrus, plan.at,
-        spot, updatedHumanity, 'University');
+        spot, updatedHumanity, 'Hospital');
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
     }
@@ -284,12 +284,12 @@ function applyPlan(plan) {
       // Lumber cost.
       currentCamp.usedLumber++;
     }
-    if (plan.b === terrain.tileTypes.university) {
+    if (plan.b === terrain.tileTypes.hospital) {
       // Metal cost.
       currentCamp.usedMetal++;
     }
     // Wealth cost.
-    if (plan.b === terrain.tileTypes.university) {
+    if (plan.b === terrain.tileTypes.hospital) {
       currentCamp.usedWealth += 20;
     } else if (plan.b === terrain.tileTypes.industry) {
       currentCamp.usedWealth += 10;
@@ -506,7 +506,7 @@ function addPopulation(updatedHumanity) {
   var camp;
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     camp = humanity.campFromId(i);
-    // Check for university limit of population support.
+    // Check for hospital limit of population support.
     if (camp.population >= camp.populationLimit) { continue; }
     // Check for future increase of population.
     var targetPopulation = Math.min(camp.populationCap, camp.populationLimit);
