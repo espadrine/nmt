@@ -165,20 +165,11 @@ function applyPlan(plan) {
     // Human movement.
     if (humanityTo.c != null && humanityTo.c !== humanityFrom.c) {
       // They're not us. This means war. Because culture difference.
-      var ourForces = plan.h;
-      if ((humanityFrom.o & terrain.manufacture.gun) !== 0) {
-        ourForces *= 2;
-      }
-      var theirForces = humanityTo.h;
-      if ((humanityTo.o & terrain.manufacture.gun) !== 0) {
-        theirForces *= 2;
-      }
-      if (terrainTileTo.vegetation) {
-        theirForces *= 1.5;
-      }
-      if (terrainTileFrom.steepness > terrainTileTo.steepness) {
-        ourForces *= 1.5;
-      }
+      var ourForces = attackForce(plan.h, humanityFrom, humanityTo,
+        terrainTileFrom, terrainTileTo);
+      var theirForces = defenseForce(humanityTo.h, humanityFrom, humanityTo,
+        terrainTileFrom, terrainTileTo);
+
       // Imbalance is > 1 if we win.
       var imbalance = ourForces / theirForces;
       //console.log('imbalance:', imbalance);
@@ -298,6 +289,93 @@ function applyPlan(plan) {
     updatedHumanity[plan.at] = humanityFrom;
     collectFromTile(plan.at, humanityFrom, true);
   }
+}
+
+// Forcepower bonuses.
+function vehicleBonus(fromManufacture, toManufacture, steepness) {
+  var bonus = 1;
+  if ((fromManufacture & terrain.manufacture.gun) !== 0) {
+    bonus *= 2;
+  }
+  // Car
+  if ((fromManufacture & terrain.manufacture.car) !== 0) {
+    if ((toManufacture & terrain.manufacture.boat) !== 0) {
+      bonus *= 1.5;
+    }
+    if ((toManufacture & terrain.manufacture.artillery) !== 0) {
+      bonus *= 0.5;
+    }
+    if ((toManufacture & terrain.manufacture.plane) !== 0) {
+      bonus *= 0.5;
+    }
+    if (steepness === terrain.tileTypes.steppe) {
+      bonus *= 1.5;
+    }
+  }
+  // Boat
+  if ((fromManufacture & terrain.manufacture.car) !== 0) {
+    if ((toManufacture & terrain.manufacture.plane) !== 0) {
+      bonus *= 1.5;
+    }
+    if ((toManufacture & terrain.manufacture.artillery) !== 0) {
+      bonus *= 1.5;
+    }
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
+      bonus *= 0.5;
+    }
+    if (steepness === terrain.tileTypes.water) {
+      bonus *= 1.5;
+    }
+  }
+  // Artillery
+  if ((fromManufacture & terrain.manufacture.artillery) !== 0) {
+    if ((toManufacture & terrain.manufacture.plane) !== 0) {
+      bonus *= 1.5;
+    }
+    if ((toManufacture & terrain.manufacture.boat) !== 0) {
+      bonus *= 0.5;
+    }
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
+      bonus *= 0.5;
+    }
+    if (steepness === terrain.tileTypes.hill) {
+      bonus *= 1.5;
+    }
+  }
+  // Plane
+  if ((fromManufacture & terrain.manufacture.plane) !== 0) {
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
+      bonus *= 1.5;
+    }
+    if ((toManufacture & terrain.manufacture.boat) !== 0) {
+      bonus *= 1.5;
+    }
+    if ((toManufacture & terrain.manufacture.artillery) !== 0) {
+      bonus *= 0.5;
+    }
+    if (steepness === terrain.tileTypes.mountain) {
+      bonus *= 1.5;
+    }
+  }
+  return bonus;
+}
+function attackForce(force, humanityFrom, humanityTo,
+    terrainTileFrom, terrainTileTo) {
+  force *= vehicleBonus(humanityFrom.o, humanityTo.o,
+    terrainTileFrom.steepness);
+  if (terrainTileFrom.steepness > terrainTileTo.steepness) {
+    force *= 1.5;
+  }
+  return force;
+}
+function defenseForce(force, humanityFrom, humanityTo,
+    terrainTileFrom, terrainTileTo) {
+  force *= vehicleBonus(humanityFrom.o, humanityTo.o,
+    terrainTileFrom.steepness);
+  if (terrainTileTo.vegetation) {
+    force *= 1.5;
+  }
+  return force;
 }
 
 // Build roads along the `travelPath` [{q,r}], and on `humanityFrom`.
