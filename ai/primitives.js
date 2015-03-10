@@ -1,6 +1,6 @@
 // A few polynomial-time primitives for the AI.
 
-var Terrain = require('terrain-gen');
+var Terrain = require('../terrain-gen');
 var terrain = new Terrain();
 
 // The following buildings are built on a place.
