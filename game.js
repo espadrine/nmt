@@ -175,7 +175,7 @@ function applyPlan(plan) {
       //console.log('imbalance:', imbalance);
       if (imbalance <= 1) {
         // We lose.
-        humanityTo.h -= (humanityTo.h * imbalance)|0;
+        humanityTo.h -= ((humanityTo.h * imbalance)|0);
         humanityFrom.h -= plan.h;
         updatedHumanity[plan.at] = humanityFrom;
         updatedHumanity[plan.to] = humanityTo;
@@ -188,7 +188,7 @@ function applyPlan(plan) {
           humanityTo.h += plan.h;
           surrenderTiles.push(plan.to);
         } else {
-          humanityTo.h = plan.h - (plan.h * (1/imbalance))|0;
+          humanityTo.h = plan.h - ((plan.h * (1/imbalance))|0);
           warTiles.push(plan.to);
         }
         humanityFrom.h -= plan.h;
@@ -313,7 +313,7 @@ function vehicleBonus(fromManufacture, toManufacture, steepness) {
     }
   }
   // Boat
-  if ((fromManufacture & terrain.manufacture.car) !== 0) {
+  if ((fromManufacture & terrain.manufacture.boat) !== 0) {
     if ((toManufacture & terrain.manufacture.plane) !== 0) {
       bonus *= 1.5;
     }
@@ -359,20 +359,20 @@ function vehicleBonus(fromManufacture, toManufacture, steepness) {
   }
   return bonus;
 }
-function attackForce(force, humanityFrom, humanityTo,
-    terrainTileFrom, terrainTileTo) {
-  force *= vehicleBonus(humanityFrom.o, humanityTo.o,
-    terrainTileFrom.steepness);
-  if (terrainTileFrom.steepness > terrainTileTo.steepness) {
+function attackForce(force, attacker, defender,
+    attackerTerrain, defenderTerrain) {
+  force *= vehicleBonus(attacker.o, defender.o,
+    attackerTerrain.steepness);
+  if (attackerTerrain.steepness > defenderTerrain.steepness) {
     force *= 1.5;
   }
   return force;
 }
-function defenseForce(force, humanityFrom, humanityTo,
-    terrainTileFrom, terrainTileTo) {
-  force *= vehicleBonus(humanityFrom.o, humanityTo.o,
-    terrainTileFrom.steepness);
-  if (terrainTileTo.vegetation) {
+function defenseForce(force, attacker, defender,
+    attackerTerrain, defenderTerrain) {
+  force *= vehicleBonus(defender.o, attacker.o,
+    defenderTerrain.steepness);
+  if (defenderTerrain.vegetation) {
     force *= 1.5;
   }
   return force;
