@@ -152,6 +152,9 @@ var sendCenterTile = function(centerTile) {
   }
 };
 
+
+// Places
+
 // List of camp names, indexed by the camp ID.
 var campNames;
 
@@ -181,6 +184,9 @@ function insertPlaces(places) {
     placesPanel.appendChild(aPlace);
   }
 }
+
+
+// Resources
 
 var resourceFromName = {
   Folks:    campResourcePopulation,
@@ -213,6 +219,132 @@ function setResourcesTable() {
   var table = '<table>' + thead + tbody + '</table>';
   resourcesPanel.innerHTML = table;
 }
+
+
+// Travel information.
+
+function displayTravelInfo(currentTile, targetTile) {
+  var ct = terrain.tile(currentTile);  // current terrain
+  var tt = terrain.tile(targetTile);   // target terrain
+  var ch = humanity.tile(currentTile); // current humans
+  var th = humanity.tile(targetTile);  // target humans
+  var traveling = travelingNumber(ch.h);
+  var html = '';
+
+  // War bonuses / maluses.
+  if (th != null && th.c != null && th.c != ch.c) {
+    var log = [];
+    html += '<dl class="attack-info">';
+    var ourForces = attackForce(traveling, ch, th, ct, tt, log);
+    html += '<dt>Attack ' + ourForces + '</dt><dd>';
+    for (var i = 0; i < log.length; i++) { html += log[i] + '<br>'; }
+    log = [];
+    var theirForces = defenseForce(th.h, ch, th, ct, tt, log);
+    var imbalance = ourForces / theirForces;
+    if (imbalance <= 1) { html += 'Lose all';
+    } else { html += 'Lose ' + (((1/imbalance) * traveling)|0); }
+    html += '</dd>';
+    html += '<dt>Defense ' + theirForces + '</dt><dd>';
+    for (var i = 0; i < log.length; i++) { html += log[i] + '<br>'; }
+    if (imbalance > 1) { html += 'Lose all';
+    } else { html += 'Lose ' + ((imbalance * th.h)|0); }
+    html += '</dd>';
+    travelInfo.innerHTML = html;
+  } else {
+    travelInfo.innerHTML = '';
+  }
+}
+
+// Forcepower bonuses.
+function vehicleBonus(fromManufacture, toManufacture, steepness, log) {
+  var bonus = 1;
+  if ((fromManufacture & terrain.manufacture.gun) !== 0) {
+    bonus *= 2; log.push('2x guns');
+  }
+  // Car
+  if ((fromManufacture & terrain.manufacture.car) !== 0) {
+    if ((toManufacture & terrain.manufacture.boat) !== 0) {
+      bonus *= 1.5; log.push('1.5x car vs. boat');
+    }
+    if ((toManufacture & terrain.manufacture.artillery) !== 0) {
+      bonus *= 0.5; log.push('0.5x car vs. artillery');
+    }
+    if ((toManufacture & terrain.manufacture.plane) !== 0) {
+      bonus *= 0.5; log.push('0.5x car vs. plane');
+    }
+    if (steepness === terrain.tileTypes.steppe) {
+      bonus *= 1.5; log.push('1.5x car on plains');
+    }
+  }
+  // Boat
+  if ((fromManufacture & terrain.manufacture.boat) !== 0) {
+    if ((toManufacture & terrain.manufacture.plane) !== 0) {
+      bonus *= 1.5; log.push('1.5x boat vs. plane');
+    }
+    if ((toManufacture & terrain.manufacture.artillery) !== 0) {
+      bonus *= 1.5; log.push('1.5x boat vs. artillery');
+    }
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
+      bonus *= 0.5; log.push('0.5x boat vs. car');
+    }
+    if (steepness === terrain.tileTypes.water) {
+      bonus *= 1.5; log.push('1.5x battleship');
+    }
+  }
+  // Artillery
+  if ((fromManufacture & terrain.manufacture.artillery) !== 0) {
+    if ((toManufacture & terrain.manufacture.plane) !== 0) {
+      bonus *= 1.5; log.push('1.5x artillery vs. plane');
+    }
+    if ((toManufacture & terrain.manufacture.boat) !== 0) {
+      bonus *= 0.5; log.push('0.5x artillery vs. boat');
+    }
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
+      bonus *= 0.5; log.push('0.5x artillery vs. car');
+    }
+    if (steepness === terrain.tileTypes.hill) {
+      bonus *= 1.5; log.push('1.5x hill ballistics');
+    }
+  }
+  // Plane
+  if ((fromManufacture & terrain.manufacture.plane) !== 0) {
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
+      bonus *= 1.5; log.push('1.5x plane vs. car');
+    }
+    if ((toManufacture & terrain.manufacture.boat) !== 0) {
+      bonus *= 1.5; log.push('1.5x plane vs. boat');
+    }
+    if ((toManufacture & terrain.manufacture.artillery) !== 0) {
+      bonus *= 0.5; log.push('0.5x plane vs. artillery');
+    }
+    if (steepness === terrain.tileTypes.mountain) {
+      bonus *= 1.5; log.push('1.5x mountain air strike');
+    }
+  }
+  return bonus;
+}
+function attackForce(force, attacker, defender,
+    attackerTerrain, defenderTerrain, log) {
+  force *= vehicleBonus(attacker.o, defender.o,
+    attackerTerrain.steepness, log);
+  if (attackerTerrain.steepness > defenderTerrain.steepness) {
+    force *= 1.5; log.push('1.5x high ground');
+  }
+  return force;
+}
+function defenseForce(force, attacker, defender,
+    attackerTerrain, defenderTerrain, log) {
+  force *= vehicleBonus(defender.o, attacker.o,
+    defenderTerrain.steepness, log);
+  if (defenderTerrain.vegetation) {
+    force *= 1.5; log.push('1.5x vegetation cover');
+  }
+  return force;
+}
+
+
+
+// Map
 
 // Focus the screen on tile t = {q, r}.
 // Changes `origin`.
@@ -1376,6 +1508,8 @@ function paintIntermediateUI(gs) {
     // Paint the path that the selected folks would take.
     paintAlongTiles(gs, terrain.pathFromParents(
           terrain.keyFromTile(targetTile), accessibleTiles));
+    // Show travel information.
+    displayTravelInfo(currentTile, targetTile);
   }
   // Paint the path that folks will take.
   for (var keyTo in registerMoves) {
@@ -2246,6 +2380,10 @@ window.onkeydown = function keyInputManagement(event) {
 // Tile selection.
 
 
+function travelingNumber(total) {
+  return (total * splitInputWidget.value / 100)|0;
+}
+
 function mouseSelection(event) {
   gs.canvas.removeEventListener('mousemove', mouseDrag);
   gs.canvas.removeEventListener('mouseup', mouseSelection);
@@ -2255,8 +2393,7 @@ function mouseSelection(event) {
   if ((selectionMode === selectionModes.travel)
     && currentTile !== undefined && humanity.tile(currentTile) !== undefined) {
     var humanityTile = humanity.tile(currentTile);
-    var numberOfPeople = humanityTile.h;
-    numberOfPeople = (numberOfPeople * splitInputWidget.value / 100)|0;
+    var numberOfPeople = travelingNumber(humanityTile.h);
 
     // Send travel information.
     var targetTile = posTile;

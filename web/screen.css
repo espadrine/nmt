@@ -58,8 +58,40 @@ hr.separator {
   box-shadow: 0 0 3px #f7f;
   margin: auto;
 }
-p { margin-top: 0; }
+p { margin-top: 0; margin-bottom: 0; }
 p.help { cursor: help; }
+
+/* Travel */
+.attack-info {
+  text-align: left;
+  margin: 0 0 0 25px;
+}
+.attack-info > dd {
+  margin-left: 15px;
+  font-size: 12px;
+}
+.exclusion-box {
+  display: table;
+  border-radius: 5px;
+  margin: auto;
+  margin-top: 20px;
+}
+.exclusion-but { display: table-cell; }
+.exclusion-but > input { display: none; }
+.exclusion-but > label {
+  padding: 10px;
+  cursor: pointer;
+  box-shadow: 0 0 5px #4B1653;
+  transition: 0.3s box-shadow;
+}
+.exclusion-but > label:hover {
+  box-shadow: 0 0 5px #4B1653 inset, 0 0 5px #4B1653;
+}
+.exclusion-but > label:active,
+.exclusion-but > input:focus + label,
+.exclusion-but > input:checked + label {
+  box-shadow: 0 0 35px #4B1653 inset;
+}
 
 /* Build */
 span.buildHelp {
@@ -157,25 +189,3 @@ iframe#helpPane {
 .Wood { color: #ea0; }
 .Metal { color: #99f; }
 .Health { color: #e5f; }
-
-.exclusion-box {
-  display: table;
-  border-radius: 5px;
-  margin: auto;
-}
-.exclusion-but { display: table-cell; }
-.exclusion-but > input { display: none; }
-.exclusion-but > label {
-  padding: 10px;
-  cursor: pointer;
-  box-shadow: 0 0 5px #4B1653;
-  transition: 0.3s box-shadow;
-}
-.exclusion-but > label:hover {
-  box-shadow: 0 0 5px #4B1653 inset, 0 0 5px #4B1653;
-}
-.exclusion-but > label:active,
-.exclusion-but > input:focus + label,
-.exclusion-but > input:checked + label {
-  box-shadow: 0 0 35px #4B1653 inset;
-}
