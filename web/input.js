@@ -263,29 +263,26 @@ function vehicleBonus(fromManufacture, toManufacture, steepness, log) {
   }
   // Car
   if ((fromManufacture & terrain.manufacture.car) !== 0) {
-    if ((toManufacture & terrain.manufacture.boat) !== 0) {
-      bonus *= 1.5; log.push('1.5x car vs. boat');
-    }
     if ((toManufacture & terrain.manufacture.artillery) !== 0) {
-      bonus *= 0.5; log.push('0.5x car vs. artillery');
+      bonus *= 1.5; log.push('1.5x car vs. artillery');
     }
     if ((toManufacture & terrain.manufacture.plane) !== 0) {
       bonus *= 0.5; log.push('0.5x car vs. plane');
     }
     if (steepness === terrain.tileTypes.steppe) {
-      bonus *= 1.5; log.push('1.5x car on plains');
+      bonus *= 1.5; log.push('1.5x flat terrain drive');
     }
   }
   // Boat
   if ((fromManufacture & terrain.manufacture.boat) !== 0) {
-    if ((toManufacture & terrain.manufacture.plane) !== 0) {
-      bonus *= 1.5; log.push('1.5x boat vs. plane');
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
+      bonus *= 1.5; log.push('1.5x boat vs. car');
     }
     if ((toManufacture & terrain.manufacture.artillery) !== 0) {
       bonus *= 1.5; log.push('1.5x boat vs. artillery');
     }
-    if ((toManufacture & terrain.manufacture.car) !== 0) {
-      bonus *= 0.5; log.push('0.5x boat vs. car');
+    if ((toManufacture & terrain.manufacture.plane) !== 0) {
+      bonus *= 0.5; log.push('0.5x boat vs. plane');
     }
     if (steepness === terrain.tileTypes.water) {
       bonus *= 1.5; log.push('1.5x battleship');
@@ -293,14 +290,11 @@ function vehicleBonus(fromManufacture, toManufacture, steepness, log) {
   }
   // Artillery
   if ((fromManufacture & terrain.manufacture.artillery) !== 0) {
-    if ((toManufacture & terrain.manufacture.plane) !== 0) {
-      bonus *= 1.5; log.push('1.5x artillery vs. plane');
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
+      bonus *= 1.5; log.push('1.5x artillery vs. car');
     }
     if ((toManufacture & terrain.manufacture.boat) !== 0) {
       bonus *= 0.5; log.push('0.5x artillery vs. boat');
-    }
-    if ((toManufacture & terrain.manufacture.car) !== 0) {
-      bonus *= 0.5; log.push('0.5x artillery vs. car');
     }
     if (steepness === terrain.tileTypes.hill) {
       bonus *= 1.5; log.push('1.5x hill ballistics');
@@ -311,11 +305,11 @@ function vehicleBonus(fromManufacture, toManufacture, steepness, log) {
     if ((toManufacture & terrain.manufacture.car) !== 0) {
       bonus *= 1.5; log.push('1.5x plane vs. car');
     }
-    if ((toManufacture & terrain.manufacture.boat) !== 0) {
-      bonus *= 1.5; log.push('1.5x plane vs. boat');
-    }
     if ((toManufacture & terrain.manufacture.artillery) !== 0) {
-      bonus *= 0.5; log.push('0.5x plane vs. artillery');
+      bonus *= 1.5; log.push('1.5x plane vs. artillery');
+    }
+    if ((toManufacture & terrain.manufacture.boat) !== 0) {
+      bonus *= 0.5; log.push('0.5x plane vs. boat');
     }
     if (steepness === terrain.tileTypes.mountain) {
       bonus *= 1.5; log.push('1.5x mountain air strike');
@@ -334,7 +328,7 @@ function attackForce(force, attacker, defender,
 }
 function defenseForce(force, attacker, defender,
     attackerTerrain, defenderTerrain, log) {
-  force *= vehicleBonus(defender.o, attacker.o,
+  force *= vehicleBonus(defender.o, 0,
     defenderTerrain.steepness, log);
   if (defenderTerrain.vegetation) {
     force *= 1.5; log.push('1.5x vegetation cover');

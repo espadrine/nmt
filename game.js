@@ -299,11 +299,8 @@ function vehicleBonus(fromManufacture, toManufacture, steepness) {
   }
   // Car
   if ((fromManufacture & terrain.manufacture.car) !== 0) {
-    if ((toManufacture & terrain.manufacture.boat) !== 0) {
-      bonus *= 1.5;
-    }
     if ((toManufacture & terrain.manufacture.artillery) !== 0) {
-      bonus *= 0.5;
+      bonus *= 1.5;
     }
     if ((toManufacture & terrain.manufacture.plane) !== 0) {
       bonus *= 0.5;
@@ -314,13 +311,13 @@ function vehicleBonus(fromManufacture, toManufacture, steepness) {
   }
   // Boat
   if ((fromManufacture & terrain.manufacture.boat) !== 0) {
-    if ((toManufacture & terrain.manufacture.plane) !== 0) {
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
       bonus *= 1.5;
     }
     if ((toManufacture & terrain.manufacture.artillery) !== 0) {
       bonus *= 1.5;
     }
-    if ((toManufacture & terrain.manufacture.car) !== 0) {
+    if ((toManufacture & terrain.manufacture.plane) !== 0) {
       bonus *= 0.5;
     }
     if (steepness === terrain.tileTypes.water) {
@@ -329,13 +326,10 @@ function vehicleBonus(fromManufacture, toManufacture, steepness) {
   }
   // Artillery
   if ((fromManufacture & terrain.manufacture.artillery) !== 0) {
-    if ((toManufacture & terrain.manufacture.plane) !== 0) {
+    if ((toManufacture & terrain.manufacture.car) !== 0) {
       bonus *= 1.5;
     }
     if ((toManufacture & terrain.manufacture.boat) !== 0) {
-      bonus *= 0.5;
-    }
-    if ((toManufacture & terrain.manufacture.car) !== 0) {
       bonus *= 0.5;
     }
     if (steepness === terrain.tileTypes.hill) {
@@ -347,10 +341,10 @@ function vehicleBonus(fromManufacture, toManufacture, steepness) {
     if ((toManufacture & terrain.manufacture.car) !== 0) {
       bonus *= 1.5;
     }
-    if ((toManufacture & terrain.manufacture.boat) !== 0) {
+    if ((toManufacture & terrain.manufacture.artillery) !== 0) {
       bonus *= 1.5;
     }
-    if ((toManufacture & terrain.manufacture.artillery) !== 0) {
+    if ((toManufacture & terrain.manufacture.boat) !== 0) {
       bonus *= 0.5;
     }
     if (steepness === terrain.tileTypes.mountain) {
@@ -370,7 +364,7 @@ function attackForce(force, attacker, defender,
 }
 function defenseForce(force, attacker, defender,
     attackerTerrain, defenderTerrain) {
-  force *= vehicleBonus(defender.o, attacker.o,
+  force *= vehicleBonus(defender.o, 0,
     defenderTerrain.steepness);
   if (defenderTerrain.vegetation) {
     force *= 1.5;
