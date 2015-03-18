@@ -1016,8 +1016,35 @@ function paintSprite(gs, cx, cy, sprite, rotation) {
 // gs is the GraphicState.
 function paintBuilding(gs, cx, cy, tilePos, building, rotation) {
   if (building != null) {
-    if (building === tileTypes.road || building === tileTypes.wall
-     || building === tileTypes.airland) {
+    // Buildings with graphics for curves.
+    if (building === tileTypes.road) {
+      var curveTile = tileTypes.curvedRoad;
+      var oriented = false;
+      var neighbors = [
+        humanity.tile(terrain.neighborFromTile(tilePos, 0)),
+        humanity.tile(terrain.neighborFromTile(tilePos, 1)),
+        humanity.tile(terrain.neighborFromTile(tilePos, 2)),
+        humanity.tile(terrain.neighborFromTile(tilePos, 3)),
+        humanity.tile(terrain.neighborFromTile(tilePos, 4)),
+        humanity.tile(terrain.neighborFromTile(tilePos, 5)),
+      ];
+      for (var i = 0; i < 6; i++) {
+        // Orient roads along other roads.
+        if (neighbors[i] && neighbors[i].b === building) {
+          var curved = neighbors[(i + 2) % 6];
+          var curvedStart = neighbors[(i + 4) % 6];
+          if (curved && curved.b === building) {
+            paintSprite(gs, cx, cy, curveTile, i);
+          } else if (curvedStart && curvedStart.b === building) {
+            // It was already drawn.
+          } else {
+            paintSprite(gs, cx, cy, building, i);
+          }
+          oriented = true;
+        }
+      }
+      if (!oriented) { paintSprite(gs, cx, cy, building, 0); }
+    } else if (building === tileTypes.wall || building === tileTypes.airland) {
       // Orient roads, walls and airlands.
       var oriented = false;
       for (var i = 0; i < 6; i++) {

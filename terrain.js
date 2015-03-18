@@ -33,7 +33,10 @@ var tileTypes = {
   citrus:       23,
   hospital:     24,
   beach:        25,
-  arsenal:      26
+  arsenal:      26,
+  smoke:        27,
+  impact:       28,
+  curvedRoad:   29
 };
 var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
     26 ];
