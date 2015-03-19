@@ -223,7 +223,7 @@ function applyPlan(plan) {
     if (plan.travelPath != null &&
         (plan.lay === terrain.tileTypes.road ||
          plan.lay === terrain.tileTypes.wall)) {
-      lay(plan.lay, plan.travelPath, updatedHumanity, humanityFrom, terrainTileTo);
+      lay(plan.lay, plan.travelPath, updatedHumanity, humanityTo, terrainTileTo);
     }
 
     // Collecting from the land.
@@ -376,15 +376,11 @@ function defenseForce(force, attacker, defender,
 // Mutates `updatedHumanity`.
 // If `terrainTileTo` (output of `terrain.tile()`) is water,
 // don't build the road.
-function lay(type, travelPath, updatedHumanity, humanityFrom, terrainTileTo) {
-  console.log(travelPath[0]);
+function lay(type, travelPath, updatedHumanity, humanityTo, terrainTileTo) {
   var terrainTileFrom = terrain.tile(terrain.tileFromKey(travelPath[0]));
   // Don't build roads over water.
   if (terrainTileFrom.type === terrain.tileTypes.water
    || terrainTileTo.type === terrain.tileTypes.water) { return; }
-  if (humanityFrom.b == null) {
-    humanityFrom.b = type;
-  }
   for (var i = 0; i < travelPath.length; i++) {
     var tileKey = travelPath[i];
     var tile = terrain.tileFromKey(tileKey);
@@ -394,6 +390,9 @@ function lay(type, travelPath, updatedHumanity, humanityFrom, terrainTileTo) {
       newHumanityTile.b = type;
       updatedHumanity[tileKey] = newHumanityTile;
     }
+  }
+  if (humanityTo.b == null) {
+    humanityTo.b = type;
   }
 }
 
