@@ -1870,7 +1870,7 @@ function paintCamps(gs) {
     var humans = humanityData[visibleHumans[i]];
     visibleCamps[humans.c][visibleHumans[i]] = true;
   }
-  var bold = gs.hexSize * 2/18;
+  var bold = gs.hexSize * 2/9;
   var hexHorizDistance = gs.hexSize * Math.sqrt(3);
   var hexVertDistance = gs.hexSize * 3/2;
   if (size < 5) {
@@ -1900,17 +1900,24 @@ function paintCamps(gs) {
       ctx.lineWidth = bold * 2;
       ctx.strokeStyle = 'hsla(' + campHueCreator9000(i) + ',30%,40%,0.4)';
       ctx.stroke();
-      // Main line.
-      ctx.lineWidth = bold;
-      ctx.strokeStyle = campHsl(i, 80, 42);
-      ctx.stroke();
     }
 
-    for (var i = numberOfCamps - 1; i >= 0; i--) {
+    for (var i = 0; i < numberOfCamps; i++) {
+      // Inside translucent border.
+      pathFromTiles(gs, visibleCamps[i],
+          hexHorizDistance, hexVertDistance, /*noisy*/ true, /*dashed*/ false);
+      ctx.save();
+      ctx.clip();
+      // Inside border.
+      ctx.lineWidth = bold;
+      ctx.strokeStyle = campHsl(i, 70, 35);
+      ctx.stroke();
+      // Dashed border.
       pathFromTiles(gs, visibleCamps[i],
           hexHorizDistance, hexVertDistance, /*noisy*/ true, /*dashed*/ true);
       ctx.strokeStyle = campHsl(i, 80, 42);
       ctx.stroke();
+      ctx.restore();
     }
 
     ctx.lineWidth = 1;
