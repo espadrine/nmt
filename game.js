@@ -183,12 +183,14 @@ function applyPlan(plan) {
         return;
       } else {
         // We win.
-        if (surrender(plan.to, humanityFrom.c)) {
-          if (plan.h + humanityTo.h > 20) { plan.h = 20 - humanityTo.h; }
-          humanityTo.h += plan.h;
+        var surrounded = surrender(plan.to, humanityFrom.c);
+        var surrenderers = (((surrounded / 6) * humanityTo.h)|0);
+        humanityTo.h = plan.h - ((plan.h * (1/imbalance))|0)
+                              + surrenderers;
+        console.log('surrenderers: ' + surrenderers);
+        if (surrenderers > 0) {
           surrenderTiles.push(plan.to);
         } else {
-          humanityTo.h = plan.h - ((plan.h * (1/imbalance))|0);
           warTiles.push(plan.to);
         }
         humanityFrom.h -= plan.h;
@@ -451,11 +453,11 @@ function surrender(tileKey, campId) {
   for (var i = 0; i < 6; i++) {
     var neighbor = humanity.tile(
         terrain.neighborFromTile(terrain.tileFromKey(tileKey), i));
-    if (neighbor && neighbor.c === campId && neighbor.h > 0) {
+    if (neighbor && neighbor.c === campId) {
       surrounded++;
     }
   }
-  return surrounded >= 2;
+  return surrounded;
 }
 
 var artilleryRange = 5;
