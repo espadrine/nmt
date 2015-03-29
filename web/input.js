@@ -246,7 +246,11 @@ function displayTravelInfo(currentTile, targetTile) {
     html += '</dd>';
     html += '<dt>Defense ' + theirForces + '</dt><dd>';
     for (var i = 0; i < log.length; i++) { html += log[i] + '<br>'; }
-    if (imbalance > 1) { html += 'Lose all';
+    if (imbalance > 1) {
+      html += 'Lose all';
+      var surrounded = surrender(targetTile, ch.c);
+      var surrenderers = (((surrounded / 6) * th.h)|0);
+      if (surrenderers > 0) { html += '<br>Surrender ' + surrenderers; }
     } else { html += 'Lose ' + ((imbalance * th.h)|0); }
     html += '</dd>';
     travelInfo.innerHTML = html;
@@ -334,6 +338,18 @@ function defenseForce(force, attacker, defender,
     force *= 1.5; log.push('1.5x vegetation cover');
   }
   return force;
+}
+function surrender(tile, campId) {
+  // How many people around.
+  var surrounded = 0;
+  for (var i = 0; i < 6; i++) {
+    var neighbor = humanity.tile(
+        terrain.neighborFromTile(tile, i));
+    if (neighbor && neighbor.c === campId) {
+      surrounded++;
+    }
+  }
+  return surrounded;
 }
 
 
