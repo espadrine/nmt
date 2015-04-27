@@ -1137,8 +1137,8 @@ function paintBuildingsSprited(gs) {
 // tilePos = {q, r} is the tile's hexagonal coordinates,
 // cx and cy are the hexagon's center pixel coordinates on the screen.
 // gs is the GraphicState.
-function paintTerrain(gs, cx, cy, tilePos) {
-  var t = terrain.tile(tilePos);
+function paintTerrain(gs, cx, cy, tilePos, t) {
+  t = t || terrain.tile(tilePos);
   // Draw terrain.
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
   paintSprite(gs, cx, cy, t.type, rotation);
@@ -1183,9 +1183,14 @@ function paintTilesSprited(gs) {
         while (cx - hexHorizDistance < width) {
           tilePos = tileFromPixel({ x:cx, y:cy }, origin, size);
           var t = terrain.tile(tilePos);
+          var comm = terrain.commodity(tilePos, t);
           if (t.type === i) {
             // Draw tile.
-            paintTerrain(gsBuffer, cx, cy, tilePos);
+            paintTerrain(gsBuffer, cx, cy, tilePos, t);
+            if (comm >= 0) {
+              gsBuffer.ctx.textAlign = 'center';
+              gsBuffer.ctx.fillText(tileNames[comm], cx, cy);
+            }
           } else if (i === 8 && t.type === tileTypes.water) {
             // Overlay sprites (beaches, …).
             for (var f = 0; f < 6; f++) {

@@ -36,7 +36,47 @@ var tileTypes = {
   arsenal:      26,
   smoke:        27,
   impact:       28,
-  curvedRoad:   29
+  curvedRoad:   29,
+  // Commodities.
+  whales:       30,
+  pearls:       31,
+  fish:         32,
+  algae:        33,
+
+  pigments:     34,
+  salt:         35,
+  cattle:       36,
+  poultry:      37,
+
+  ivory:        38,
+  granite:      39,
+  wool:         40,
+  wine:         41,
+
+  fur:          42,
+  glass:        43,
+  rubber:       44,
+  marble:       45,
+
+  crocodile:    46,
+  petroleum:    47,
+  shrimp:       48,
+  clay:         49,
+
+  spices:       50,
+  cotton:       51,
+  coffee:       52,
+  tea:          53,
+
+  resin:        54,
+  cocoa:        55,
+  honey:        56,
+  silk:         57,
+
+  ruby:         58,
+  gems:         59,
+  pelt:         60,
+  amber:        61
 };
 var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
     26 ];
@@ -273,6 +313,42 @@ Terrain.prototype = {
       rain: -vegetationNoise / 2
     };
     return tile;
+  },
+
+  // Get the commodity at the tile at hexagonal coordinates `coord` {q, r}.
+  // Returns -1 if there are no commodity.
+  // See `tileTypes`.
+  commodity: function commodity(coord, tile) {
+    var x = coord.q, y = coord.r;
+    //if (coord.x === undefined) {
+    //  x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
+    //  y = (3/2 * coord.r);
+    //} else { x = coord.x; y = coord.y; }
+
+    var magnitude1 = (-simplex1.noise2D(x/60,y/60)/8 + 1) / 2;
+    var magnitude2 = (simplex1.noise2D(x/60,y/60)/8 + 1) / 2;
+    var magnitude3 = (-simplex2.noise2D(x/60,y/60)/8 + 1) / 2;
+    var magnitude4 = (simplex2.noise2D(x/60,y/60)/8 + 1) / 2;
+    var hm1 = (magnitude1) * simplex1.noise2D(x/4, y/4);
+    var hm2 = (magnitude2) * simplex1.noise2D(x/16, y/16);
+    var hm3 = (magnitude3) * simplex2.noise2D(x/2, y/2);
+    var hm4 = (magnitude4) * simplex2.noise2D(x/8, y/8);
+    var frequency;
+    if (hm1 > 0.49) {         // rare spread
+      frequency = 0;
+    } else if (hm2 > 0.49) {  // rare packed
+      frequency = 1;
+    } else if (hm3 > 0.45) {  // frequent spread
+      frequency = 2;
+    } else if (hm4 > 0.45) {  // frequent packed
+      frequency = 3;
+    } else {
+      return -1;  // No commodity.
+    }
+    var tileType;
+    if (tile != null) { tileType = tile.type; }
+    else { tileType = this.tile(coord).type; }
+    return tileTypes.whales + (tileType << 2) + frequency;
   },
 
   // Movements.
