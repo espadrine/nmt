@@ -82,12 +82,12 @@ var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
     26 ];
 
 var resourceTypes = {
-  lumber:   -1,
+  stock:    -1,
   metal:    -2,
   wealth:   -3
 };
 var listOfResourceTypes = [
-  resourceTypes.lumber,
+  resourceTypes.stock,
   resourceTypes.metal,
   resourceTypes.wealth
 ];
@@ -153,16 +153,16 @@ var buildingDependencies = [,,,,,,,,
     [[2, tileTypes.farm]],      // residence [9].
     [[6, tileTypes.residence]],
     [[3, tileTypes.residence], [2, tileTypes.road]],
-    [[1, tileTypes.residence], [1, tileTypes.water], [1, resourceTypes.lumber]],
+    [[1, tileTypes.residence], [1, tileTypes.water], [1, resourceTypes.stock]],
     [[2, tileTypes.road]],
-    [[1, tileTypes.gunsmith], [3, tileTypes.airland], [1, resourceTypes.lumber]],
+    [[1, tileTypes.gunsmith], [3, tileTypes.airland], [1, resourceTypes.stock]],
     [[1, tileTypes.skyscraper], [1, tileTypes.factory]],
     ,
     ,
     ,
     ,
     [[1, tileTypes.residence]],
-    [[1, resourceTypes.lumber], [1, tileTypes.factory]],
+    [[1, resourceTypes.stock], [1, tileTypes.factory]],
     [[10, resourceTypes.wealth], [1, tileTypes.mine], [5, tileTypes.road]],
     ,
     [[1, resourceTypes.metal], [20, resourceTypes.wealth], [2, tileTypes.wall]],
@@ -172,7 +172,7 @@ var buildingDependencies = [,,,,,,,,
 
 // What the current tile must hold to allow a building to be constructed.
 var buildingTileDependency = [,,,,,,,, ,,,,,,,,,,,,
-    [tileTypes.forest, tileTypes.taiga],         // Lumber [20]
+    [tileTypes.forest, tileTypes.taiga],         // Stock [20]
     [tileTypes.metal],,,
     [tileTypes.citrus],
     [tileTypes.steppe]
@@ -621,13 +621,13 @@ Terrain.prototype = {
 
   // Given a building (see tileTypes) and a tile = {q, r},
   // check whether the building can be built there.
-  // resources = {lumber, usedLumber, metal, usedMetal, wealth, usedWealth}
+  // resources = {stock, usedStock, metal, usedMetal, wealth, usedWealth}
   // is the resources available for use in the current camp.
   validConstruction: function validConstruction(building, tile, resources) {
     if (building == null) { return true; }   // Destruction is always valid.
     var humanityTile = this.humanity.tile(tile);
     var tileInfo = this.tile(tile);
-    var spareLumber = resources.lumber - resources.usedLumber;
+    var spareStock = resources.stock - resources.usedStock;
     var spareMetal = resources.metal - resources.usedMetal;
     var spareFarm = resources.wealth - resources.usedWealth;
     if (!humanityTile || humanityTile.h <= 0) { return false; }
@@ -665,8 +665,8 @@ Terrain.prototype = {
             dependencies[j]++;
           } else if (requiredDependencies[j][1] < 0) {
             // Resources.
-            if (requiredDependencies[j][1] === resourceTypes.lumber
-                && spareLumber < requiredDependencies[j][0]) {
+            if (requiredDependencies[j][1] === resourceTypes.stock
+                && spareStock < requiredDependencies[j][0]) {
               return false;
             } else if (requiredDependencies[j][1] === resourceTypes.metal
                 && spareMetal < requiredDependencies[j][0]) {

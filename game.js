@@ -274,8 +274,8 @@ function applyPlan(plan) {
     if (plan.b === terrain.tileTypes.dock
      || plan.b === terrain.tileTypes.airport
      || plan.b === terrain.tileTypes.mine) {
-      // Lumber cost.
-      currentCamp.usedLumber++;
+      // Stock cost.
+      currentCamp.usedStock++;
     }
     if (plan.b === terrain.tileTypes.hospital) {
       // Metal cost.

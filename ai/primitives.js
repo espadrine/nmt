@@ -11,7 +11,7 @@ lookAtPlaces[terrain.tileTypes.hospital] = true;
 
 var lookAroundBuildings = Object.create(null);
 lookAroundBuildings[terrain.tileTypes.industry] = [ terrain.tileTypes.mine ];
-lookAroundBuildings[terrain.tileTypes.lumber] = [terrain.tileTypes.lumber];
+lookAroundBuildings[terrain.tileTypes.stock] = [terrain.tileTypes.stock];
 
 // Given a tile position and something to build, find the nearest tile where it
 // can be built, or null.
@@ -167,7 +167,7 @@ var valuableBuildings = [
   terrain.tileTypes.dock,
   terrain.tileTypes.airport,
   terrain.tileTypes.wall,
-  terrain.tileTypes.lumber,
+  terrain.tileTypes.stock,
   terrain.tileTypes.mine,
   terrain.tileTypes.industry,
   terrain.tileTypes.hospital,
@@ -969,8 +969,8 @@ Strategy.prototype = {
       var resource = resources[i][1];
       var buildingType;
       var size;
-      if (resource === terrain.resourceTypes.lumber) {
-        buildingType = terrain.tileTypes.lumber;
+      if (resource === terrain.resourceTypes.stock) {
+        buildingType = terrain.tileTypes.stock;
         size = -1;
       } else if (resource === terrain.resourceTypes.metal) {
         buildingType = terrain.tileTypes.industry;
