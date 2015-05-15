@@ -82,13 +82,13 @@ var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
     26 ];
 
 var resourceTypes = {
-  stock:    -1,
-  metal:    -2,
-  wealth:   -3
+  stock:      -1,
+  production: -2,
+  wealth:     -3
 };
 var listOfResourceTypes = [
   resourceTypes.stock,
-  resourceTypes.metal,
+  resourceTypes.production,
   resourceTypes.wealth
 ];
 
@@ -165,9 +165,9 @@ var buildingDependencies = [,,,,,,,,
     [[1, resourceTypes.stock], [1, tileTypes.factory]],
     [[10, resourceTypes.wealth], [1, tileTypes.mine], [5, tileTypes.road]],
     ,
-    [[1, resourceTypes.metal], [20, resourceTypes.wealth], [2, tileTypes.wall]],
+    [[1, resourceTypes.production], [20, resourceTypes.wealth], [2, tileTypes.wall]],
     ,
-    [[1, tileTypes.gunsmith], [1, resourceTypes.metal]]
+    [[1, tileTypes.gunsmith], [1, resourceTypes.production]]
 ];
 
 // What the current tile must hold to allow a building to be constructed.
@@ -621,14 +621,15 @@ Terrain.prototype = {
 
   // Given a building (see tileTypes) and a tile = {q, r},
   // check whether the building can be built there.
-  // resources = {stock, usedStock, metal, usedMetal, wealth, usedWealth}
+  // resources = {stock, usedStock, production, usedProduction, wealth,
+  // usedWealth}
   // is the resources available for use in the current camp.
   validConstruction: function validConstruction(building, tile, resources) {
     if (building == null) { return true; }   // Destruction is always valid.
     var humanityTile = this.humanity.tile(tile);
     var tileInfo = this.tile(tile);
     var spareStock = resources.stock - resources.usedStock;
-    var spareMetal = resources.metal - resources.usedMetal;
+    var spareProduction = resources.production - resources.usedProduction;
     var spareFarm = resources.wealth - resources.usedWealth;
     if (!humanityTile || humanityTile.h <= 0) { return false; }
     // Requirements on the current tile.
@@ -668,8 +669,8 @@ Terrain.prototype = {
             if (requiredDependencies[j][1] === resourceTypes.stock
                 && spareStock < requiredDependencies[j][0]) {
               return false;
-            } else if (requiredDependencies[j][1] === resourceTypes.metal
-                && spareMetal < requiredDependencies[j][0]) {
+            } else if (requiredDependencies[j][1] === resourceTypes.production
+                && spareProduction < requiredDependencies[j][0]) {
               return false;
             } else if (requiredDependencies[j][1] === resourceTypes.wealth
                 && spareFarm < requiredDependencies[j][0]) {

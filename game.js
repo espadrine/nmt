@@ -278,8 +278,8 @@ function applyPlan(plan) {
       currentCamp.usedStock++;
     }
     if (plan.b === terrain.tileTypes.hospital) {
-      // Metal cost.
-      currentCamp.usedMetal++;
+      // Production cost.
+      currentCamp.usedProduction++;
     }
     // Wealth cost.
     if (plan.b === terrain.tileTypes.hospital) {
@@ -489,7 +489,7 @@ function artilleryDamage(tile, campId) {
 // Game turn.
 
 var gameTurnTime = 50;     // Every 50ms.
-var maxMetal = 13;  // Winning amount of metal for an Industrial Victory.
+var maxProduction = 13;  // Winning amount of production for an Industrial Victory.
 var maxAcquiredUniversities = 3;
 
 function gameTurn() {
@@ -540,10 +540,11 @@ function gameTurn() {
       winType = 'Supremacy';
       var winners = humanity.winners(function(camp) {return camp.population;});
       gameOver = true;
-    } else if ((currentCamp.metal - currentCamp.usedMetal) >= maxMetal) {
+    } else if ((currentCamp.production - currentCamp.usedProduction) >=
+        maxProduction) {
       winType = 'Industrial';
       var winners = humanity.winners(function(camp) {
-        return camp.metal - camp.usedMetal;
+        return camp.production - camp.usedProduction;
       });
       gameOver = true;
     } else if (currentCamp.acquiredUniversities >= maxAcquiredUniversities) {

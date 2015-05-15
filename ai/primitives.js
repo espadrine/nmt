@@ -320,7 +320,7 @@ function resourceBuildRequirement(buildingType, camp) {
   var buildingRequirements = terrain.buildingDependencies[buildingType];
   var requirements = [];
   if (buildingRequirements == null) { return []; }
-  var left = [camp.leftLumber, camp.leftMetal, camp.leftFarm];
+  var left = [camp.leftStock, camp.leftProduction, camp.leftFarm];
   var type = terrain.listOfResourceTypes;
   // Extract required resources.
   for (var i = 0; i < buildingRequirements.length; i++) {
@@ -972,7 +972,7 @@ Strategy.prototype = {
       if (resource === terrain.resourceTypes.stock) {
         buildingType = terrain.tileTypes.stock;
         size = -1;
-      } else if (resource === terrain.resourceTypes.metal) {
+      } else if (resource === terrain.resourceTypes.production) {
         buildingType = terrain.tileTypes.industry;
         size = -1;
       } else if (resource === terrain.resourceTypes.farm) {
