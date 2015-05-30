@@ -54,4 +54,49 @@ function genName(name) {
   }
 }
 
+var firstNamesMale = ['Mohamed', 'Manuel', 'Mamadou', 'Mehdi', 'Thiago',
+  'Daniel', 'Miguel', 'Liam', 'Jack', 'William', 'Agustín', 'Santiago',
+  'Stevenson', 'Jayden', 'Ramón', 'Luis', 'Sebastián', 'Noah', 'Ethan', 'David',
+  'Deven', 'James', 'Aarav', 'Amir', 'Ali', 'Noam', 'George', 'Adam', 'An',
+  'Wei', 'Hiroto', 'Min-joon', 'Chia-hao', 'Hiro', 'Somchai', 'Yerasyl',
+  'Naranbaatar', 'John', 'Noel', 'Marc', 'Davit', 'Tobias', 'Yusif', 'Maxim',
+  'Lucas', 'Nathan', 'Amar', 'Georgi', 'Jacob', 'Oliver', 'Rasmus', 'Elias',
+  'Gabriel', 'Giorgi', 'Ben', 'Georgios', 'Malik', 'Charlie', 'Bence', 'Aaron',
+  'James', 'Francesco', 'Robert', 'Matas', 'Alexander', 'Luke', 'Mathéo',
+  'Nicholas', 'Sem', 'Andrei', 'Artyom', 'Hugo', 'Jonas', 'Yusuf', 'Cooper',
+  'Nikau'];
+var firstNamesFemale = ['Fatima', 'Mary', 'Aya', 'Mariam', 'Sophia', 'Alysha',
+  'Olivia', 'Emma', 'Léa', 'Mariana', 'Gabrielle', 'Ximena', 'Mia', 'Madison',
+  'Chloe', 'Isabella', 'Anya', 'Florencia', 'Camille', 'Ai', 'Jing', 'Yuina',
+  'Odval', 'Seo-yeon', 'Shu-fen', 'Aadhya', 'Noa', 'Eden', 'Rimas', 'Ayzere',
+  'Nor', 'Althea', 'Sumayah', 'Uendi', 'Laia', 'Nareh', 'Anna', 'Zahra',
+  'Sevinj', 'Aya', 'Lamija', 'Victoria', 'Lana', 'Eliška', 'Amelia', 'Sara',
+  'Amanda', 'Louise', 'Mariami', 'Ivaana', 'Katherine', 'Emilia', 'Alessia',
+  'Marija', 'Elena', 'Tess', 'Nora', 'Lena', 'Anastasia', 'Dunja', 'Lucía',
+  'Ane', 'Martine', 'Elsa', 'Mia', 'Chiara', 'Charlotte', 'Ruby', 'Aria',
+  'Tiare'];
+var lastNames = ['Kelmendi', 'Gruber', 'Mammadov', 'Peeters', 'Hodžić',
+  'Kovačević', 'Dimitrov', 'Horvat', 'Novák', 'Jensen', 'Tamm', 'Ivanov',
+  'Joensen', 'Korhonen', 'Johansson', 'Martin', 'Beridze', 'Müller',
+  'Papadopoulos', 'Nagy', 'Murphy', 'Rossi', 'Zogaj', 'Bērziņš', 'Kazlauskas',
+  'Schmit', 'Borg', 'Andov', 'De Jong', 'Hansen', 'Kowalski', 'Silva', 'Popa',
+  'Smirnov', 'Jovanović', 'Horváth', 'García', 'González', 'Andersson',
+  'Bianchi', 'Yılmaz', 'Melnyk', 'Smith', 'Wilson'];
+
+genName.genPerson = function genPerson(options) {
+  options = options || {};
+  var female = (Math.random() < 0.5);
+  var firstName = pick(female? firstNamesFemale: firstNamesMale);
+  if (options.parents) {
+    var lastName = pick(options.parents);
+  } else {
+    var lastName = pick(lastNames);
+  }
+  return {
+    female: female,
+    firstName: firstName,
+    lastName: lastName
+  };
+}
+
 module.exports = genName;
