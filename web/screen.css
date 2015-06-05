@@ -183,6 +183,7 @@ iframe#helpPane {
   z-index: -2;
   box-shadow: #999 1px 1px inset, #999 -1px -1px inset;
 }
+#resourcesPanel th { text-align: left; }
 #resourcesPanel td { text-align: center; }
 .Folks { color: pink; }
 .Wealth { color: #dd0; }

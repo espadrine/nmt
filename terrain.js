@@ -212,18 +212,18 @@ Terrain.prototype = {
 
   // Returns true if it is part of the continent.
   continent: function continent(x, y) {
-    var size = 2500;
-    var hm = heatmap(x, y, simplex1, 3/5*size, 8);
+    var size = 512;
+    var hm = heatmap(x, y, simplex1, size, 8);
     var center = this.centerPoint;
     var squareDistanceFromCenter = (x - center.x) * (x - center.x)
                                  + (y - center.y) * (y - center.y);
-    var innerSize = 300;
-    hm = (hm + 1) / 2;
-    hm = hm * Math.exp(-squareDistanceFromCenter / (size * size))
+    var continents = heatmap(x, y, simplex1, 4 * size, 8);
+    var island =
       // Keep the center above ocean level.
-      + hm * Math.exp(-squareDistanceFromCenter / (innerSize * innerSize));
-    hm = Math.min(1, hm);
-    return hm;
+      + (hm + .7) * Math.exp(-squareDistanceFromCenter / (size * size));
+    if (island < continents) { island = continents; }
+    island = Math.min(1, island);
+    return island;
   },
 
   continentLimit: 0.42,
@@ -273,7 +273,7 @@ Terrain.prototype = {
       // Rivers are thinner in mountains.
       (((heightNoise > 0.6)? false: (riverNoise > 0.98))
       // Seas are smaller in mountains.
-      || seaNoise*3/4 + heightNoise/4 < -0.7) ?
+      || seaNoise*3/4 + heightNoise/4 < -1.0) ?
           // Inverse of oceanHeight.
           // sea height = X * 1 + Y
           // limit height = X * continentLimit + Y
