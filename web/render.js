@@ -67,6 +67,7 @@ function paintTilesRaw(imgdata, size, origin) {
   if (cachedTerrainPaint[pos] === undefined) {
     var data = new Uint8ClampedArray(arraySize);
     for (var y = 0; y < height; y++) {
+      var wasWater = false;
       for (var x = 0; x < width; x++) {
         var t = terrain.tile({
           x: (x + origin.x0)/size,
@@ -75,7 +76,7 @@ function paintTilesRaw(imgdata, size, origin) {
         var color = [0,0,0];
         var fromRed = 0, toRed = 0, fromGreen = 0, toGreen = 0;
         var heightMin = -1, heightMax = 1;
-        if (t.steepness == tileTypes.water) {
+        if (t.steepness === tileTypes.water) {
           color[2] = 180;
           fromRed = 0;
           fromGreen = 0;
@@ -83,16 +84,22 @@ function paintTilesRaw(imgdata, size, origin) {
           toGreen = 80;
           heightMin = -2;
           heightMax = -1.5;
-        } else if (t.steepness == tileTypes.steppe) {
-          fromRed = 10;
-          fromGreen = 190;
-          toRed = 85;
-          toGreen = 170;
-          heightMin = -1.5;
-          heightMax = -0.2;
-        } else if (t.steepness == tileTypes.hill) {
+        } else if (t.steepness === tileTypes.steppe) {
           fromRed = 100;
           fromGreen = 160;
+          toRed = 85;
+          toGreen = 140;
+          heightMin = -1.5;
+          heightMax = -0.2;
+          if (wasWater) {
+            fromRed = 170;
+            fromGreen = 170;
+            toRed = 170;
+            toGreen = 170;
+          }
+        } else if (t.steepness === tileTypes.hill) {
+          fromRed = 100;
+          fromGreen = 140;
           toRed = 150;
           toGreen = 110;
           heightMin = -0.2;
@@ -105,7 +112,8 @@ function paintTilesRaw(imgdata, size, origin) {
           heightMin = 0.2;
           heightMax = 1;
         }
-        if (t.type == tileTypes.forest) {
+        wasWater = (t.steepness === tileTypes.water);
+        if (t.type === tileTypes.forest) {
           fromRed = 20;
           fromGreen = 100;
           toRed = 50;
