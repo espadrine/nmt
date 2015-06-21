@@ -1007,18 +1007,19 @@ function paintTileHexagon(gs, tile, color, lineWidth) {
   ctx.lineWidth = 1;
 }
 
+var πx2 = 2 * Math.PI;
 var mπd3 = - Math.PI / 3;   // Minus PI divided by 3.
 
 // gs is the GraphicState.
 // cx and cy are the hexagon's center pixel coordinates on the screen,
-// rotation = {0…5} is the orientation where to orient the sprite.
+// rotation = {0…2π} is the orientation where to orient the sprite.
 // gs is the GraphicState.
-function paintSprite(gs, cx, cy, sprite, rotation) {
+function paintRotatedSprite(gs, cx, cy, sprite, rotation) {
   var ctx = gs.ctx; var size = gs.hexSize;
   var spritesWidth = gs.spritesWidth;
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate(rotation * mπd3);
+  ctx.rotate(rotation);
   var factor = size / 20;
   var msize = - (spritesWidth * factor / 2)|0;
   var mwidth = (spritesWidth * factor)|0;
@@ -1028,12 +1029,21 @@ function paintSprite(gs, cx, cy, sprite, rotation) {
   ctx.restore();
 }
 
+// gs is the GraphicState.
+// cx and cy are the hexagon's center pixel coordinates on the screen,
+// rotation = {0…5} is the orientation where to orient the sprite.
+// gs is the GraphicState.
+function paintSprite(gs, cx, cy, sprite, rotation) {
+  return paintRotatedSprite(gs, cx, cy, sprite, rotation * mπd3);
+}
+
 // tilePos = {q, r} is the tile's hexagonal coordinates,
 // cx and cy are the hexagon's center pixel coordinates on the screen,
 // building is a tileTypes.
 // rotation = {0…5} is the orientation where to orient the building.
+// t is a tile.
 // gs is the GraphicState.
-function paintBuilding(gs, cx, cy, tilePos, building, rotation) {
+function paintBuilding(gs, cx, cy, tilePos, building, rotation, t) {
   if (building != null) {
     // Buildings with graphics for curves.
     if (building === tileTypes.road) {
@@ -1080,6 +1090,9 @@ function paintBuilding(gs, cx, cy, tilePos, building, rotation) {
         }
       }
       if (!oriented) { paintSprite(gs, cx, cy, building, 0); }
+    } else if (building > 26 && building < 63) {
+      paintRotatedSprite(gs, cx, cy, building,
+        ((tilePos.q * tilePos.r * ((t.rain*128)|0)) % 64) / 64 * πx2);
     } else if (building === tileTypes.airport || building === tileTypes.factory
         || building > tileTypes.wall) {
       paintSprite(gs, cx, cy, building, 0);
@@ -1095,7 +1108,7 @@ function paintLoneBuilding(gs, tilePos, building) {
   var cp = pixelFromTile(tilePos, gs.origin, gs.hexSize);
   var t = terrain.tile(tilePos);
   var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
-  paintBuilding(gs, cp.x, cp.y, tilePos, building, rotation);
+  paintBuilding(gs, cp.x, cp.y, tilePos, building, rotation, t);
 }
 
 // gs is the GraphicState.
@@ -1121,7 +1134,7 @@ function paintBuildingsSprited(gs) {
       var t = terrain.tile(tilePos);
       var rotation = (tilePos.q ^ tilePos.r ^ ((t.rain*128)|0)) % 6;
       var human = humanity.tile(tilePos);
-      paintBuilding(gs, cx, cy, tilePos, (human? human.b: null), rotation);
+      paintBuilding(gs, cx, cy, tilePos, (human? human.b: null), rotation, t);
       cx += hexHorizDistance;
     }
     cy += hexVertDistance;
