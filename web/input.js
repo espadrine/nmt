@@ -1947,12 +1947,12 @@ function paintCamps(gs) {
       ctx.clip();
       // Inside border.
       ctx.lineWidth = bold;
-      ctx.strokeStyle = campHsl(i, 70, 35);
+      ctx.strokeStyle = campHsl(i, 70, 35, 0.4);
       ctx.stroke();
       // Dashed border.
       pathFromTiles(gs, visibleCamps[i],
           hexHorizDistance, hexVertDistance, /*noisy*/ true, /*dashed*/ true);
-      ctx.strokeStyle = campHsl(i, 80, 42);
+      ctx.strokeStyle = campHsl(i, 80, 42, 0.4);
       ctx.stroke();
       ctx.restore();
     }
@@ -1964,11 +1964,16 @@ function paintCamps(gs) {
 // Return CSS hsl string.
 // saturation: number from 0 to 100.
 // lightness: number from 0 to 100.
-function campHsl(camp, saturation, lightness) {
+function campHsl(camp, saturation, lightness, opacity) {
   if (saturation == null) { saturation = 100; }
   if (lightness == null) { lightness = 45; }
-  return 'hsl(' + campHueCreator9000(camp)
-      + ',' + saturation + '%,' + lightness + '%)';
+  if (opacity == null) {
+    return 'hsl(' + campHueCreator9000(camp)
+        + ',' + saturation + '%,' + lightness + '%)';
+  } else {
+    return 'hsla(' + campHueCreator9000(camp)
+        + ',' + saturation + '%,' + lightness + '%,' + opacity + ')';
+  }
 }
 
 var campHue = [];
