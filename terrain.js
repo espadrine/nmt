@@ -633,6 +633,10 @@ Terrain.prototype = {
     var spareProduction = resources.production - resources.usedProduction;
     var spareFarm = resources.wealth - resources.usedWealth;
     if (!humanityTile || humanityTile.h <= 0) { return false; }
+    // Special requirements for fields
+    if (building === tileTypes.field) {
+      return this.commodity(tile, tileInfo) >= 0;
+    }
     // Requirements on the current tile.
     if (tileInfo.type === tileTypes.water &&
         (building === tileTypes.farm || building === tileTypes.residence ||
