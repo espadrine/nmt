@@ -490,6 +490,7 @@ var maxFarmImprovements = 2;
 var maxStockImprovements = 4;
 var maxIndustryImprovements = 2;
 var maxMineImprovements = 8;
+var maxMarketValue = 50;
 
 
 // Camps.
@@ -507,6 +508,7 @@ function Camp(id, humanity) {
   this.skyscraper = {};
   this.wealth = 0;
   this.usedWealth = 0;      // Never decreases.
+  this.commodities = {};    // Map from commodity to number.
   this.stock = 1;           // Number of stock spots occupied.
   this.usedStock = 0;       // Never decreases.
   this.production = 0;      // Number of production occupied.
@@ -526,6 +528,7 @@ Camp.prototype = {
   skyscraper: {},
   wealth: 0,
   usedWealth: 0,      // Never decreases.
+  commodities: {},    // Map from commodity to number.
   stock: 1,           // Number of stock spots occupied.
   usedStock: 0,       // Never decreases.
   production: 0,      // Number of production spots occupied.
@@ -562,6 +565,9 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.hospital) {
       this.populationLimit -= hospitalPopulationLimit;
       this.health -= this.acquiredUniversitiesMap[tileKey] - 1;
+    } else if (b === this.terrain.tileTypes.field) {
+      var commodity = this.terrain.commodity(this.terrain.tileFromKey(tileKey));
+      this.updateCommodityWealth(commodity, -1);
     }
   },
   winHomes: function winHomes(tileKey, newTile) {
@@ -594,6 +600,36 @@ Camp.prototype = {
         this.acquiredUniversitiesMap[tileKey] = 1;
       }
       this.health += this.acquiredUniversitiesMap[tileKey];
+    } else if (b === this.terrain.tileTypes.field) {
+      var commodity = this.terrain.commodity(this.terrain.tileFromKey(tileKey));
+      this.updateCommodityWealth(commodity, 1);
+    }
+  },
+  updateCommodityWealth: function(commodity, delta) {
+    var oldTotal = 0;
+    for (var i = 0; i < this.humanity.numberOfCamps; i++) {
+      var camp = this.humanity.camps[i];
+      oldTotal += camp.commodities[commodity] || 0;
+    }
+    var total = oldTotal + delta;
+    for (var i = 0; i < this.humanity.numberOfCamps; i++) {
+      var camp = this.humanity.camps[i];
+      camp.commodities[commodity] = camp.commodities[commodity] || 0;
+      if (oldTotal === 0) {
+        var oldMarketShare = 0;
+      } else {
+        var oldMarketShare = camp.commodities[commodity] / oldTotal;
+      }
+      if (this.id === i) {
+        // Our camp has a change.
+        camp.commodities[commodity] += delta;
+      }
+      if (total === 0) {
+        var marketShare = 0;
+      } else {
+        var marketShare = camp.commodities[commodity] / total;
+      }
+      camp.wealth += ((marketShare - oldMarketShare) * maxMarketValue)|0;
     }
   },
   get resources () {
