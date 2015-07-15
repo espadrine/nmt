@@ -48,6 +48,7 @@ Humanity.prototype = {
   centerTile: null,
   data: function data() { return this.humanityData; },
   dirtyWorld: false,
+  commoditiesChanged: false,
 
   setCenterTile: function setCenterTile(centerTile) {
     // {q,r} location of center.
@@ -91,8 +92,7 @@ Humanity.prototype = {
       tile.f = 0; tile.o = 0; tile.h = 0;
       if (tile.b === null ||
           tile.b === this.terrain.tileTypes.road ||
-          tile.b === this.terrain.tileTypes.wall ||
-          tile.b === this.terrain.tileTypes.field) {
+          tile.b === this.terrain.tileTypes.wall) {
         tile.c = null;
       }
     }
@@ -141,6 +141,16 @@ Humanity.prototype = {
           }
         }
         delete change.resources;
+      }
+      if (change.commodities !== undefined) {
+        // commodities: map camp id to map from commodity to number.
+        for (var i = 0; i < this.numberOfCamps; i++) {
+          for (var commodity in change.commodities[i]) {
+            this.camps[i].commodities[commodity] =
+              change.commodities[i][commodity];
+          }
+        }
+        delete change.commodities;
       }
       if (change.population !== undefined) {
         for (var i = 0; i < this.numberOfCamps; i++) {
@@ -472,6 +482,14 @@ Humanity.prototype = {
     return list;
   },
 
+  getCommodities: function getCommodities() {
+    var list = new Array(this.camps.length);
+    for (var i = 0; i < this.camps.length; i++) {
+      list[i] = this.camps[i].commodities;
+    }
+    return list;
+  },
+
   getPopulationLimits: function getPopulationLimits() {
     var list = new Array(this.camps.length);
     for (var i = 0; i < this.camps.length; i++) {
@@ -631,6 +649,7 @@ Camp.prototype = {
       }
       camp.wealth += ((marketShare - oldMarketShare) * maxMarketValue)|0;
     }
+    this.humanity.commoditiesChanged = true;
   },
   get resources () {
     return {

@@ -29,6 +29,7 @@ function actWSStart(socket) {
     centerTile: centerTile,
     campNames: humanity.campNames(),
     resources: humanity.getResources(),
+    commodities: humanity.getCommodities(),
   }));
   socket.send(JSON.stringify({lockedTiles:humanity.lockedTiles}));
 }
@@ -511,6 +512,10 @@ function gameTurn() {
     updatedHumanity.artilleryFire = artilleryFire;
     updatedHumanity.resources = humanity.getResources();
     updatedHumanity.lockedTiles = humanity.lockedTiles;
+    if (humanity.commoditiesChanged) {
+      updatedHumanity.commodities = humanity.getCommodities();
+      humanity.commoditiesChanged = false;
+    }
     var jsonUpdatedHumanity = JSON.stringify(updatedHumanity);
     actChannel.clients.forEach(function (client) {
       try {
