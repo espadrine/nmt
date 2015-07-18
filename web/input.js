@@ -43,6 +43,10 @@ function socketMessage(e) {
       resources = change.resources[playerCamp];
       delete change.resources;
     }
+    if (change.commodities !== undefined) {
+      campCommodities = change.commodities;
+      delete change.commodities;
+    }
     if (change.population !== undefined) {
       humanityPopulation = change.population;
       delete change.population;
@@ -208,11 +212,15 @@ function setResourcesTable() {
   'Health'].forEach(function(resourceName) {
     var row = '';
     var shortName = resourceName;
-    if (shortName === 'Production') { shortName = 'Product'; }
+    var isWealth = (resourceName === 'Wealth');
+    var isProduction = (resourceName === 'Production');
+    if (isProduction) { shortName = 'Product'; }
     row += '<th>' + shortName + '</th>';
     for (var i = 0; i < numberOfCamps; i++) {
       var resource = resourceFromName[resourceName](i);
-      row += '<td>' + resource + '</td>';
+      var hoverAction = '';
+      if (isWealth) { hoverAction = hoverWealthAction(i); }
+      row += '<td ' + hoverAction + '>' + resource + '</td>';
     }
     row = '<tr class="' + resourceName + '">' + row + '</tr>';
     content += row;
@@ -221,6 +229,47 @@ function setResourcesTable() {
   var tbody = '<tbody>' + content + '<tbody>';
   var table = '<table>' + thead + tbody + '</table>';
   resourcesPanel.innerHTML = table;
+}
+
+function capitalize(str) {
+  var first = String.fromCharCode(str.charCodeAt(0) - 32);
+  return first + str.slice(1);
+}
+// Return the HTML data to display on the hover resource display.
+function hoverResourceDisplayWealth(campId) {
+  var commodities = campCommodities[campId];
+  var data = '';
+  for (var commodity in commodities) {
+    if (commodities[commodity] <= 0) { continue; }
+    var total = 0;
+    for (var i = 0; i < numberOfCamps; i++) {
+      total += campCommodities[i][commodity];
+    }
+    var marketShare = commodities[commodity] / total;
+    data += capitalize(tileNames[commodity]) +
+      ' (' + (marketShare * 100).toFixed(0) + '%) ';
+  }
+  if (data.length === 0) {
+    data = 'Nothing';
+  }
+  return data;
+}
+// Return the inserted HTML in a tag to trigger a hover resource display.
+function hoverWealthAction(campId) {
+  return 'onmouseover="showHoverResourceDisplayWealth(event, ' +
+    'hoverResourceDisplayWealth(' + campId + '))" ' +
+    'onmouseout="hideHoverResourceDisplay()"';
+}
+function hideHoverResourceDisplay() {
+  hoverResourceDisplay.style.display = 'none';
+}
+// Takes HTML data to display on the
+function showHoverResourceDisplayWealth(event, data) {
+  hoverResourceDisplay.innerHTML = data;
+  hoverResourceDisplay.style.color = '#bb0';
+  hoverResourceDisplay.style.left = (event.clientX + 20) + 'px';
+  hoverResourceDisplay.style.top = event.clientY + 'px';
+  hoverResourceDisplay.style.display = 'block';
 }
 
 

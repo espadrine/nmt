@@ -10,4 +10,3 @@ camp.route(/^\/not-my-territory(\/.*)$/, function (query, match, end) {
   }
   end(null, { template: match[1] });
 });
-
