@@ -243,11 +243,18 @@ function hoverResourceDisplayWealth(campId) {
     if (commodities[commodity] <= 0) { continue; }
     var total = 0;
     for (var i = 0; i < numberOfCamps; i++) {
-      total += campCommodities[i][commodity];
+      total += campCommodities[i][commodity] || 0;
     }
-    var marketShare = commodities[commodity] / total;
+    var fields = commodities[commodity] || 0;
+    if (total === 0) {
+      var marketShare = 0;
+    } else {
+      var marketShare = fields / total;
+    }
+    // wealth = 50 x fields/total x (2 - 1/fields)
+    var wealth = 50 * marketShare * (2 - 1/fields);
     data += capitalize(tileNames[commodity]) +
-      ' (' + (marketShare * 100).toFixed(0) + '%) ';
+      ' (' + (wealth).toFixed(0) + ') ';
   }
   if (data.length === 0) {
     data = 'Nothing';

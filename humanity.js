@@ -632,20 +632,24 @@ Camp.prototype = {
     var total = oldTotal + delta;
     for (var i = 0; i < this.humanity.numberOfCamps; i++) {
       var camp = this.humanity.camps[i];
-      camp.commodities[commodity] = camp.commodities[commodity] || 0;
-      if (oldTotal === 0) {
+      var oldFields = camp.commodities[commodity] || 0;
+      var fields = oldFields;
+      // wealth = 50 x (market share = fields/total) x (2 - 1/fields)
+      // wealth = 50 x (2 x fields - 1) / total
+      if (oldFields === 0) {
         var oldMarketShare = 0;
       } else {
-        var oldMarketShare = camp.commodities[commodity] / oldTotal;
+        var oldMarketShare = ((oldFields << 1) - 1) / oldTotal;
       }
       if (this.id === i) {
         // Our camp has a change.
-        camp.commodities[commodity] += delta;
+        fields += delta;
+        camp.commodities[commodity] = fields;
       }
-      if (total === 0) {
+      if (fields === 0) {
         var marketShare = 0;
       } else {
-        var marketShare = camp.commodities[commodity] / total;
+        var marketShare = ((fields << 1) - 1) / total;
       }
       camp.wealth += ((marketShare - oldMarketShare) * maxMarketValue)|0;
     }
