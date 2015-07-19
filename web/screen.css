@@ -3,13 +3,13 @@
   src: local("Linux Biolinum O"), url(./LinBiolinum_R.woff);
 }
 body { margin: 0; font-family: "Linux Biolinum", Helvetica, Arial, "Lucida Grande", sans-serif; }
-canvas.maincanvas {
+.maincanvas {
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
 }
-output#info {
+#info {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -20,7 +20,7 @@ output#info {
   color: #abcdef;
   border-top-left-radius: 4px;
 }
-section#hoverResourceDisplay {
+#hoverResourceDisplay {
   position: absolute;
   display: none;
   background: #222;
@@ -30,13 +30,13 @@ section#hoverResourceDisplay {
   z-index: 2;
 }
 
-div#controller { position: absolute; z-index: 1; }
-div#controller > svg { width: 50px; height: 50px; float: left; }
-div#controller > svg > path { cursor: pointer; }
+#controller { position: absolute; z-index: 1; }
+#controller > svg { width: 50px; height: 50px; float: left; }
+#controller > svg > path { cursor: pointer; }
 .hex { stroke: white; stroke-width: 1.8px; }
 .gum { stroke: white; stroke-width: 1.5px; }
 .dust { stroke: #aaa; }
-div.controlPanel {
+.controlPanel {
   display: none;
   border: 2px solid white;
   color: #f7f;
@@ -56,9 +56,11 @@ div.controlPanel {
   border-top-left-radius: 10px 60px;
   border-bottom-left-radius: 3px;
 }
-div.controlPanel > p { padding: 10px; }
-hr.separator {
+.controlPanel > p { padding: 10px; }
+.separator {
   display: block;
+  position: relative;
+  top: 10px;
   width: 80%;
   height: 1px;
   border: 0;
@@ -68,7 +70,7 @@ hr.separator {
   margin: auto;
 }
 p { margin-top: 0; margin-bottom: 0; }
-p.help { cursor: help; }
+.help { cursor: help; }
 
 /* Travel */
 .attack-info {
@@ -103,35 +105,44 @@ p.help { cursor: help; }
 }
 
 /* Build */
-span.buildHelp {
-  font-size: 0.7em;
+.buildHelp {
+  height: 0;
+  display: block;
+  font-size: 0em;
   font-style: italic;
   font-variant: normal;
   letter-spacing: normal;
+  transition: font-size .3s 1s, height .3s 1s;
+  -webkit-transition: font-size .3s 1s, height .3s 1s;
 }
-p.buildSelection {
+.buildSelection {
   font-variant: small-caps;
   letter-spacing: 3px;
-  transition: box-shadow 1.2s, font-size .3s 1s;
-  -webkit-transition: box-shadow 0.6s, font-size .3s 1s;
+  transition: box-shadow 1.2s;
+  -webkit-transition: box-shadow 0.6s;
   margin: 0;
   padding: 5px 0;
   cursor: default;
   /* Invalid by default */
   color: #403;
   text-shadow: -1px -1px 0px #949, 1px 1px 0px #727, -1px 1px 0px #727, 1px -1px 0px #949;
-  font-size: 0.8em;
+  font-size: 0.9em;
 }
-p.buildSelection:hover {
-  font-size: 1.1em;
+.buildSelection:hover:not(.validSelection) {
+  color: #d5d;
+  text-shadow: 0px 1px 0px #333;
 }
-p.validSelection {
+.buildSelection:hover > .buildHelp {
+  font-size: 0.7em;
+  height: 100%;
+}
+.validSelection {
   color: #f7f;
   cursor: pointer;
   background: #800080;
   text-shadow: 0px 1px 0px #333;
 }
-p.validSelection:hover {
+.validSelection:hover {
   animation: build-selection 1.2s ease-in 0s infinite alternate;
   -webkit-animation: build-selection 1.2s ease-in 0s infinite alternate;
 }
@@ -151,13 +162,16 @@ p.validSelection:hover {
 }
 
 /* Places */
-div#placesPanel > p[data-tilekey] > div {
-  width: 2em;
-  margin: auto;
+#placesPanel > p[data-tilekey] { cursor: pointer; }
+#placesPanel .arrow {
+  float: left;
+  width: 0;
+  font-size: 16px;
+  -webkit-transform-origin: 5px;
+  transform-origin:         5px;
 }
-div#placesPanel > p[data-tilekey] { cursor: pointer; }
 
-iframe#helpPane {
+#helpPane {
   display: none;
   position: absolute;
   top: 50px;

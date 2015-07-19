@@ -167,18 +167,19 @@ var defaultPlacesPanelHTML = placesPanel.innerHTML;
 // Insert places = {"tileKey": "Place name"} into the panel.
 function insertPlaces(places) {
   placesPanel.innerHTML = defaultPlacesPanelHTML;
-  for (var place in places) {
+  var keys = Object.keys(places), last = keys.length - 1;
+  for (var i = 0; i <= last; i++) {
+    var place = keys[i];
     var aPlace = document.createElement('p');
     aPlace.classList.add('buildSelection');
     aPlace.classList.add('validSelection');
-    // Add a separator.
-    var aSep = document.createElement('hr');
-    aSep.classList.add('separator');
-    placesPanel.appendChild(aSep);
     // Add the place block.
     var tile = terrain.tileFromKey(place);
     aPlace.setAttribute('data-tilekey', place);
-    aPlace.innerHTML = '<div style="position:absolute;">→</div> <br>' + places[place];
+    var html = '<div class="arrow">➢</div>' +
+      '<span class=buildHelp></span>' + places[place];
+    if (i < last) { html += '<hr class=separator>'; }
+    aPlace.innerHTML = html;
     aPlace.addEventListener('click', (function(t) {
       return function() {
         gotoPlace(t);
@@ -440,7 +441,7 @@ function orientPlacesArrow() {
       arrow.style.transform = 'rotate(' + angle + 'rad)';
       arrow.style.WebkitTransform = 'rotate(' + angle + 'rad)';
       arrow.nextSibling.textContent =
-        kmDistance(screenCenter, tileCenter).toFixed(2) + 'km';
+        kmDistance(screenCenter, tileCenter).toFixed(2) + ' km';
     }
   }
 }
