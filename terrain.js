@@ -175,7 +175,7 @@ var buildingDependencies = [,,,,,,,,
 var buildingTileDependency = [,,,,,,,, ,,,,,,,,,,,,
     [tileTypes.forest, tileTypes.taiga],         // Stock [20]
     [tileTypes.metal],,,
-    [tileTypes.citrus],
+    [tileTypes.citrus],,
     [tileTypes.steppe]
 ];
 
