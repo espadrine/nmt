@@ -319,25 +319,9 @@ Humanity.prototype = {
     return centerSpot;
   },
 
-  metallicFormation: [
-    'Orebody',
-    'Cavern',
-    'Lore',
-    'Pit',
-    'Vein',
-    'Reef'
-  ],
+  metallicFormation: ['Orebody', 'Cavern', 'Lode', 'Lore', 'Pit', 'Vein', 'Reef', 'Seam', 'Strata'],
 
-  citrusFruits: [
-    'Lemon',
-    'Orange',
-    'Grapefruit',
-    'Clementine',
-    'Tangerine',
-    'Lime',
-    'Kumquat',
-    'Citron'
-  ],
+  citrusFruits: ['Lemon', 'Orange', 'Grapefruit', 'Clementine', 'Tangerine', 'Lime', 'Kumquat', 'Citron'],
 
   // Takes center, the tile {q,r} at the center of the map.
   // Return a map from tilekeys "q:r" to {type, name}

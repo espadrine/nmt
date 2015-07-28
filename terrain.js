@@ -43,20 +43,20 @@ var tileTypes = {
   fish:         32,
   algae:        33,
 
-  pigments:     34,
+  glass:        34,
   salt:         35,
   cattle:       36,
   poultry:      37,
 
   ivory:        38,
-  granite:      39,
+  limestone:    39,
   wool:         40,
   wine:         41,
 
   fur:          42,
-  glass:        43,
+  pigments:     43,
   rubber:       44,
-  marble:       45,
+  coal:         45,
 
   crocodile:    46,
   petroleum:    47,
