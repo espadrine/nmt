@@ -272,21 +272,21 @@ function applyPlan(plan) {
       // Human cost.
       humanityFrom.h--;
     }
-    if (plan.b === terrain.tileTypes.dock
-     || plan.b === terrain.tileTypes.airport
-     || plan.b === terrain.tileTypes.mine) {
-      // Stock cost.
-      currentCamp.usedStock++;
-    }
-    if (plan.b === terrain.tileTypes.hospital) {
-      // Production cost.
-      currentCamp.usedProduction++;
-    }
-    // Wealth cost.
-    if (plan.b === terrain.tileTypes.hospital) {
-      currentCamp.usedWealth += 20;
-    } else if (plan.b === terrain.tileTypes.industry) {
-      currentCamp.usedWealth += 10;
+    // Costs.
+    var costs = terrain.buildingDependencies[plan.b];
+    for (var i = 0; i < costs.length; i++) {
+      // Each cost is either a nearby building or a resource.
+      // The first element of a cost is the quantity, second is type.
+      // Resources have a negative type.
+      if (costs[i][1] < 0) {
+        if (costs[i][1] === terrain.resourceTypes.stock) {
+          currentCamp.usedStock += costs[i][0];
+        } else if (costs[i][1] === terrain.resourceTypes.production) {
+          currentCamp.usedProduction += costs[i][0];
+        } else if (costs[i][1] === terrain.resourceTypes.wealth) {
+          currentCamp.usedWealth += costs[i][0];
+        }
+      }
     }
     humanityFrom.b = plan.b;
     updatedHumanity[plan.at] = humanityFrom;

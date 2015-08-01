@@ -78,10 +78,11 @@ var tileTypes = {
   pelt:         60,
   amber:        61,
 
-  field:        62
+  field:        62,
+  market:       63
 };
 var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
-    26, 62 ];
+    26, 62, 63 ];
 
 var resourceTypes = {
   stock:      -1,
@@ -169,6 +170,7 @@ var buildingDependencies = [,,,,,,,,
     [[1, tileTypes.gunsmith], [1, resourceTypes.production]],
     ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
     [],
+    [[1, tileTypes.dock], [1, tileTypes.skyscraper], [4, resourceTypes.production]]
 ];
 
 // What the current tile must hold to allow a building to be constructed.
