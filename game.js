@@ -274,17 +274,19 @@ function applyPlan(plan) {
     }
     // Costs.
     var costs = terrain.buildingDependencies[plan.b];
-    for (var i = 0; i < costs.length; i++) {
-      // Each cost is either a nearby building or a resource.
-      // The first element of a cost is the quantity, second is type.
-      // Resources have a negative type.
-      if (costs[i][1] < 0) {
-        if (costs[i][1] === terrain.resourceTypes.stock) {
-          currentCamp.usedStock += costs[i][0];
-        } else if (costs[i][1] === terrain.resourceTypes.production) {
-          currentCamp.usedProduction += costs[i][0];
-        } else if (costs[i][1] === terrain.resourceTypes.wealth) {
-          currentCamp.usedWealth += costs[i][0];
+    if (costs != null) {
+      for (var i = 0; i < costs.length; i++) {
+        // Each cost is either a nearby building or a resource.
+        // The first element of a cost is the quantity, second is type.
+        // Resources have a negative type.
+        if (costs[i][1] < 0) {
+          if (costs[i][1] === terrain.resourceTypes.stock) {
+            currentCamp.usedStock += costs[i][0];
+          } else if (costs[i][1] === terrain.resourceTypes.production) {
+            currentCamp.usedProduction += costs[i][0];
+          } else if (costs[i][1] === terrain.resourceTypes.wealth) {
+            currentCamp.usedWealth += costs[i][0];
+          }
         }
       }
     }
