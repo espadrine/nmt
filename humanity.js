@@ -493,6 +493,7 @@ var maxStockImprovements = 4;
 var maxIndustryImprovements = 2;
 var maxMineImprovements = 8;
 var maxMarketValue = 50;
+var wealthPerMarketDist = 8;
 
 
 // Camps.
@@ -511,6 +512,7 @@ function Camp(id, humanity) {
   this.wealth = 0;
   this.usedWealth = 0;      // Never decreases.
   this.commodities = {};    // Map from commodity to number.
+  this.markets = {};        // Map from market tileKey to distance to closest.
   this.stock = 1;           // Number of stock spots occupied.
   this.usedStock = 0;       // Never decreases.
   this.production = 0;      // Number of production occupied.
@@ -531,6 +533,7 @@ Camp.prototype = {
   wealth: 0,
   usedWealth: 0,      // Never decreases.
   commodities: {},    // Map from commodity to number.
+  markets: {},        // Map from market tileKey to distance to closest.
   stock: 1,           // Number of stock spots occupied.
   usedStock: 0,       // Never decreases.
   production: 0,      // Number of production spots occupied.
@@ -570,6 +573,28 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.field) {
       var commodity = this.terrain.commodity(this.terrain.tileFromKey(tileKey));
       this.updateCommodityWealth(commodity, -1);
+    } else if (b === this.terrain.tileTypes.market) {
+      // We lose the distance to the nearest market.
+      var curTile = this.terrain.tileFromKey(tileKey);
+      for (var i = 0; i < this.humanity.numberOfCamps; i++) {
+        var camp = this.humanity.camps[i];
+        for (var marketTile in camp.markets) {
+          var otherTile = this.terrain.tileFromKey(marketTile);
+          var dist = this.terrain.distanceBetweenTiles(curTile, otherTile);
+          // If the other market was connected to us, we find a new connection.
+          if ((camp.markets[marketTile] - dist < 1) &&
+            (marketTile === tileKey)) {
+            camp.wealth -= (dist / wealthPerMarketDist) >>> 0;
+            var newConnDist = this.closestMarket(otherTile);
+            if (newConnDist < Infinity) {
+              camp.wealth += (newConnDist / wealthPerMarketDist) >>> 0;
+              camp.markets[marketTile] = newConnDist;
+            }
+          }
+        }
+      }
+      this.wealth -= (this.markets[tileKey] / wealthPerMarketDist) >>> 0;
+      delete this.markets[tileKey];
     }
   },
   winHomes: function winHomes(tileKey, newTile) {
@@ -605,6 +630,29 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.field) {
       var commodity = this.terrain.commodity(this.terrain.tileFromKey(tileKey));
       this.updateCommodityWealth(commodity, 1);
+    } else if (b === this.terrain.tileTypes.market) {
+      // We win the distance to the nearest market.
+      var curTile = this.terrain.tileFromKey(tileKey);
+      for (var i = 0; i < this.humanity.numberOfCamps; i++) {
+        var camp = this.humanity.camps[i];
+        for (var marketTile in camp.markets) {
+          var otherTile = this.terrain.tileFromKey(marketTile);
+          var connDist = camp.markets[marketTile];
+          var dist = this.terrain.distanceBetweenTiles(curTile, otherTile);
+          // If the other market was connected to something further than us,
+          // they reconnect to us instead.
+          if (connDist > dist) {
+            camp.wealth -= (connDist / wealthPerMarketDist) >>> 0;
+            camp.wealth += (dist / wealthPerMarketDist) >>> 0;
+            camp.markets[marketTile] = dist;
+          }
+        }
+      }
+      var dist = this.closestMarket(curTile);
+      if (dist < Infinity) {
+        this.wealth += (dist / wealthPerMarketDist) >>> 0;
+      }
+      this.markets[tileKey] = dist;
     }
   },
   updateCommodityWealth: function(commodity, delta) {
@@ -638,6 +686,22 @@ Camp.prototype = {
       camp.wealth += ((marketShare - oldMarketShare) * maxMarketValue)|0;
     }
     this.humanity.commoditiesChanged = true;
+  },
+  closestMarket: function(curTile) {
+    var dist = Infinity;
+    var closest;
+    for (var i = 0; i < this.humanity.numberOfCamps; i++) {
+      var camp = this.humanity.camps[i];
+      for (var marketTile in camp.markets) {
+        var otherTile = this.terrain.tileFromKey(marketTile);
+        var ndist = this.terrain.distanceBetweenTiles(curTile, otherTile);
+        if (ndist < dist) {
+          dist = ndist;
+          closest = marketTile;
+        }
+      }
+    }
+    return dist;
   },
   get resources () {
     return {
