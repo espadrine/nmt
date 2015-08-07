@@ -31,7 +31,7 @@ var tileTypes = {
   mine:         21,
   industry:     22,
   citrus:       23,
-  hospital:     24,
+  university:   24,
   beach:        25,
   arsenal:      26,
   smoke:        27,
@@ -165,7 +165,7 @@ var buildingDependencies = [,,,,,,,,
     [[1, resourceTypes.stock], [1, tileTypes.factory]],
     [[10, resourceTypes.wealth], [1, tileTypes.mine], [5, tileTypes.road]],
     ,
-    [[1, resourceTypes.production], [20, resourceTypes.wealth], [2, tileTypes.wall]],
+    [[1, tileTypes.meadow], [1, tileTypes.water], [2, tileTypes.residence]],
     ,
     [[1, tileTypes.gunsmith], [1, resourceTypes.production]],
     ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -176,8 +176,7 @@ var buildingDependencies = [,,,,,,,,
 // What the current tile must hold to allow a building to be constructed.
 var buildingTileDependency = [,,,,,,,, ,,,,,,,,,,,,
     [tileTypes.forest, tileTypes.taiga],         // Stock [20]
-    [tileTypes.metal],,,
-    [tileTypes.citrus],,
+    [tileTypes.metal],,,,,
     [tileTypes.steppe]
 ];
 

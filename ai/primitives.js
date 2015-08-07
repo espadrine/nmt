@@ -7,7 +7,7 @@ var terrain = new Terrain();
 var lookAtPlaces = Object.create(null);
 lookAtPlaces[terrain.tileTypes.mine] = true;
 lookAtPlaces[terrain.tileTypes.industry] = true;
-lookAtPlaces[terrain.tileTypes.hospital] = true;
+lookAtPlaces[terrain.tileTypes.university] = true;
 
 var lookAroundBuildings = Object.create(null);
 lookAroundBuildings[terrain.tileTypes.industry] = [ terrain.tileTypes.mine ];
@@ -170,12 +170,12 @@ var valuableBuildings = [
   terrain.tileTypes.stock,
   terrain.tileTypes.mine,
   terrain.tileTypes.industry,
-  terrain.tileTypes.hospital,
+  terrain.tileTypes.university,
 ];
 var constructFromValuable = Object.create(null);
 constructFromValuable[terrain.tileTypes.blackdeath] = terrain.tileTypes.airport;
 constructFromValuable[terrain.tileTypes.metal] = terrain.tileTypes.mine;
-constructFromValuable[terrain.tileTypes.citrus] = terrain.tileTypes.hospital;
+constructFromValuable[terrain.tileTypes.citrus] = terrain.tileTypes.university;
 
 // Compute the set of buildings to build, in order, to be able to build
 // something specific, on a tile.

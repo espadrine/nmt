@@ -12,7 +12,7 @@ var homePerHouse = {
   skyscraper: 6
 };
 
-var hospitalPopulationLimit = 100;
+var universityPopulationLimit = 100;
 
 
 function Humanity() {
@@ -483,7 +483,7 @@ Humanity.prototype = {
   },
 
   homePerHouse: homePerHouse,
-  hospitalPopulationLimit: hospitalPopulationLimit,
+  universityPopulationLimit: universityPopulationLimit,
 
 };
 
@@ -506,7 +506,7 @@ function Camp(id, humanity) {
   this.name = genName();
   this.populationCap = 0;   // Max. number of people, based on number of houses.
   this.population = 0;      // Number of people.
-  this.populationLimit = hospitalPopulationLimit;
+  this.populationLimit = universityPopulationLimit;
   this.residence = {};      // Maps from tileKey to number of homes.
   this.skyscraper = {};
   this.wealth = 0;
@@ -527,7 +527,7 @@ Camp.prototype = {
   name: 'Default',
   populationCap: 0,   // Max. number of people, based on number of houses.
   population: 0,      // Number of people.
-  populationLimit: hospitalPopulationLimit,
+  populationLimit: universityPopulationLimit,
   residence: {},      // Maps from tileKey to number of homes.
   skyscraper: {},
   wealth: 0,
@@ -567,8 +567,8 @@ Camp.prototype = {
       this.production -= 1 + Math.min(oldTile.h, maxMineImprovements);
     } else if (b === this.terrain.tileTypes.industry) {
       this.production -= 1 + Math.min(oldTile.h, maxIndustryImprovements);
-    } else if (b === this.terrain.tileTypes.hospital) {
-      this.populationLimit -= hospitalPopulationLimit;
+    } else if (b === this.terrain.tileTypes.university) {
+      this.populationLimit -= universityPopulationLimit;
       this.health -= this.acquiredUniversitiesMap[tileKey] - 1;
     } else if (b === this.terrain.tileTypes.field) {
       var commodity = this.terrain.commodity(this.terrain.tileFromKey(tileKey));
@@ -621,8 +621,8 @@ Camp.prototype = {
       this.production += 1 + Math.min(newTile.h, maxMineImprovements);
     } else if (b === this.terrain.tileTypes.industry) {
       this.production += 1 + Math.min(newTile.h, maxIndustryImprovements);
-    } else if (b === this.terrain.tileTypes.hospital) {
-      this.populationLimit += hospitalPopulationLimit;
+    } else if (b === this.terrain.tileTypes.university) {
+      this.populationLimit += universityPopulationLimit;
       if (!this.acquiredUniversitiesMap[tileKey]) {
         this.acquiredUniversitiesMap[tileKey] = 1;
       }
