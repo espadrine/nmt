@@ -438,13 +438,15 @@ function zeroOrOneManufacture(a) {
 }
 function clearBit(a) {
   a = a|0;
-  var b = a|0;
+  return a & ~smallestBit(a);
+}
+function smallestBit(a) {
+  a = a|0;
   // 5 manufacture items, so limit = 2^5 = 32.
-  for (var i = 1; i < 32; i << 1) {
-    a &= ~i;
-    if (b !== a) { return a; }
+  for (var i = 1; i < 32; i <<= 1) {
+    if ((a & i) > 0) { return i; }
   }
-  return a;
+  return 0;
 }
 
 // Are the people in tileKey = "q:r" surrounded by camp?
