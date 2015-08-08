@@ -2239,7 +2239,10 @@ var currentTile;    // {q,r}.
 // For a mouse event, give the information of the tile under the cursor.
 function showTileInformation(tile) {
   var t = terrain.tile(tile);
+  var comm = terrain.commodity(tile, t);
   var info = 'a ' + tileNames[t.type];
+  if (t.type === 0) { info = tileNames[t.type]; }
+  if (comm >= 0) { info += ' with ' + tileNames[comm]; }
   var h = humanity.tile(tile);
   if (h != null) {
     if (h.b != null) {
