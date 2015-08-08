@@ -422,27 +422,25 @@ function collectFromTile(tileKey, humanityTile, addBuilding) {
 }
 
 function getManufacture(humanityTile, manufacture) {
-  humanityTile.o |= manufacture;
-  var binSum = binDigitSum(humanityTile.o);
-  if (binSum > 2) {
+  // We already have that manufacture.
+  if ((humanityTile.o & manufacture) !== 0) { return; }
+  if (!zeroOrOneManufacture(humanityTile.o)) {  // we have 2 manufactures
     // We have to drop something.
     humanityTile.o = clearBit(humanityTile.o);
   }
+  humanityTile.o |= manufacture;
 }
 
-function binDigitSum(a) {
+function zeroOrOneManufacture(a) {
   a = a|0;
-  var sum = 0;
-  while (a !== 0) {
-    sum += (a & 1);
-    a >>= 1;
-  }
-  return sum;
+  // It is a power of two or zero.
+  return (a & -a) === a;
 }
 function clearBit(a) {
   a = a|0;
   var b = a|0;
-  for (var i = 1; i < 32; i++) {
+  // 5 manufacture items, so limit = 2^5 = 32.
+  for (var i = 1; i < 32; i << 1) {
     a &= ~i;
     if (b !== a) { return a; }
   }
