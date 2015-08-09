@@ -121,19 +121,9 @@ function heatmap(x, y, simplex, size, harmonics) {
 
 
 // Movements.
-var distances = [];
-distances[tileTypes.water]    = 0xbad;
-distances[tileTypes.steppe]   = 2;
-distances[tileTypes.hill]     = 4;
-distances[tileTypes.mountain] = 16;
-distances[tileTypes.swamp]    = 8;
-distances[tileTypes.meadow]   = 3;
-distances[tileTypes.forest]   = 8;
-distances[tileTypes.taiga]    = 24;
-distances[tileTypes.road]     = 1;
-distances[tileTypes.wall]     = 32;
-var normalWater = distances[tileTypes.water];
-var normalSwamp = distances[tileTypes.swamp];
+var distancesNormal = [17,2,4,16,8,3,8,24,,,,,,,,,1,32];
+var distancesBoat = [1,4,8,16,1,8,16,24,,,,,,,,,1,32];
+var distancesPlane = [1,1,2,2,1,1,2,2,,,,,,,,,1,8];
 
 var MAX_INT = 9007199254740992;
 
@@ -354,13 +344,13 @@ Terrain.prototype = {
   },
 
   // Movements.
-  distances: distances,
+  distances: distancesNormal,
 
   distance: function distance(tpos) {
     var t = this.tile(tpos);
     var h = this.humanity.tile(tpos);
-    var d = distances[(h && h.b)? h.b: t.type];
-    if (d === undefined) { d = distances[t.type]; }
+    var d = this.distances[(h && h.b)? h.b: t.type];
+    if (d === undefined) { d = this.distances[t.type]; }
     return d;
   },
 
@@ -407,11 +397,11 @@ Terrain.prototype = {
   },
 
   speedFromHuman: function speedFromHuman(human) {
-    if ((human.o & manufacture.plane) !== 0) {
-      return 32;
-    } else if ((human.o & manufacture.car) !== 0) {
-      return 16;
-    } else { return 8; }
+    var speed = 8;
+    if ((human.o & manufacture.car) !== 0) {
+      speed += 8;
+    }
+    return speed;
   },
 
   // Find the set of tiles one can move to, from a starter tile.
@@ -572,17 +562,14 @@ Terrain.prototype = {
   },
 
   setDistancesForHuman: function setDistancesForHuman(h) {
-    if ((h.o & manufacture.boat) !== 0) {
-      this.distances[tileTypes.water] = 1;
-      this.distances[tileTypes.swamp] = 1;
-    } else if ((h.o & manufacture.plane) !== 0) {
-      this.distances[tileTypes.water] = 2;
-      this.distances[tileTypes.swamp] = 2;
+    if ((h.o & manufacture.plane) !== 0) {
+      this.distances = distancesPlane;
+    } else if ((h.o & manufacture.boat) !== 0) {
+      this.distances = distancesBoat;
     }
   },
   unsetDistancesForHuman: function unsetDistancesForHuman(h) {
-    this.distances[tileTypes.water] = normalWater;
-    this.distances[tileTypes.swamp] = normalSwamp;
+    this.distances = distancesNormal;
   },
   humanTravelFrom: function humanTravelFrom(tpos) {
     var h = this.humanity.tile(tpos);
