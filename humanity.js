@@ -95,6 +95,10 @@ Humanity.prototype = {
           tile.b === this.terrain.tileTypes.wall) {
         tile.c = null;
       }
+    } else if (tile.c >= this.numberOfCamps) {
+      for (var i = 0; i < (tile.c - this.numberOfCamps + 1); i++) {
+        this.addCamp();
+      }
     }
   },
 
@@ -218,6 +222,22 @@ Humanity.prototype = {
     return this.camps;
   },
 
+  addCamp: function() {
+    var newCamp = new Camp(this.numberOfCamps, this);
+    this.camps.push(newCamp);
+    this.numberOfCamps++;
+    return newCamp;
+  },
+
+  addOrReuseCamp: function(minPopulation) {
+    for (var i = 0; i < this.numberOfCamps; i++) {
+      if (this.camps[i].population < minPopulation) {
+        return this.camps[i];
+      }
+    }
+    return this.addCamp();
+  },
+
   // List of camp IDs from most (population, …) to least.
   // criterion is a function that takes a camp, returns a number.
   winners: function winners(criterion) {
@@ -237,6 +257,7 @@ Humanity.prototype = {
   // Modifies `camps`.
   // Returns {q,r} location of center of map.
   setSpawn: function setSpawn() {
+    this.numberOfCamps = 3;
     this.spawnCampCursor = 0;
     this.camps = this.makeCamps();
     this.humanityData = {};    // reset humanity.
@@ -423,6 +444,18 @@ Humanity.prototype = {
     }
     if (k > limit) { return null; }
     return tile;
+  },
+
+  // Take a function from (humanityTile, tileKey) to a truth value.
+  // Returns the first humanityTile for which this function returns true.
+  // Returns null if none is found.
+  tileWith: function tileWith(valid) {
+    for (var tileKey in this.humanityData) {
+      var humanityTile = this.humanityData[tileKey];
+      if (valid(humanityTile, tileKey)) {
+        return this.terrain.tileFromKey(tileKey);
+      }
+    }
   },
 
 

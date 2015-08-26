@@ -512,10 +512,19 @@ var terrain = new Terrain(humanity);
 
 function changeHumanity(humanityData, change) {
   for (var tileKey in change) {
+    if (change[tileKey].c >= numberOfCamps) {
+      addCamp(change[tileKey].c);
+    }
     humanityData[tileKey] = change[tileKey];
     delete registerMoves[tileKey];
     delete registerBuilds[tileKey];
   }
+}
+
+// Register a new camp.
+function addCamp(id) {
+  var campsToAdd = id - numberOfCamps + 1;
+  numberOfCamps += campsToAdd;
 }
 
 

@@ -134,6 +134,8 @@ function campIsPlayedByHuman(camp) {
   return campIdIsPlayedByHuman[camp.id];
 }
 
+// Note: any mutation of humanity must be done on a humanity.copy(), so  that
+// humanity.change() can pick up the differences.
 function applyPlan(plan) {
   var tileFrom = terrain.tileFromKey(plan.at);
   var humanityFrom = humanity.copy(humanity.tile(tileFrom));
@@ -188,7 +190,6 @@ function applyPlan(plan) {
         var surrenderers = (((surrounded / 6) * humanityTo.h)|0);
         humanityTo.h = plan.h - ((plan.h * (1/imbalance))|0)
                               + surrenderers;
-        console.log('surrenderers: ' + surrenderers);
         if (surrenderers > 0) {
           surrenderTiles.push(plan.to);
         } else {
@@ -506,8 +507,8 @@ function gameTurn() {
   planFromTile = {};
   // Send new humanity to all.
   if (Object.keys(updatedHumanity).length > 0) {
-    humanity.change(updatedHumanity);
     addPopulation(updatedHumanity);
+    humanity.change(updatedHumanity);
     updatedHumanity.population = humanity.population();
     updatedHumanity.war = warTiles;
     updatedHumanity.surrender = surrenderTiles;
@@ -543,11 +544,7 @@ function gameTurn() {
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     var currentCamp = humanity.campFromId(i);
     var campPopulation = currentCamp.population;
-    if (campPopulation <= 0) {
-      winType = 'Supremacy';
-      var winners = humanity.winners(function(camp) {return camp.population;});
-      gameOver = true;
-    } else if ((currentCamp.production - currentCamp.usedProduction) >=
+    if ((currentCamp.production - currentCamp.usedProduction) >=
         maxProduction) {
       winType = 'Industrial';
       var winners = humanity.winners(function(camp) {
@@ -588,7 +585,9 @@ function addPopulation(updatedHumanity) {
   for (var i = 0; i < humanity.numberOfCamps; i++) {
     camp = humanity.campFromId(i);
     // Check for university limit of population support.
-    if (camp.population >= camp.populationLimit) { continue; }
+    if (camp.population >= camp.populationLimit) {
+      secession(camp, updatedHumanity);  // Revolution!
+    }
     // Check for future increase of population.
     var targetPopulation = Math.min(camp.populationCap, camp.populationLimit);
     var newPopulation = targetPopulation - camp.population;
@@ -642,6 +641,25 @@ function addFolk(homes, index, number) {
   updatedHumanity[randomHome] = randomHomeTile;
 }
 
+// c is a Camp
+function secession(camp, updatedHumanity) {
+  var tile = humanity.tileWith(function(humanityTile) {
+    return humanityTile.c === camp.id && humanityTile.b != null
+      && humanityTile.h > 0;
+  });
+  var excessPopulation = camp.population - camp.populationLimit;
+  // Create a new camp, or join an existing <50 folks camp.
+  var newCamp = humanity.addOrReuseCamp(50);
+  humanity.findNearest(tile, function(tile) {
+    var revoltedTile = humanity.copy(humanity.tile(tile));
+    if (revoltedTile !== undefined && revoltedTile.c != null) {
+      revoltedTile.c = newCamp.id;
+      updatedHumanity[terrain.keyFromTile(tile)] = revoltedTile;
+      excessPopulation -= revoltedTile.h;
+    }
+    return excessPopulation <= -40;
+  }, 8);
+}
 
 // Starting the game.
 

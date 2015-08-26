@@ -42,11 +42,12 @@ function wordBasedName() {
 }
 
 // Approach using random metals.
-var metals = ['copper', 'aluminium', 'iron', 'tin', 'lead', 'silver', 'chromium', 'lithium', 'sodium', 'magnesium', 'potassium', 'calcium', 'titanium', 'manganese', 'nickel', 'zinc', 'tungsten', 'mercury', 'phosphorus', 'sulfur', 'fluorine', 'selenium', 'coal', 'gold'];
+var metals = ['copper', 'aluminium', 'iron', 'tin', 'lead', 'silver', 'chromium', 'lithium', 'sodium', 'magnesium', 'potassium', 'calcium', 'titanium', 'manganese', 'nickel', 'zinc', 'tungsten', 'mercury', 'phosphorus', 'sulfur', 'fluorine', 'selenium', 'gold'];
+var extractor = ['mine', 'quarry', 'rig', 'excavator'];
 
 function genName(name) {
   if (name === 'Mine') {
-    return capitalize(pick(metals)) + ' ' + name;
+    return capitalize(pick(metals)) + ' ' + capitalize(pick(extractor));
   } else if (name != null) {
     return wordBasedName() + ' ' + name;
   } else {
