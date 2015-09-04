@@ -493,7 +493,7 @@ function artilleryDamage(tile, campId) {
 // Game turn.
 
 var gameTurnTime = 50;     // Every 50ms.
-var maxProduction = 13;  // Winning amount of production for an Industrial Victory.
+var maxProduction = 50;  // Winning amount of production for an Industrial Victory.
 var maxAcquiredUniversities = 3;
 
 function gameTurn() {
