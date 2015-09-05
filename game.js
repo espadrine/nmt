@@ -281,8 +281,8 @@ function applyPlan(plan) {
         // The first element of a cost is the quantity, second is type.
         // Resources have a negative type.
         if (costs[i][1] < 0) {
-          if (costs[i][1] === terrain.resourceTypes.stock) {
-            currentCamp.usedStock += costs[i][0];
+          if (costs[i][1] === terrain.resourceTypes.fuel) {
+            currentCamp.usedFuel += costs[i][0];
           } else if (costs[i][1] === terrain.resourceTypes.production) {
             currentCamp.usedProduction += costs[i][0];
           } else if (costs[i][1] === terrain.resourceTypes.wealth) {

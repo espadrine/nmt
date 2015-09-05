@@ -11,7 +11,7 @@ lookAtPlaces[terrain.tileTypes.university] = true;
 
 var lookAroundBuildings = Object.create(null);
 lookAroundBuildings[terrain.tileTypes.industry] = [ terrain.tileTypes.mine ];
-lookAroundBuildings[terrain.tileTypes.stock] = [terrain.tileTypes.stock];
+lookAroundBuildings[terrain.tileTypes.lumber] = [terrain.tileTypes.lumber];
 
 // Given a tile position and something to build, find the nearest tile where it
 // can be built, or null.
@@ -167,7 +167,7 @@ var valuableBuildings = [
   terrain.tileTypes.dock,
   terrain.tileTypes.airport,
   terrain.tileTypes.wall,
-  terrain.tileTypes.stock,
+  terrain.tileTypes.lumber,
   terrain.tileTypes.mine,
   terrain.tileTypes.industry,
   terrain.tileTypes.university,
@@ -320,7 +320,7 @@ function resourceBuildRequirement(buildingType, camp) {
   var buildingRequirements = terrain.buildingDependencies[buildingType];
   var requirements = [];
   if (buildingRequirements == null) { return []; }
-  var left = [camp.leftStock, camp.leftProduction, camp.leftFarm];
+  var left = [camp.leftFuel, camp.leftProduction, camp.leftFarm];
   var type = terrain.listOfResourceTypes;
   // Extract required resources.
   for (var i = 0; i < buildingRequirements.length; i++) {
@@ -969,8 +969,8 @@ Strategy.prototype = {
       var resource = resources[i][1];
       var buildingType;
       var size;
-      if (resource === terrain.resourceTypes.stock) {
-        buildingType = terrain.tileTypes.stock;
+      if (resource === terrain.resourceTypes.fuel) {
+        buildingType = terrain.tileTypes.lumber;
         size = -1;
       } else if (resource === terrain.resourceTypes.production) {
         buildingType = terrain.tileTypes.industry;

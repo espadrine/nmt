@@ -522,7 +522,7 @@ Humanity.prototype = {
 
 
 var maxFarmImprovements = 2;
-var maxStockImprovements = 4;
+var maxFuelImprovements = 4;
 var maxIndustryImprovements = 2;
 var maxMineImprovements = 8;
 var maxMarketValue = 50;
@@ -546,8 +546,8 @@ function Camp(id, humanity) {
   this.usedWealth = 0;      // Never decreases.
   this.commodities = {};    // Map from commodity to number.
   this.markets = {};        // Map from market tileKey to distance to closest.
-  this.stock = 1;           // Number of stock spots occupied.
-  this.usedStock = 0;       // Never decreases.
+  this.fuel = 1;            // Number of fuel spots occupied.
+  this.usedFuel = 0;        // Never decreases.
   this.production = 0;      // Number of production occupied.
   this.usedProduction = 0;  // Never decreases.
   this.health = 1;
@@ -567,8 +567,8 @@ Camp.prototype = {
   usedWealth: 0,      // Never decreases.
   commodities: {},    // Map from commodity to number.
   markets: {},        // Map from market tileKey to distance to closest.
-  stock: 1,           // Number of stock spots occupied.
-  usedStock: 0,       // Never decreases.
+  fuel: 1,            // Number of fuel spots occupied.
+  usedFuel: 0,        // Never decreases.
   production: 0,      // Number of production spots occupied.
   usedProduction: 0,  // Never decreases.
   health: 1,
@@ -590,11 +590,11 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.farm) {
       this.wealth -= 1 + Math.min(oldTile.h, maxFarmImprovements);
     } else if (b === this.terrain.tileTypes.lumber) {
-      var improvements = 1 + Math.min(oldTile.h, maxStockImprovements);
-      this.stock -= improvements;
+      var improvements = 1 + Math.min(oldTile.h, maxFuelImprovements);
+      this.fuel -= improvements;
       if (this.terrain.tile(this.terrain.tileFromKey(tileKey)).type
           === this.terrain.tileTypes.taiga) {
-        this.stock -= improvements;
+        this.fuel -= improvements;
       }
     } else if (b === this.terrain.tileTypes.mine) {
       this.production -= 1 + Math.min(oldTile.h, maxMineImprovements);
@@ -644,11 +644,11 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.farm) {
       this.wealth += 1 + Math.min(newTile.h, maxFarmImprovements);
     } else if (b === this.terrain.tileTypes.lumber) {
-      var improvements = 1 + Math.min(newTile.h, maxStockImprovements);
-      this.stock += improvements;
+      var improvements = 1 + Math.min(newTile.h, maxFuelImprovements);
+      this.fuel += improvements;
       if (this.terrain.tile(this.terrain.tileFromKey(tileKey)).type
           === this.terrain.tileTypes.taiga) {
-        this.stock += improvements;
+        this.fuel += improvements;
       }
     } else if (b === this.terrain.tileTypes.mine) {
       this.production += 1 + Math.min(newTile.h, maxMineImprovements);
@@ -740,8 +740,8 @@ Camp.prototype = {
     return {
       wealth: this.wealth,
       usedWealth: this.usedWealth,
-      stock: this.stock,
-      usedStock: this.usedStock,
+      fuel: this.fuel,
+      usedFuel: this.usedFuel,
       production: this.production,
       usedProduction: this.usedProduction,
       health: this.health,
@@ -752,14 +752,14 @@ Camp.prototype = {
   get usedResources () {
     return {
       usedWealth: this.usedWealth,
-      usedStock: this.usedStock,
+      usedFuel: this.usedFuel,
       usedProduction: this.usedProduction,
       usedHealth: this.usedHealth,
       acquiredUniversitiesMap: this.acquiredUniversitiesMap,
     };
   },
   get leftFarm () { return this.wealth - this.usedWealth; },
-  get leftStock () { return this.stock - this.usedStock; },
+  get leftFuel () { return this.fuel - this.usedFuel; },
   get leftProduction () { return this.production - this.usedProduction; },
   get leftHealth () { return this.health - this.usedHealth; },
   // Number of universities won from enemies.
