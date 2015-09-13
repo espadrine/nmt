@@ -548,8 +548,8 @@ function Camp(id, humanity) {
   this.markets = {};        // Map from market tileKey to distance to closest.
   this.fuel = 1;            // Number of fuel spots occupied.
   this.usedFuel = 0;        // Never decreases.
-  this.production = 0;      // Number of production occupied.
-  this.usedProduction = 0;  // Never decreases.
+  this.metal = 0;           // Number of metal occupied.
+  this.usedMetal = 0;       // Never decreases.
   this.health = 1;
   this.usedHealth = 0;      // Never decreases.
   this.acquiredUniversitiesMap = {};// From tileKey to number of conquests.
@@ -569,8 +569,8 @@ Camp.prototype = {
   markets: {},        // Map from market tileKey to distance to closest.
   fuel: 1,            // Number of fuel spots occupied.
   usedFuel: 0,        // Never decreases.
-  production: 0,      // Number of production spots occupied.
-  usedProduction: 0,  // Never decreases.
+  metal: 0,           // Number of metal spots occupied.
+  usedMetal: 0,       // Never decreases.
   health: 1,
   usedHealth: 0,      // Never decreases.
   acquiredUniversitiesMap: {},// From tileKey to number of conquests.
@@ -597,9 +597,9 @@ Camp.prototype = {
         this.fuel -= improvements;
       }
     } else if (b === this.terrain.tileTypes.mine) {
-      this.production -= 1 + Math.min(oldTile.h, maxMineImprovements);
+      this.metal -= 1 + Math.min(oldTile.h, maxMineImprovements);
     } else if (b === this.terrain.tileTypes.industry) {
-      this.production -= 1 + Math.min(oldTile.h, maxIndustryImprovements);
+      this.metal -= 1 + Math.min(oldTile.h, maxIndustryImprovements);
     } else if (b === this.terrain.tileTypes.university) {
       this.populationLimit -= universityPopulationLimit;
       this.health -= this.acquiredUniversitiesMap[tileKey] - 1;
@@ -651,9 +651,9 @@ Camp.prototype = {
         this.fuel += improvements;
       }
     } else if (b === this.terrain.tileTypes.mine) {
-      this.production += 1 + Math.min(newTile.h, maxMineImprovements);
+      this.metal += 1 + Math.min(newTile.h, maxMineImprovements);
     } else if (b === this.terrain.tileTypes.industry) {
-      this.production += 1 + Math.min(newTile.h, maxIndustryImprovements);
+      this.metal += 1 + Math.min(newTile.h, maxIndustryImprovements);
     } else if (b === this.terrain.tileTypes.university) {
       this.populationLimit += universityPopulationLimit;
       if (!this.acquiredUniversitiesMap[tileKey]) {
@@ -742,8 +742,8 @@ Camp.prototype = {
       usedWealth: this.usedWealth,
       fuel: this.fuel,
       usedFuel: this.usedFuel,
-      production: this.production,
-      usedProduction: this.usedProduction,
+      metal: this.metal,
+      usedMetal: this.usedMetal,
       health: this.health,
       usedHealth: this.usedHealth,
       acquiredUniversitiesMap: this.acquiredUniversitiesMap,
@@ -753,14 +753,14 @@ Camp.prototype = {
     return {
       usedWealth: this.usedWealth,
       usedFuel: this.usedFuel,
-      usedProduction: this.usedProduction,
+      usedMetal: this.usedMetal,
       usedHealth: this.usedHealth,
       acquiredUniversitiesMap: this.acquiredUniversitiesMap,
     };
   },
   get leftFarm () { return this.wealth - this.usedWealth; },
   get leftFuel () { return this.fuel - this.usedFuel; },
-  get leftProduction () { return this.production - this.usedProduction; },
+  get leftMetal () { return this.metal - this.usedMetal; },
   get leftHealth () { return this.health - this.usedHealth; },
   // Number of universities won from enemies.
   get acquiredUniversities () {

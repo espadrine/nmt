@@ -87,12 +87,12 @@ var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
 
 var resourceTypes = {
   fuel:       -1,
-  production: -2,
+  metal:      -2,
   wealth:     -3
 };
 var listOfResourceTypes = [
   resourceTypes.fuel,
-  resourceTypes.production,
+  resourceTypes.metal,
   resourceTypes.wealth
 ];
 
@@ -158,11 +158,11 @@ var buildingDependencies = [,,,,,,,,
     ,
     [[1, tileTypes.meadow], [1, tileTypes.water], [2, tileTypes.residence]],
     ,
-    [[1, tileTypes.gunsmith], [1, resourceTypes.production]],
+    [[1, tileTypes.gunsmith], [1, resourceTypes.metal]],
     ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
     [],
-    [[1, tileTypes.dock], [1, tileTypes.skyscraper], [4, resourceTypes.production]],
-    [[2, tileTypes.airport], [20, resourceTypes.production], [20, resourceTypes.fuel]]
+    [[1, tileTypes.dock], [1, tileTypes.skyscraper], [4, resourceTypes.metal]],
+    [[2, tileTypes.airport], [20, resourceTypes.metal], [20, resourceTypes.fuel]]
 ];
 
 // What the current tile must hold to allow a building to be constructed.
@@ -612,7 +612,7 @@ Terrain.prototype = {
 
   // Given a building (see tileTypes) and a tile = {q, r},
   // check whether the building can be built there.
-  // resources = {fuel, usedFuel, production, usedProduction, wealth,
+  // resources = {fuel, usedFuel, metal, usedMetal, wealth,
   // usedWealth}
   // is the resources available for use in the current camp.
   validConstruction: function validConstruction(building, tile, resources) {
@@ -620,7 +620,7 @@ Terrain.prototype = {
     var humanityTile = this.humanity.tile(tile);
     var tileInfo = this.tile(tile);
     var spareFuel = resources.fuel - resources.usedFuel;
-    var spareProduction = resources.production - resources.usedProduction;
+    var spareMetal = resources.metal - resources.usedMetal;
     var spareFarm = resources.wealth - resources.usedWealth;
     if (!humanityTile || humanityTile.h <= 0) { return false; }
     // Special requirements for fields
@@ -664,8 +664,8 @@ Terrain.prototype = {
             if (requiredDependencies[j][1] === resourceTypes.fuel
                 && spareFuel < requiredDependencies[j][0]) {
               return false;
-            } else if (requiredDependencies[j][1] === resourceTypes.production
-                && spareProduction < requiredDependencies[j][0]) {
+            } else if (requiredDependencies[j][1] === resourceTypes.metal
+                && spareMetal < requiredDependencies[j][0]) {
               return false;
             } else if (requiredDependencies[j][1] === resourceTypes.wealth
                 && spareFarm < requiredDependencies[j][0]) {

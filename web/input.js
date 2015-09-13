@@ -197,7 +197,7 @@ var resourceFromName = {
   Folks:      campResourcePopulation,
   Wealth:     campResourceWealth,
   Fuel:       campResourceFuel,
-  Production: campResourceProduction,
+  Metal:      campResourceMetal,
   Health:     campResourceHealth
 };
 function setResourcesTable() {
@@ -209,13 +209,11 @@ function setResourcesTable() {
   header = '<tr>' + header + '</tr>';
   // Make the body.
   var content = '';
-  ['Folks', 'Wealth', 'Fuel', 'Production',
+  ['Folks', 'Wealth', 'Fuel', 'Metal',
   'Health'].forEach(function(resourceName) {
     var row = '';
     var shortName = resourceName;
     var isWealth = (resourceName === 'Wealth');
-    var isProduction = (resourceName === 'Production');
-    if (isProduction) { shortName = 'Product'; }
     row += '<th>' + shortName + '</th>';
     for (var i = 0; i < numberOfCamps; i++) {
       var resource = resourceFromName[resourceName](i);
@@ -486,8 +484,8 @@ var resources = {
   usedWealth: 0,
   fuel: 0,
   usedFuel: 0,
-  production: 0,
-  usedProduction: 0
+  metal: 0,
+  usedMetal: 0
 };
 var campResources;
 function campResourcePopulation(c) { return humanityPopulation[c]; }
@@ -495,8 +493,8 @@ function campResourceWealth(c) {
   var r = campResources[c]; return r.wealth - r.usedWealth; }
 function campResourceFuel(c) {
   var r = campResources[c]; return r.fuel - r.usedFuel; }
-function campResourceProduction(c) {
-  var r = campResources[c]; return r.production - r.usedProduction; }
+function campResourceMetal(c) {
+  var r = campResources[c]; return r.metal - r.usedMetal; }
 function campResourceHealth(c) {
   var r = campResources[c]; return r.health - r.usedHealth; }
 
