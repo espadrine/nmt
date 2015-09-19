@@ -1105,6 +1105,7 @@ function paintSprite(gs, cx, cy, sprite, rotation) {
 // cx and cy are the hexagon's center pixel coordinates on the screen,
 // building is a tileTypes.
 // rotation = {0…5} is the orientation where to orient the building.
+// It is optional and ignored for some buildings.
 // t is a tile.
 // gs is the GraphicState.
 function paintBuilding(gs, cx, cy, tilePos, building, rotation, t) {
@@ -1161,6 +1162,7 @@ function paintBuilding(gs, cx, cy, tilePos, building, rotation, t) {
         || building > tileTypes.wall) {
       paintSprite(gs, cx, cy, building, 0);
     } else {
+      rotation = rotation || 0;
       paintSprite(gs, cx, cy, building, rotation);
     }
   }
@@ -1268,8 +1270,7 @@ function paintTilesSprited(gs) {
             // Draw tile.
             paintTerrain(gsBuffer, cx, cy, tilePos, t);
             if (comm >= 0) {
-              gsBuffer.ctx.textAlign = 'center';
-              gsBuffer.ctx.fillText(tileNames[comm], cx, cy);
+              paintBuilding(gsBuffer, cx, cy, tilePos, comm, null, t);
             }
           } else if (i === 8 && t.type === tileTypes.water) {
             // Overlay sprites (beaches, …).

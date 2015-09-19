@@ -51,7 +51,7 @@ var tileTypes = {
   ivory:        38,
   limestone:    39,
   wool:         40,
-  wine:         41,
+  grapes:       41,
 
   fur:          42,
   pigments:     43,
@@ -73,8 +73,8 @@ var tileTypes = {
   honey:        56,
   silk:         57,
 
-  ruby:         58,
-  gems:         59,
+  gems:         58,
+  fungus:       59,
   pelt:         60,
   amber:        61,
 
