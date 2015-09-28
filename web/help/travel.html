@@ -6,30 +6,31 @@
 <p>
 How fast traveling through a tile is depends on its
 <a href=./zones.html>type</a>. Traveling through mountains and going through
-slopes takes more time. Some tiles have special conditions to be able to cross
-them, such as water, swamp, and walls.
+slopes takes more time. How difficult it is depends on what mode of
+transportation you are using.
 </p>
 <table>
-  <tr><th> Zone   <th> Distance
-  <tr><td> Road   <td> 1
-  <tr><td> Water  <td> 2
-  <tr><td> Steppe <td> 2
-  <tr><td> Swamp  <td> 3
-  <tr><td> Meadow <td> 3
-  <tr><td> Hills  <td> 4
-  <tr><td> Forest <td> 8
-  <tr><td> Mountain <td> 16
-  <tr><td> Taiga    <td> 24
-  <tr><td> Wall     <td> 32
+  <tr><th> Zone     <th> Difficulty <th> Boat <th> Plane
+  <tr><td> Road     <td> 1          <td> 1    <td> 1
+  <tr><td> Water    <td> 17         <td> 1    <td> 1
+  <tr><td> Swamp    <td> 8          <td> 1    <td> 1
+  <tr><td> Steppe   <td> 2          <td> 4    <td> 1
+  <tr><td> Meadow   <td> 3          <td> 8    <td> 1
+  <tr><td> Hills    <td> 4          <td> 8    <td> 2
+  <tr><td> Forest   <td> 8          <td> 16   <td> 2
+  <tr><td> Mountain <td> 16         <td> 16   <td> 2
+  <tr><td> Taiga    <td> 24         <td> 24   <td> 2
+  <tr><td> Wall     <td> 32         <td> 32   <td> 8
 </table>
 <p>
-Each person has a certain speed, depending on how she is equipped. By default, her
-speed is 8, that is, she can walk a cumulated distance of 8 at once.
-With a <a href=./manufacture.html>car</a>, her speed would be 16.
-On a <a href=./manufacture.html>boat</a>, it would be 20.
-By <a href=./manufacture.html>plane</a>, 32.
-However, if a tile contains some enemies, the person cannot go past that tile.
-She has to stop on it and <a href=./war.html>fight</a>.
+Each person has a certain speed, depending on how they are equipped. By default,
+their speed is 8, that is, they can walk 8 tiles on roads in a single go.
+A <a href=./manufacture.html>car</a> doubles their speed, regardless of mode
+of transportation.
+</p>
+<p>
+If a tile contains some enemies, the person cannot go past that tile.
+They have to stop on it and <a href=./war.html>fight</a>.
 </p>
 <p>
 Water and swamps cannot be crossed barefoot, nor with a car.
@@ -40,5 +41,7 @@ although <a href=./manufacture.html>planes</a> also work.
 When traveling, mind your <a href=./food.html>food supply</a>. You may need to
 build <a href=./farm.html>farms</a> along the way, which will cost you folks.
 Still, you probably want to depart will all the food you can carry, by making a
-stop at a farm first.
+stop at a farm first. That will top if off to 20 food: each step will cost 1
+food (2 for planes). Without food, half the group will die of hunger until
+nobody is left.
 </p>
