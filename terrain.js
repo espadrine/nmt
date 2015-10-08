@@ -81,10 +81,11 @@ var tileTypes = {
   field:        62,
   market:       63,
   'space mission': 64,
-  'stock exchange': 65
+  'stock exchange': 65,
+  monument:     66
 };
 var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
-    26, 62, 63, 64, 65 ];
+    26, 62, 63, 64, 65, 66 ];
 
 var resourceTypes = {
   fuel:       -1,
@@ -166,7 +167,9 @@ var buildingDependencies = [,,,,,,,,
     [[2, tileTypes.airport],
       [20, resourceTypes.metal], [20, resourceTypes.fuel]],
     [[1, tileTypes.market], [1, tileTypes.university],
-      [200, resourceTypes.wealth], [20, resourceTypes.metal]]
+      [200, resourceTypes.wealth], [20, resourceTypes.metal]],
+    [[3, tileTypes.skyscraper], [200, resourceTypes.wealth],
+      [20, resourceTypes.fuel]]
 ];
 
 // What the current tile must hold to allow a building to be constructed.
