@@ -552,6 +552,9 @@ function Camp(id, humanity) {
   this.usedMetal = 0;       // Never decreases.
   this.health = 1;
   this.usedHealth = 0;      // Never decreases.
+  this.spaceMissions = 0;
+  this.stockExchanges = 0;
+  this.monuments = 0;
   this.acquiredUniversitiesMap = {};// From tileKey to number of conquests.
   this.spawn = { q:0, r:0 };// Starting spot.
   this.nActions = 0;        // Number of actions.
@@ -628,6 +631,12 @@ Camp.prototype = {
       }
       this.wealth -= (this.markets[tileKey] / wealthPerMarketDist) >>> 0;
       delete this.markets[tileKey];
+    } else if (b === this.terrain.tileTypes['space mission']) {
+      this.spaceMissions--;
+    } else if (b === this.terrain.tileTypes['stock exchange']) {
+      this.stockExchanges--;
+    } else if (b === this.terrain.tileTypes.monument) {
+      this.monuments--;
     }
   },
   winHomes: function winHomes(tileKey, newTile) {
@@ -686,6 +695,12 @@ Camp.prototype = {
         this.wealth += (dist / wealthPerMarketDist) >>> 0;
       }
       this.markets[tileKey] = dist;
+    } else if (b === this.terrain.tileTypes['space mission']) {
+      this.spaceMissions++;
+    } else if (b === this.terrain.tileTypes['stock exchange']) {
+      this.stockExchanges++;
+    } else if (b === this.terrain.tileTypes.monument) {
+      this.monuments++;
     }
   },
   updateCommodityWealth: function(commodity, delta) {

@@ -505,8 +505,9 @@ function gameTurn() {
     if (!plan.ai) { includeHumanMove = true; }
   }
   planFromTile = {};
+  var hasChange = Object.keys(updatedHumanity).length > 0;
   // Send new humanity to all.
-  if (Object.keys(updatedHumanity).length > 0) {
+  if (hasChange) {
     addPopulation(updatedHumanity);
     humanity.change(updatedHumanity);
     updatedHumanity.population = humanity.population();
@@ -532,33 +533,44 @@ function gameTurn() {
     if (includeHumanMove) {
       runAi();
     }
-  }
-  terrain.clearPlans();
-  updatedHumanity = {};
-  warTiles = [];
-  surrenderTiles = [];
-  artilleryFire = {};
-  // The game ends if one of the camps is empty, or is too high.
-  var gameOver = false;
-  var winType;
-  for (var i = 0; i < humanity.numberOfCamps; i++) {
-    var currentCamp = humanity.campFromId(i);
-    var campPopulation = currentCamp.population;
-    if ((currentCamp.metal - currentCamp.usedMetal) >= maxMetal) {
-      winType = 'Industrial';
-      var winners = humanity.winners(function(camp) {
-        return camp.metal - camp.usedMetal;
-      });
-      gameOver = true;
-    } else if (currentCamp.acquiredUniversities >= maxAcquiredUniversities) {
-      winType = 'Intellectual';
-      var winners = humanity.winners(function(camp) {
-        return camp.acquiredUniversities;
-      });
-      gameOver = true;
+
+    // Reset information.
+    terrain.clearPlans();
+    updatedHumanity = {};
+    warTiles = [];
+    surrenderTiles = [];
+    artilleryFire = {};
+    // The game ends if one of the camps is empty, or is too high.
+    var gameOver = false;
+    var winType;
+    var winner = 0;
+    for (var i = 0; i < humanity.numberOfCamps; i++) {
+      var currentCamp = humanity.campFromId(i);
+      var campPopulation = currentCamp.population;
+      if (currentCamp.spaceMissions > 1 && currentCamp.monuments > 0) {
+        winType = 'Intellectual';
+        winner = i; gameOver = true; break;
+      } else if (currentCamp.stockExchanges > 1
+          && currentCamp.spaceMissions > 0) {
+        winType = 'Industrial';
+        winner = i; gameOver = true; break;
+      } else if (currentCamp.monuments > 1 && currentCamp.stockExchanges > 0) {
+        winType = 'Prosperity';
+        winner = i; gameOver = true; break;
+      }
     }
   }
   if (gameOver) {
+    var winners = humanity.winners(function(camp) {
+      var score = 0;
+      if (camp.id === winner) { score += 1000000; }
+      score += 1000 *
+        (camp.spaceMissions + camp.stockExchanges + camp.monuments);
+      score += (camp.wealth + camp.usedWealth) / 10
+        + camp.fuel + camp.usedFuel
+        + camp.metal + camp.usedMetal;
+      return score;
+    });
     actChannel.clients.forEach(function (client) {
       client.send(JSON.stringify({ winners: winners, winType: winType }));
     });

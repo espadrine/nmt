@@ -180,7 +180,6 @@ p { margin-top: 0; margin-bottom: 0; }
   max-height: calc(100% - 74px);
   border: 2px solid white;
   border-radius: 2px;
-  opacity: 0.9;
   z-index: 1;
 }
 
