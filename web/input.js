@@ -237,7 +237,7 @@ function capitalize(str) {
 // Return the HTML data to display on the hover resource display.
 function hoverResourceDisplayWealth(campId) {
   var commodities = campCommodities[campId];
-  var data = '';
+  var commodityData = [];
   for (var commodity in commodities) {
     if (commodities[commodity] <= 0) { continue; }
     var total = 0;
@@ -252,13 +252,22 @@ function hoverResourceDisplayWealth(campId) {
     }
     // wealth = 50 x fields/total x (2 - 1/fields)
     var wealth = 50 * marketShare * (2 - 1/fields);
-    data += capitalize(tileNames[commodity]) +
-      ' (' + (wealth).toFixed(0) + ') ';
+    commodityData.push({
+      name: capitalize(tileNames[commodity]),
+      wealth: wealth.toFixed(0)
+    });
   }
-  if (data.length === 0) {
-    data = 'Nothing';
+  var html = '';
+  if (commodityData.length === 0) {
+    html = 'Nothing';
+  } else {
+    commodityData.sort(function(a, b) { return b.wealth - a.wealth; });
+    for (var i = 0; i < commodityData.length; i++) {
+      var comm = commodityData[i];
+      html += comm.name + ' (' + comm.wealth + ')<br>';
+    }
   }
-  return data;
+  return html;
 }
 // Return the inserted HTML in a tag to trigger a hover resource display.
 function hoverWealthAction(campId) {
@@ -273,9 +282,13 @@ function hideHoverResourceDisplay() {
 function showHoverResourceDisplayWealth(event, data) {
   hoverResourceDisplay.innerHTML = data;
   hoverResourceDisplay.style.color = '#bb0';
-  hoverResourceDisplay.style.left = (event.clientX + 20) + 'px';
-  hoverResourceDisplay.style.top = event.clientY + 'px';
+  var target = event.target;
+  var bounds = target.getBoundingClientRect();
   hoverResourceDisplay.style.display = 'block';
+  var hoverWidth = hoverResourceDisplay.offsetWidth;
+  hoverResourceDisplay.style.left =
+    (bounds.left + ((bounds.width - hoverWidth) >> 1) + 5) + 'px';
+  hoverResourceDisplay.style.top = (bounds.top + 20) + 'px';
 }
 
 
