@@ -378,19 +378,25 @@ function defenseForce(force, attacker, defender,
   return force;
 }
 
-// Build roads along the `travelPath` [{q,r}], and on `humanityFrom`.
+// Build `type` (eg. roads) along the `travelPath` [{q,r}],
+// and on `humanityFrom`.
 // Mutates `updatedHumanity`.
-// If `terrainTileTo` (output of `terrain.tile()`) is water,
-// don't build the road.
+// If `terrainTileTo` (output of `terrain.tile()`) is water
+// or we don't use a car, we don't build the road.
 function lay(type, travelPath, updatedHumanity, humanityTo, terrainTileTo) {
-  var terrainTileFrom = terrain.tile(terrain.tileFromKey(travelPath[0]));
-  // Don't build roads over water.
+  var tileKey = travelPath[0];
+  var tile = terrain.tileFromKey(tileKey);
+  var terrainTileFrom = terrain.tile(tile);
+  var humanityTile = humanity.tile(tile);
+  // Don't build over water.
   if (terrainTileFrom.type === terrain.tileTypes.water
-   || terrainTileTo.type === terrain.tileTypes.water) { return; }
+   || terrainTileTo.type === terrain.tileTypes.water
+   // Don't build if you have a plane.
+   || (humanityTile.o & terrain.manufacture.plane) !== 0) { return; }
   for (var i = 0; i < travelPath.length; i++) {
-    var tileKey = travelPath[i];
-    var tile = terrain.tileFromKey(tileKey);
-    var humanityTile = humanity.tile(tile);
+    tileKey = travelPath[i];
+    tile = terrain.tileFromKey(tileKey);
+    humanityTile = humanity.tile(tile);
     if (humanityTile == null || humanityTile.b == null) {
       var newHumanityTile = humanity.copy(humanityTile);
       newHumanityTile.b = type;
