@@ -148,7 +148,7 @@ var buildingDependencies = [,,,,,,,,
     ,
     [[2, tileTypes.farm]],      // residence [9].
     [[6, tileTypes.residence]],
-    [[3, tileTypes.residence], [2, tileTypes.road]],
+    [[3, tileTypes.residence]],
     [[1, tileTypes.residence], [1, tileTypes.water], [1, resourceTypes.fuel]],
     [[2, tileTypes.road]],
     [[1, tileTypes.gunsmith], [3, tileTypes.airland], [1, resourceTypes.fuel]],

@@ -391,6 +391,8 @@ function lay(type, travelPath, updatedHumanity, humanityTo, terrainTileTo) {
   // Don't build over water.
   if (terrainTileFrom.type === terrain.tileTypes.water
    || terrainTileTo.type === terrain.tileTypes.water
+   // Build if you have a car.
+   || (humanityTile.o & terrain.manufacture.car) === 0
    // Don't build if you have a plane.
    || (humanityTile.o & terrain.manufacture.plane) !== 0) { return; }
   for (var i = 0; i < travelPath.length; i++) {
