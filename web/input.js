@@ -2476,18 +2476,20 @@ window.onkeydown = function keyInputManagement(event) {
     redraw = true;
   } else if (event.keyCode === 187 || event.keyCode === 61) {  // +=
     // Zoom.
-    gs.hexSize *= 4;
-    gs.origin.x0 = gs.origin.x0*4 + (gs.width*(3/2))|0;
-    gs.origin.y0 = gs.origin.y0*4 + (gs.height*(3/2))|0;
+    var factor = 16;
+    gs.hexSize *= factor;
+    gs.origin.x0 = ((gs.origin.x0 * factor)|0) + (((factor-1) * gs.width)>>1);
+    gs.origin.y0 = ((gs.origin.y0 * factor)|0) + (((factor-1) * gs.height)>>1);
     voidCache = true;
     redraw = true;
   } else if (event.keyCode === 173 || event.keyCode === 189
           || event.keyCode === 109 || event.keyCode === 219
           || event.keyCode === 169) {   // -
     // Unzoom.
-    gs.hexSize /= 4;
-    gs.origin.x0 = ((gs.origin.x0/4)|0) - ((gs.width*(3/8))|0);
-    gs.origin.y0 = ((gs.origin.y0/4)|0) - ((gs.height*(3/8))|0);
+    var factor = 16;
+    gs.hexSize /= factor;
+    gs.origin.x0 = ((gs.origin.x0 / factor)|0) - (((1-1/factor)*gs.width)>>1);
+    gs.origin.y0 = ((gs.origin.y0 / factor)|0) - (((1-1/factor)*gs.height)>>1);
     voidCache = true;
     redraw = true;
   } else if (event.keyCode === 84) {    // T
