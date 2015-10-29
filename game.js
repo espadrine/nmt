@@ -241,31 +241,23 @@ function applyPlan(plan) {
 
   } else if (plan.do === terrain.planTypes.build) {
     //console.log('Plan: building', plan.b, 'at', plan.at);
-    if (plan.b === terrain.tileTypes.airport) {
+    if (plan.b === terrain.tileTypes.farm) {
       // It can be a treasure activation.
       if (humanityFrom.b === terrain.tileTypes.blackdeath) {
-        treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c);
+        treasure.blackDeath(terrain, humanity, updatedHumanity, humanityFrom.c)
+        var spot = humanity.findMountain(
+          humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
+        humanity.moveTreasure(terrain.tileTypes.blackdeath, plan.at,
+          spot, updatedHumanity, 'Airport');
+        // Send the new treasure.
+        updatedHumanity.places = humanity.getPlaces();
       }
-      var spot = humanity.findMountain(
-        humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
-      humanity.moveTreasure(terrain.tileTypes.blackdeath, plan.at,
-        spot, updatedHumanity, 'Airport');
-      // Send the new treasure.
-      updatedHumanity.places = humanity.getPlaces();
     } else if (plan.b === terrain.tileTypes.mine) {
       // It can be a mine construction.
       var spot = humanity.findMountain(
         humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
       humanity.moveTreasure(terrain.tileTypes.metal, plan.at,
         spot, updatedHumanity, 'Mine');
-      // Send the new treasure.
-      updatedHumanity.places = humanity.getPlaces();
-    } else if (plan.b === terrain.tileTypes.university) {
-      // It can be a university construction. Shocker, I know.
-      var spot = humanity.findMeadow(
-        humanity.awayFrom(tileFrom, humanity.generateRandomDistance()));
-      humanity.moveTreasure(terrain.tileTypes.citrus, plan.at,
-        spot, updatedHumanity, 'University');
       // Send the new treasure.
       updatedHumanity.places = humanity.getPlaces();
     }

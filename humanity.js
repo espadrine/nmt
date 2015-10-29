@@ -295,7 +295,6 @@ Humanity.prototype = {
     var humanityTile = this.makeDefault();
     humanityTile.b = treasure.type;
     change[tileKey] = humanityTile;
-    this.places[tileKey] = treasure.name;
     this.change(change);
   },
 
@@ -373,9 +372,10 @@ Humanity.prototype = {
           % this.metallicFormation.length];
       currentTreasure =
         new treasure.Treasure(this.terrain.tileTypes.metal, 'Metal ' + name);
-      this.addTreasure(this.findMountain(
-          this.awayFrom(center, this.generateRandomDistance())),
-          currentTreasure);
+      var tileKey = this.findMountain(
+          this.awayFrom(center, this.generateRandomDistance()))
+      this.addTreasure(tileKey, currentTreasure);
+      this.places[tileKey] = currentTreasure.name;
     }
   },
 
