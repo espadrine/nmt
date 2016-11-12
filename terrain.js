@@ -242,7 +242,7 @@ Terrain.prototype = {
       x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
       y = (3/2 * coord.r);
     } else { x = coord.x; y = coord.y; }
-    var size = simplex2.noise2D(y/500, x/500);
+    var size = simplex2.noise2D(y/4/factor, x/4/factor);
     var riverNoise = 1-Math.abs((
         + 4 * (simplex1.noise2D(x/4/factor, y/4/factor))
         + 2 * (simplex1.noise2D(x/2/factor, y/2/factor))
@@ -251,7 +251,7 @@ Terrain.prototype = {
         )/(1/2+1+2+4));
     var heightNoise = Math.sin(
         // Abs gives valleys.
-        - (size * 5) * Math.abs(simplex1.noise2D(1/4*x/factor, 1/4*y/factor))
+        - (size * 5) * Math.abs(simplex1.noise2D(1/8*x/factor, 1/8*y/factor))
         + simplex1.noise2D(x/factor, y/factor)
         - 1/2 * simplex1.noise2D(2*x/factor, 2*y/factor)
         + 1/4 * simplex1.noise2D(4*x/factor, 4*y/factor)
