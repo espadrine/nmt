@@ -1723,6 +1723,7 @@ function fillMapIndex(places) {
 function drawMapPlaces(gs) {
   var ctx = gs.ctx;
   ctx.fillStyle = 'black';
+  ctx.strokeStyle = 'lightgrey';
   ctx.textAlign = 'center';
   for (var tileSizeKey in mapIndex) {
     var e = tileSizeKey.split(':');
@@ -1730,8 +1731,9 @@ function drawMapPlaces(gs) {
     var tile = { q: e[1]|0, r: e[2]|0 };
     var pixel = pixelFromTile(tile, gs.origin, gs.hexSize);
     var text = mapIndex[tileSizeKey];
-    ctx.font = 'italic '
+    ctx.font = 'bold italic '
       + (gs.hexSize*size*7) + 'px "Linux Biolinum", sans-serif';
+    ctx.strokeText(text, pixel.x, pixel.y - 15);
     ctx.fillText(text, pixel.x, pixel.y - 15);
   }
   ctx.textAlign = 'start';
