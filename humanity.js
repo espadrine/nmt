@@ -226,6 +226,7 @@ Humanity.prototype = {
     var newCamp = new Camp(this.numberOfCamps, this);
     this.camps.push(newCamp);
     this.numberOfCamps++;
+    this.commoditiesChanged = true;
     return newCamp;
   },
 

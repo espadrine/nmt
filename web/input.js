@@ -301,6 +301,7 @@ function displayTravelInfo(currentTile, targetTile) {
   var th = humanity.tile(targetTile);  // target humans
   var traveling = travelingNumber(ch.h);
   var html = '';
+  if (ch === undefined) { return; }
 
   // War bonuses / maluses.
   if (th != null && th.c != null && th.c != ch.c) {
