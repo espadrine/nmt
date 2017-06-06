@@ -963,7 +963,10 @@ Strategy.prototype = {
 
   // resources: list of [quantity, resourceType] (see terrain.resourceTypes).
   resourceProject: function(resources) {
-    console.log('resources:', resources);
+    console.log('resources:',
+      resources.map(function(res) {
+        return String(res[0]) + " " + terrain.stringFromTileType(res[1]);
+      }).join(', '));
     for (var i = 0; i < resources.length; i++) {
       var quantity = resources[i][0];
       var resource = resources[i][1];
@@ -975,7 +978,7 @@ Strategy.prototype = {
       } else if (resource === terrain.resourceTypes.metal) {
         buildingType = terrain.tileTypes.industry;
         size = -1;
-      } else if (resource === terrain.resourceTypes.farm) {
+      } else if (resource === terrain.resourceTypes.wealth) {
         buildingType = terrain.tileTypes.farm;
       } else { continue; }
       if (buildingType == null) { debugger; continue; }

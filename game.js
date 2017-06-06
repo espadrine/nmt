@@ -486,6 +486,15 @@ function artilleryDamage(tile, campId) {
   return (totalArtillery/4)|0;
 }
 
+function stringFromPlan(plan) {
+  if (plan.do === terrain.planTypes.move) {
+    return "move " + plan.h + " human from " + plan.at + " to " + plan.to +
+      " laying " + terrain.stringFromTileType(plan.lay);
+  } else {
+    return "build " + terrain.stringFromTileType(plan.b) + " at " + plan.at;
+  }
+}
+
 
 
 // Game turn.
@@ -684,7 +693,7 @@ function startGameLoop() {
     for (var i = 0; i < plans.length; i++) {
       var aiPlan = plans[i];
       if (aiPlan != null) {
-        console.log('AI plan:', plans[i]);
+        console.log('AI plan:', stringFromPlan(plans[i]));
         aiPlan.ai = true;
         judgePlan(0, aiPlan, true, function(msg) {
           if (msg != null) { console.log(msg); }

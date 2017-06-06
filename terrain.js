@@ -98,6 +98,14 @@ var listOfResourceTypes = [
   resourceTypes.wealth
 ];
 
+function setupStringFromTileType() {
+  var map = Object.create(null);
+  for (var type in tileTypes) { map[tileTypes[type]] = type; }
+  for (var type in resourceTypes) { map[resourceTypes[type]] = type; }
+  return map;
+}
+var stringFromTileType = setupStringFromTileType();
+
 var tileVegetationTypeFromSteepness = [];
 tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
 tileVegetationTypeFromSteepness[tileTypes.steppe]   = tileTypes.meadow;
@@ -202,6 +210,7 @@ Terrain.prototype = {
   buildingTypes: buildingTypes,
   resourceTypes: resourceTypes,
   listOfResourceTypes: listOfResourceTypes,
+  stringFromTileType: function(tile) { return stringFromTileType[tile]; },
   tileType: tileType,
   heatmap: heatmap,
 
