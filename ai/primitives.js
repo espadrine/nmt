@@ -10,7 +10,7 @@ lookAtPlaces[terrain.tileTypes.industry] = true;
 lookAtPlaces[terrain.tileTypes.university] = true;
 
 var lookAroundBuildings = Object.create(null);
-lookAroundBuildings[terrain.tileTypes.industry] = [ terrain.tileTypes.mine ];
+lookAroundBuildings[terrain.tileTypes.industry] = [terrain.tileTypes.mine];
 lookAroundBuildings[terrain.tileTypes.lumber] = [terrain.tileTypes.lumber];
 
 // Given a tile position and something to build, find the nearest tile where it
@@ -386,13 +386,15 @@ function trajectory(from, to, human, maxTiles) {
   var costs = travel.costs;
   var humanSpeed = terrain.speedFromHuman(human);
   var speed = humanSpeed;
+  var travelledDist = 0;
   steps.push(tileKey);
-  for (var i = 0; i < path.length; i++) {
+  for (var i = 1; i < path.length; i++) {
     tileKey = path[i];
-    speed -= costs[tileKey];
+    speed -= costs[tileKey] - travelledDist;
+    travelledDist += costs[tileKey];
     if (speed <= 0) {
       speed = humanSpeed;
-      steps.push(tileKey);
+      steps.push(path[i-1]);
     }
   }
   return steps;

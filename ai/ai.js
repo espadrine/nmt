@@ -40,6 +40,7 @@ AI.prototype = {
       centerTile: this.humanity.centerTile,
       campNames: this.humanity.campNames(),
       resources: this.humanity.getResources(),
+      // FIXME: add commodities.
       lockedTiles: this.humanity.lockedTiles,
     })});
     this.strategy[campId] = child;
