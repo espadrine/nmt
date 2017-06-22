@@ -522,10 +522,7 @@ Humanity.prototype = {
 };
 
 
-var maxFarmImprovements = 2;
-var maxFuelImprovements = 4;
-var maxIndustryImprovements = 2;
-var maxMineImprovements = 8;
+var maxWorkerBoost = 4;
 var maxMarketValue = 50;
 var wealthPerMarketDist = 8;
 
@@ -592,18 +589,18 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.skyscraper) {
       delete this.skyscraper[tileKey];
     } else if (b === this.terrain.tileTypes.farm) {
-      this.wealth -= 1 + Math.min(oldTile.h, maxFarmImprovements);
+      this.wealth -= 1 + Math.min(oldTile.h, maxWorkerBoost);
     } else if (b === this.terrain.tileTypes.lumber) {
-      var improvements = 1 + Math.min(oldTile.h, maxFuelImprovements);
+      var improvements = 1 + Math.min(oldTile.h, maxWorkerBoost);
       this.fuel -= improvements;
       if (this.terrain.tile(this.terrain.tileFromKey(tileKey)).type
           === this.terrain.tileTypes.taiga) {
         this.fuel -= improvements;
       }
     } else if (b === this.terrain.tileTypes.mine) {
-      this.metal -= 1 + Math.min(oldTile.h, maxMineImprovements);
+      this.metal -= 1 + Math.min(oldTile.h, maxWorkerBoost);
     } else if (b === this.terrain.tileTypes.industry) {
-      this.metal -= 1 + Math.min(oldTile.h, maxIndustryImprovements);
+      this.metal -= 1 + Math.min(oldTile.h, maxWorkerBoost);
     } else if (b === this.terrain.tileTypes.university) {
       this.populationLimit -= universityPopulationLimit;
       this.health -= this.acquiredUniversitiesMap[tileKey] - 1;
@@ -652,18 +649,18 @@ Camp.prototype = {
     } else if (b === this.terrain.tileTypes.skyscraper) {
       this.skyscraper[tileKey] = homes;
     } else if (b === this.terrain.tileTypes.farm) {
-      this.wealth += 1 + Math.min(newTile.h, maxFarmImprovements);
+      this.wealth += 1 + Math.min(newTile.h, maxWorkerBoost);
     } else if (b === this.terrain.tileTypes.lumber) {
-      var improvements = 1 + Math.min(newTile.h, maxFuelImprovements);
+      var improvements = 1 + Math.min(newTile.h, maxWorkerBoost);
       this.fuel += improvements;
       if (this.terrain.tile(this.terrain.tileFromKey(tileKey)).type
           === this.terrain.tileTypes.taiga) {
         this.fuel += improvements;
       }
     } else if (b === this.terrain.tileTypes.mine) {
-      this.metal += 1 + Math.min(newTile.h, maxMineImprovements);
+      this.metal += 1 + Math.min(newTile.h, maxWorkerBoost);
     } else if (b === this.terrain.tileTypes.industry) {
-      this.metal += 1 + Math.min(newTile.h, maxIndustryImprovements);
+      this.metal += 1 + Math.min(newTile.h, maxWorkerBoost);
     } else if (b === this.terrain.tileTypes.university) {
       this.populationLimit += universityPopulationLimit;
       if (!this.acquiredUniversitiesMap[tileKey]) {
