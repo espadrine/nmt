@@ -162,6 +162,17 @@ function tileIsOneOf(tile, tiles) {
   return false;
 }
 
+var resourceBuildings = [
+  terrain.tileTypes.farm,
+  terrain.tileTypes.lumber,
+  terrain.tileTypes.mine,
+  terrain.tileTypes.industry,
+];
+
+function isResourceBuilding(building) {
+  return isOneOf(building, resourceBuildings);
+}
+
 // FIXME: dynamically build a list of valuable buildings.
 var valuableBuildings = [
   terrain.tileTypes.dock,
@@ -408,15 +419,15 @@ function trajectory(from, to, human, maxTiles) {
 
 // A group corresponds to a camp. It is on a unique tile.
 // tile: {q,r}
-// camp: a camp object. See humanity.js.
-function Group(tile, strategy) {
+// options:
+// - size: number of humans that are part of this group.
+function Group(tile, strategy, options) {
   this.tile = tile;
   this.strategy = strategy;
+  this.size = options.size || this.strategy.humanity.tile(tile).h;
   this.camp = strategy.camp;
   // See trajectory().
   this.trajectory = [];
-  // Whether we should start by forking the group on this location.
-  this.fork = false;
   // Whether the group is getting some refreshing food.
   this.goingToAFarm = false;
 }
@@ -470,13 +481,7 @@ Group.prototype = {
   // Return a valid plan that either moves people from "q:r" to "q:r" tiles,
   // or builds a farm, if they're out of food.
   moveOrFood: function(from, to, humanityTile) {
-    var humansMoving = humanityTile.h;
-    // Should we fork the current group?
-    if (!!this.fork) {
-      humansMoving = (humansMoving / 2)|0;
-      if (humansMoving <= 0) { humansMoving = 1; }
-      this.fork = false;
-    }
+    var humansMoving = this.size;
 
     var fromTile = terrain.tileFromKey(from);
     if (to == null) { debugger; }
@@ -667,7 +672,7 @@ Group.prototype = {
         && nextHumanityTile.h > 0) {
       // We are blocked by a silly group in front of us.
       // Tell them to get off our lawn!
-      console.log('need to get them off my path near', fromTile);
+      this.strategy.log('need to get them off my path near', fromTile);
       return this.putOwnPeopleAway(toTile, fromTile, nextHumanityTile);
     }
     // Remove current tile, going to the next tile.
@@ -736,22 +741,22 @@ Group.prototype = {
       // Based on what blocks us, switch group to one which can go through.
       if (nextTerrain.type === terrain.tileTypes.water) {
         // We need to go to a dock close by or we need to build one.
-        console.log('need a dock near', fromTile);
+        this.strategy.log('need a dock near', fromTile);
         this.useManufacture(terrain.tileTypes.dock, fromTile);
       } else if ((nextHumanityTile
         && nextHumanityTile.b === terrain.tileTypes.wall)
         || nextTerrain.type === terrain.tileTypes.taiga) {
         // We need to go to an airport or build one.
-        console.log('need an airport near', fromTile);
+        this.strategy.log('need an airport near', fromTile);
         this.useManufacture(terrain.tileTypes.airport, fromTile);
       } else if (nextTerrain.type === terrain.tileTypes.mountain) {
         // We need to go to a factory or build one.
-        console.log('need a factory near', fromTile);
+        this.strategy.log('need a factory near', fromTile);
         this.useManufacture(terrain.tileTypes.factory, fromTile);
       } else if (nextHumanityTile && nextHumanityTile.h > 0) {
         // We are blocked by a silly group in front of us.
         // Tell them to get off our lawn!
-        console.log('need to get them off my lawn near', fromTile);
+        this.strategy.log('need to get them off my lawn near', fromTile);
         return this.putOwnPeopleAway(blockingTile, fromTile, nextHumanityTile);
       }
       return null;
@@ -800,6 +805,9 @@ var projectTypeList = Object.keys(projectType);
 
 Strategy.prototype = {
 
+  log: function(...msg) {
+    console.log("AI" + this.camp.id, ...msg);
+  },
   // A few functions to simplify input parameters.
   findNearestEmpty: function(tile, size) {
     return findNearestEmpty(this.humanity, tile, size);
@@ -847,21 +855,29 @@ Strategy.prototype = {
   // Find a group closest to the tile = {q,r}.
   // It may return a group we already occupy if we can fork it,
   // or if the `stealGroup` flag is true.
+  // options:
+  // - stealGroup: allow to reuse groups that the AI is working with.
+  // -
   // Returns the group.
-  addGroup: function(tile, stealGroup) {
-    if (stealGroup == null) { stealGroup = false; }
-    // It needs to be a group we don't currently count.
-    var tiles = this.camp.inhabitedTiles;
+  addGroup: function(tile, options) {
+    options = options || {};
+    if (options.stealGroup == null) { options.stealGroup = false; }
+    // It needs to be a group we don't currently count, or use.
+    var tiles = this.camp.tilesWith(function(humanityTile) {
+      return humanityTile.h > 0 && !isResourceBuilding(humanityTile.b);
+    });
     var chosenTile;
     var groupFromKey = this.controlledGroups();
     var closest = MAX_INT;
     for (var i = 0; i < tiles.length; i++) {
+      // Don't include the tile we want to add people to.
+      if (sameTile(tile, tiles[i])) { continue; }
       var tileKey = terrain.keyFromTile(tiles[i]);
       // Groups we already control.
       if (groupFromKey[tileKey] !== undefined) {
-        // If there is more than one, we can we can fork them.
+        // If there is more than one, we can fork them.
         var humanityTile = this.humanity.tile(terrain.tileFromKey(tileKey));
-        if (!stealGroup && humanityTile.h < 2) { continue; }
+        if (!options.stealGroup && humanityTile.h < 2) { continue; }
       }
       // Don't include tiles controlled by players.
       if (this.humanity.lockedTiles[tileKey] !== undefined) { continue; }
@@ -872,11 +888,23 @@ Strategy.prototype = {
         chosenTile = tiles[i];
       }
     }
-    if (chosenTile == null) { debugger; return this.addGroup(tile, true); }
-    var group = new Group(chosenTile, this);
-    // If we own that
-    if (groupFromKey[tileKey] !== undefined) { group.fork = true; }
-    return group;
+    if (chosenTile == null) {
+      if (!options.stealGroup) {
+        options.stealGroup = true;
+        return this.addGroup(tile, options);
+      } else {
+        this.buildProject(terrain.tileTypes.skyscraper);
+        var project = this.projects.pop();
+        this.projects.unshift(project);
+        return;
+      }
+    }
+    var size = this.humanity.tile(chosenTile).h;
+    // If we own that, we will fork.
+    if (groupFromKey[tileKey] !== undefined) {
+      size = Math.ceil(size / 2);
+    }
+    return new Group(chosenTile, this, {size: size});
   },
 
   // Remove empty groups from a project.
@@ -907,13 +935,13 @@ Strategy.prototype = {
       // Pick a random tile we occupy.
       tile = tiles[(tiles.length * Math.random())|0];
     }
-    console.log('build project:', buildingType);
+    this.log('build project:', terrain.stringFromTileType(buildingType));
     // FIXME: choose a size depending on the building type.
     if (size == null) { size = 0; }
     if (size >= 0) {
       // Find an unoccupied tile close by.
       tile = this.findNearestEmpty(tile, size);
-      console.log('nearest empty:', tile);
+      this.log('nearest empty:', tile);
     }
     var maxSearch = 500;
     // Don't build manufactures on tiles which require their items to get to.
@@ -938,14 +966,14 @@ Strategy.prototype = {
       // We could not find an accessible construction spot → we lack people.
       if (!traj) { return this.warProject(tile, this.camp.id); }
     }
-    console.log('construction location:', tile);
+    this.log('construction location:', tile);
     if (tile == null) { return; }
     var builds = this.dependencyBuilds(buildingType, tile, forbiddenTiles);
-    console.log('builds:', builds);
+    this.log('builds:', builds);
     if (builds == null) { return; }
     // Find the nearest group around that tile.
     if (group === undefined) {
-      var group = this.addGroup(tile);
+      group = this.addGroup(tile);
     }
     if (traj !== undefined) {
       group.trajectory = traj;
@@ -960,12 +988,12 @@ Strategy.prototype = {
     });
     // Check for the lack of resources needed to build this.
     this.resourceProject(resourceBuildRequirement(buildingType, this.camp));
-    console.log('build project');
+    this.log('build project');
   },
 
   // resources: list of [quantity, resourceType] (see terrain.resourceTypes).
   resourceProject: function(resources) {
-    console.log('resources:',
+    this.log('resources:',
       resources.map(function(res) {
         return String(res[0]) + " " + terrain.stringFromTileType(res[1]);
       }).join(', '));
@@ -984,7 +1012,33 @@ Strategy.prototype = {
         buildingType = terrain.tileTypes.farm;
       } else { continue; }
       if (buildingType == null) { debugger; continue; }
-      for (var j = 0; j < quantity; j++) {
+
+      // Try to find a spot with less than 4 workers.
+      var self = this;
+      var tilesNeedingWorkers = this.camp.tilesWith(function(humanityTile) {
+        return humanityTile.b === buildingType && humanityTile.h < 4;
+      }).map(function(tile) {
+        var humanityTile = self.humanity.tile(tile);
+        return {lackingWorkers: 4 - humanityTile.h, tile: tile};
+      });
+      var workersToAdd = 0;  // Number of workers that we will add.
+      for (var j = 0; j < tilesNeedingWorkers.length; j++) {
+        var neededResourcesRemaining = quantity - workersToAdd;
+        if (neededResourcesRemaining <= 0) { break; }
+        var tileNeedingWorkers = tilesNeedingWorkers[j];
+        var workersToAddHere = Math.min(neededResourcesRemaining,
+          tileNeedingWorkers.lackingWorkers);
+        workersToAdd += workersToAddHere;
+        this.warProject(tileNeedingWorkers.tile, this.camp.id,
+          {size: workersToAddHere});
+        var project = this.projects.pop();
+        this.projects.unshift(project);
+      }
+
+      // Build resource buildings for the remaining resource points.
+      var neededResourcesRemaining = quantity - workersToAdd;
+      var buildingsNeeded = Math.ceil(neededResourcesRemaining / 4);
+      for (var j = 0; j < buildingsNeeded; j++) {
         this.buildProject(buildingType, null, size);
         // The strategy is at the end. Put it at the beginning.
         var project = this.projects.pop();
@@ -1016,24 +1070,33 @@ Strategy.prototype = {
       camp: campId,
       ttl: 100,
     });
-    console.log('conquer project');
+    this.log('conquer project');
   },
 
   // Harm a specific adversary.
   // Targets residential buildings and buildings around them.
   // Can also be used to put humans on a specific tile.
-  warProject: function(tile, campId) {
+  // options:
+  // - size: number of humans to add to this tile.
+  warProject: function(tile, campId, options) {
+    options = options || {};
+    var size = options.size || 1;
+    var currentArmySize = 0;
     // Find the nearest group around that tile.
     var groups = [];
-    groups.push(this.addGroup(tile));
-    this.projects.push({
-      type: projectType.war,
-      groups: groups,
-      target: tile,
-      camp: campId,
-      ttl: 100,
-    });
-    console.log('war project');
+    while (currentArmySize < size) {
+      var group = this.addGroup(tile);
+      groups.push(group);
+      currentArmySize += group.size;
+      this.projects.push({
+        type: projectType.war,
+        groups: groups,
+        target: tile,
+        camp: campId,
+        ttl: 100,
+      });
+    }
+    this.log('war project:', size, 'humans to', tile);
   },
 
   // Remove the main project.
@@ -1053,9 +1116,11 @@ Strategy.prototype = {
       var buildingType = terrain.buildingTypes[
         (terrain.buildingTypes.length * Math.random())|0];
       // TODO: remove next lines.
-      if (this.camp.population < 50) {
-        buildingType = terrain.tileTypes.skyscraper;
-      } else { buildingType = terrain.tileTypes.industry; }
+      // if (this.camp.population < 50) {
+      //   buildingType = terrain.tileTypes.skyscraper;
+      // } else {
+        buildingType = terrain.tileTypes['space mission'];
+      // }
       this.buildProject(buildingType);
     } else if (type === projectType.conquer) {
       // Random camp, find a tile type it owns.
@@ -1084,7 +1149,7 @@ Strategy.prototype = {
     project.ttl--;
     // If the project's time to live has sunk to 0, kill it.
     if (project.ttl <= 0) { return true; }
-    console.log('TTL:', project.ttl);
+    this.log('TTL:', project.ttl);
     // If there is nobody left for the job, find new ones.
     if (project.groups.length <= 0) {
       project.groups.push(this.addGroup(project.target));
@@ -1136,14 +1201,14 @@ Strategy.prototype = {
     }
     if (this.projects.length === 0) { return null; }
     // Avoid infinite creation of new projects because of chicken-and-egg.
-    if (this.projects.length > 20 || this.recursionLimit > 7) {
-      console.log('Projects reset.');
+    if (this.recursionLimit > 7) {
+      this.log('Projects reset.');
       for (var i = 0; i < this.projects.length; i++) { this.removeProject(); }
       // This is the only exception to the rule at the head of this function.
       this.recursionLimit = 0;
       return this.runProject();
     }
-    ///console.log('projects:', JSON.stringify(this.projects, null, 2));
+    ///this.log('projects:', JSON.stringify(this.projects, null, 2));
     // Complete the first project we have.
     var project = this.projects[0];
     // Remove empty groups.
