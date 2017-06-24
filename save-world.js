@@ -40,7 +40,7 @@ World.prototype = {
       world.centerTile = this.humanity.centerTile;
       world.campNames = this.humanity.campNames();
       world.resources = this.humanity.getUsedResources();
-      fs.writeFile(this.worldFile, JSON.stringify(world));
+      fs.writeFile(this.worldFile, JSON.stringify(world), function() {});
       this.humanity.dirtyWorld = false;
     }
   },
