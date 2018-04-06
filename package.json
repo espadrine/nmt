@@ -10,14 +10,16 @@
   },
   "main": "app.js",
   "scripts": {
-    "test": "make test"
+    "build": "node make",
+    "start": "PORT=8080 node app"
   },
   "dependencies": {
-    "camp": ">=13.11.9",
-    "uglify-js": ">=1.2.5",
+    "camp": "^17.2.1"
+  },
+  "devDependencies": {
+    "uglify-js": ">=3.3.21",
     "simplex-noise": ">=2.1.1"
   },
-  "devDependencies": {},
   "optionalDependencies": {},
   "engines": {
     "node": "*"

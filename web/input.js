@@ -10,7 +10,7 @@ function connectSocket(cb) {
     'ws' + window.location.protocol.slice(4) + '//' +
       window.location.hostname +
       (window.location.port.length > 0? (':' + window.location.port): '') +
-      '/$websocket:act');
+      '/act');
   socket.onmessage = socketMessage;
   socket.onclose = socket.onerror = socketError;
   socket.onopen = function() { retries = 0; cb(); };

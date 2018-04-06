@@ -721,7 +721,7 @@ function start(camp) {
   centerTile = humanity.centerTile;
   console.log('center:', centerTile);
   startGameLoop();
-  actChannel = camp.ws('act', actWSStart);
+  actChannel = camp.ws('/act', actWSStart);
 }
 
 

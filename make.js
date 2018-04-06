@@ -2,64 +2,78 @@
 // Contrary to popular belief, this file is meant to be a JS code concatenator.
 // It is meant to be used in a node environment, as in, `node make.js`.
 
-var fs = require('fs');
-var path = require('path');
-var uglify = require('uglify-js');
+const fs = require('fs');
+const path = require('path');
+const uglify = require('uglify-js');
+const {Writable} = require('stream');
 
-var debug = !!process.argv[2] || false;
+const debug = process.argv.some(a => a === '--debug');
 
-function bundle(file, inputs, compress) {
-  compress = !!compress;
-  var output = fs.createWriteStream(file);
+function main() {
+  // Server-side terrain.
+  bundle('terrain-gen.js', [
+    'terrain-node-before.js',
+    'terrain.js',
+    'terrain-node-after.js',
+  ]);
 
-  function cat(i) {
-    var input = fs.createReadStream(path.join(__dirname, inputs[i]));
+  // Client-side terrain.
+  bundle('web/display.js', [
+    'web/simplex-noise.js',
+    'web/mersenne-twister.js',
+    'terrain.js',
+    'web/input.js',
+  ]);
+
+  // Rendering worker thread.
+  bundle('web/render-worker.js', [
+    'web/simplex-noise.js',
+    'web/mersenne-twister.js',
+    'terrain.js',
+    'web/render.js',
+  ]);
+}
+
+function bundle(file, inputs, options = {compress: true}) {
+  const {compress} = options;
+  const compression = !!compress;
+
+  function cat(output, i = 0) {
+    const input = fs.createReadStream(path.join(__dirname, inputs[i]));
     input.pipe(output, {end: false});
     input.on('end', function() {
-      var next = i + 1;
+      const next = i + 1;
       if (next < inputs.length) {
-        cat(next);
+        cat(output, next);
       } else {
         output.end();
       }
     });
   }
-  if (!compress || debug) {  // do not minify the code.
-    cat(0);
+
+  if (!compression || debug) {  // do not minify the code.
+    cat(fs.createWriteStream(file));
   } else {
-    var minified = uglify.minify(inputs);
-    output.write(minified.code, function(){});
+    cat(new UglifyWriter(file));
   }
 }
 
-// Union of lists (in the correct order).
-function union(lists) {
-  var ulist = [];
-  for (var i = 0; i < lists.length; i++) {
-    ulist = ulist.concat(lists[i]);
+class UglifyWriter extends Writable {
+  constructor(file, options) {
+    super(options);
+    this.file = file;
+    this.buffer = '';
   }
-  return ulist;
+  _write(chunk, encoding, cb) {
+    try { this.buffer += String(chunk); cb(); }
+    catch (e) { cb(e); }
+  }
+  _final(cb) {
+    const minified = uglify.minify(this.buffer);
+    if (minified.error) {
+      console.error(minified.error); cb(minified.error);
+    } else { fs.writeFile(this.file, minified.code, cb); }
+  }
 }
 
-// Server-side terrain.
-bundle('terrain-gen.js', [
-  'terrain-node-before.js',
-  'terrain.js',
-  'terrain-node-after.js',
-], true);
-
-// Client-side terrain.
-bundle('web/display.js', [
-  'web/simplex-noise.js',
-  'web/mersenne-twister.js',
-  'terrain.js',
-  'web/input.js',
-], true);
-
-// Rendering worker thread.
-bundle('web/render-worker.js', [
-  'web/simplex-noise.js',
-  'web/mersenne-twister.js',
-  'terrain.js',
-  'web/render.js',
-], true);
+main();
