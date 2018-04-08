@@ -40,6 +40,7 @@ function makeActWSRecv(playerId) {
     try {
       plan = JSON.parse(data);
     } catch(e) { return; }
+    console.log('Received player ' + playerId + ' move: ' + JSON.stringify(plan));
     judgePlan(playerId, plan, cheatMode);
   };
 }

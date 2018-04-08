@@ -15,9 +15,6 @@ function World(worldFile) {
   } catch(e) {
     this.humanity.setSpawn();
   }
-  //for (var i = 0; i < this.humanity.numberOfCamps; i++) {
-  //  console.log('camp', i + ':', this.humanity.camps[i].spawn);
-  //}
   // Update periodically.
   var periodicity = 10000;  // Every 10s.
   setInterval(this.saveWorld.bind(this), periodicity);

@@ -1,1 +1,1333 @@
-!function(){var _=.5*(Math.sqrt(3)-1),N=(3-Math.sqrt(3))/6,B=1/6,ce=(Math.sqrt(5)-1)/4,fe=(5-Math.sqrt(5))/20;function e(e){e||(e=Math.random),this.p=new Uint8Array(256),this.perm=new Uint8Array(512),this.permMod12=new Uint8Array(512);for(var t=0;t<256;t++)this.p[t]=256*e();for(t=0;t<512;t++)this.perm[t]=this.p[255&t],this.permMod12[t]=this.perm[t]%12}e.prototype={grad3:new Float32Array([1,1,0,-1,1,0,1,-1,0,-1,-1,0,1,0,1,-1,0,1,1,0,-1,-1,0,-1,0,1,1,0,-1,1,0,1,-1,0,-1,-1]),grad4:new Float32Array([0,1,1,1,0,1,1,-1,0,1,-1,1,0,1,-1,-1,0,-1,1,1,0,-1,1,-1,0,-1,-1,1,0,-1,-1,-1,1,0,1,1,1,0,1,-1,1,0,-1,1,1,0,-1,-1,-1,0,1,1,-1,0,1,-1,-1,0,-1,1,-1,0,-1,-1,1,1,0,1,1,1,0,-1,1,-1,0,1,1,-1,0,-1,-1,1,0,1,-1,1,0,-1,-1,-1,0,1,-1,-1,0,-1,1,1,1,0,1,1,-1,0,1,-1,1,0,1,-1,-1,0,-1,1,1,0,-1,1,-1,0,-1,-1,1,0,-1,-1,-1,0]),noise2D:function(e,t){var i,r,s=this.permMod12,n=this.perm,a=this.grad3,o=0,l=0,p=0,h=(e+t)*_,u=Math.floor(e+h),m=Math.floor(t+h),c=(u+m)*N,f=e-(u-c),y=t-(m-c);y<f?(i=1,r=0):(i=0,r=1);var T=f-i+N,d=y-r+N,v=f-1+2*N,g=y-1+2*N,M=255&u,w=255&m,b=.5-f*f-y*y;if(0<=b){var x=3*s[M+n[w]];o=(b*=b)*b*(a[x]*f+a[x+1]*y)}var D=.5-T*T-d*d;if(0<=D){var F=3*s[M+i+n[w+r]];l=(D*=D)*D*(a[F]*T+a[F+1]*d)}var q=.5-v*v-g*g;if(0<=q){var P=3*s[M+1+n[w+1]];p=(q*=q)*q*(a[P]*v+a[P+1]*g)}return 70*(o+l+p)},noise3D:function(e,t,i){var r,s,n,a,o,l,p,h,u,m,c=this.permMod12,f=this.perm,y=this.grad3,T=(e+t+i)*(1/3),d=Math.floor(e+T),v=Math.floor(t+T),g=Math.floor(i+T),M=(d+v+g)*B,w=e-(d-M),b=t-(v-M),x=i-(g-M);b<=w?x<=b?(u=h=o=1,m=p=l=0):x<=w?(u=p=l=0,m=h=o=1):(u=l=o=0,m=h=p=1):b<x?(h=l=o=0,m=u=p=1):w<x?(h=p=o=0,m=u=l=1):(u=h=l=1,m=p=o=0);var D=w-o+B,F=b-l+B,q=x-p+B,P=w-h+2*B,_=b-u+2*B,N=x-m+2*B,A=w-1+.5,k=b-1+.5,S=x-1+.5,R=255&d,K=255&v,H=255&g,U=.6-w*w-b*b-x*x;if(U<0)r=0;else{var E=3*c[R+f[K+f[H]]];r=(U*=U)*U*(y[E]*w+y[E+1]*b+y[E+2]*x)}var O=.6-D*D-F*F-q*q;if(O<0)s=0;else{var L=3*c[R+o+f[K+l+f[H+p]]];s=(O*=O)*O*(y[L]*D+y[L+1]*F+y[L+2]*q)}var V=.6-P*P-_*_-N*N;if(V<0)n=0;else{var C=3*c[R+h+f[K+u+f[H+m]]];n=(V*=V)*V*(y[C]*P+y[C+1]*_+y[C+2]*N)}var W=.6-A*A-k*k-S*S;if(W<0)a=0;else{var z=3*c[R+1+f[K+1+f[H+1]]];a=(W*=W)*W*(y[z]*A+y[z+1]*k+y[z+2]*S)}return 32*(r+s+n+a)},noise4D:function(e,t,i,r){this.permMod12;var s,n,a,o,l,p,h,u,m,c,f,y,T,d,v,g,M,w=this.perm,b=this.grad4,x=(e+t+i+r)*ce,D=Math.floor(e+x),F=Math.floor(t+x),q=Math.floor(i+x),P=Math.floor(r+x),_=(D+F+q+P)*fe,N=e-(D-_),A=t-(F-_),k=i-(q-_),S=r-(P-_),R=0,K=0,H=0,U=0;A<N?R++:K++,k<N?R++:H++,S<N?R++:U++,k<A?K++:H++,S<A?K++:U++,S<k?H++:U++;var E=N-(p=3<=R?1:0)+fe,O=A-(h=3<=K?1:0)+fe,L=k-(u=3<=H?1:0)+fe,V=S-(m=3<=U?1:0)+fe,C=N-(c=2<=R?1:0)+2*fe,W=A-(f=2<=K?1:0)+2*fe,z=k-(y=2<=H?1:0)+2*fe,B=S-(T=2<=U?1:0)+2*fe,I=N-(d=1<=R?1:0)+3*fe,X=A-(v=1<=K?1:0)+3*fe,j=k-(g=1<=H?1:0)+3*fe,G=S-(M=1<=U?1:0)+3*fe,J=N-1+4*fe,Q=A-1+4*fe,Y=k-1+4*fe,Z=S-1+4*fe,$=255&D,ee=255&F,te=255&q,ie=255&P,re=.6-N*N-A*A-k*k-S*S;if(re<0)s=0;else{var se=w[$+w[ee+w[te+w[ie]]]]%32*4;s=(re*=re)*re*(b[se]*N+b[se+1]*A+b[se+2]*k+b[se+3]*S)}var ne=.6-E*E-O*O-L*L-V*V;if(ne<0)n=0;else{var ae=w[$+p+w[ee+h+w[te+u+w[ie+m]]]]%32*4;n=(ne*=ne)*ne*(b[ae]*E+b[ae+1]*O+b[ae+2]*L+b[ae+3]*V)}var oe=.6-C*C-W*W-z*z-B*B;if(oe<0)a=0;else{var le=w[$+c+w[ee+f+w[te+y+w[ie+T]]]]%32*4;a=(oe*=oe)*oe*(b[le]*C+b[le+1]*W+b[le+2]*z+b[le+3]*B)}var pe=.6-I*I-X*X-j*j-G*G;if(pe<0)o=0;else{var he=w[$+d+w[ee+v+w[te+g+w[ie+M]]]]%32*4;o=(pe*=pe)*pe*(b[he]*I+b[he+1]*X+b[he+2]*j+b[he+3]*G)}var ue=.6-J*J-Q*Q-Y*Y-Z*Z;if(ue<0)l=0;else{var me=w[$+1+w[ee+1+w[te+1+w[ie+1]]]]%32*4;l=(ue*=ue)*ue*(b[me]*J+b[me+1]*Q+b[me+2]*Y+b[me+3]*Z)}return 27*(s+n+a+o+l)}},"undefined"!=typeof define&&define.amd&&define(function(){return e}),"undefined"!=typeof exports?exports.SimplexNoise=e:"undefined"!=typeof navigator&&(this.SimplexNoise=e),"undefined"!=typeof module&&(module.exports=e)}();var MersenneTwister=function(e){null==e&&(e=(new Date).getTime()),this.N=624,this.M=397,this.MATRIX_A=2567483615,this.UPPER_MASK=2147483648,this.LOWER_MASK=2147483647,this.mt=new Array(this.N),this.mti=this.N+1,this.init_genrand(e)};MersenneTwister.prototype.init_genrand=function(e){for(this.mt[0]=e>>>0,this.mti=1;this.mti<this.N;this.mti++){e=this.mt[this.mti-1]^this.mt[this.mti-1]>>>30;this.mt[this.mti]=(1812433253*((4294901760&e)>>>16)<<16)+1812433253*(65535&e)+this.mti,this.mt[this.mti]>>>=0}},MersenneTwister.prototype.init_by_array=function(e,t){var i,r,s;for(this.init_genrand(19650218),i=1,r=0,s=this.N>t?this.N:t;s;s--){var n=this.mt[i-1]^this.mt[i-1]>>>30;this.mt[i]=(this.mt[i]^(1664525*((4294901760&n)>>>16)<<16)+1664525*(65535&n))+e[r]+r,this.mt[i]>>>=0,r++,++i>=this.N&&(this.mt[0]=this.mt[this.N-1],i=1),t<=r&&(r=0)}for(s=this.N-1;s;s--){n=this.mt[i-1]^this.mt[i-1]>>>30;this.mt[i]=(this.mt[i]^(1566083941*((4294901760&n)>>>16)<<16)+1566083941*(65535&n))-i,this.mt[i]>>>=0,++i>=this.N&&(this.mt[0]=this.mt[this.N-1],i=1)}this.mt[0]=2147483648},MersenneTwister.prototype.genrand_int32=function(){var e,t=new Array(0,this.MATRIX_A);if(this.mti>=this.N){var i;for(this.mti==this.N+1&&this.init_genrand(5489),i=0;i<this.N-this.M;i++)e=this.mt[i]&this.UPPER_MASK|this.mt[i+1]&this.LOWER_MASK,this.mt[i]=this.mt[i+this.M]^e>>>1^t[1&e];for(;i<this.N-1;i++)e=this.mt[i]&this.UPPER_MASK|this.mt[i+1]&this.LOWER_MASK,this.mt[i]=this.mt[i+(this.M-this.N)]^e>>>1^t[1&e];e=this.mt[this.N-1]&this.UPPER_MASK|this.mt[0]&this.LOWER_MASK,this.mt[this.N-1]=this.mt[this.M-1]^e>>>1^t[1&e],this.mti=0}return e=this.mt[this.mti++],e^=e>>>11,e^=e<<7&2636928640,e^=e<<15&4022730752,(e^=e>>>18)>>>0},MersenneTwister.prototype.genrand_int31=function(){return this.genrand_int32()>>>1},MersenneTwister.prototype.genrand_real1=function(){return this.genrand_int32()*(1/4294967295)},MersenneTwister.prototype.random=function(){return this.genrand_int32()*(1/4294967296)},MersenneTwister.prototype.genrand_real3=function(){return(this.genrand_int32()+.5)*(1/4294967296)},MersenneTwister.prototype.genrand_res53=function(){return(67108864*(this.genrand_int32()>>>5)+(this.genrand_int32()>>>6))*(1/9007199254740992)};var prng=new MersenneTwister(0),simplex1=new SimplexNoise(prng.random.bind(prng)),simplex2=new SimplexNoise(prng.random.bind(prng)),factor=50,tileTypes={water:0,steppe:1,hill:2,mountain:3,swamp:4,meadow:5,forest:6,taiga:7,farm:8,residence:9,skyscraper:10,factory:11,dock:12,airland:13,airport:14,gunsmith:15,road:16,wall:17,blackdeath:18,metal:19,lumber:20,mine:21,industry:22,citrus:23,university:24,beach:25,arsenal:26,smoke:27,impact:28,curvedRoad:29,whales:30,pearls:31,fish:32,algae:33,glass:34,salt:35,cattle:36,poultry:37,ivory:38,limestone:39,wool:40,grapes:41,fur:42,pigments:43,rubber:44,coal:45,crocodile:46,petroleum:47,shrimp:48,clay:49,spices:50,cotton:51,coffee:52,tea:53,resin:54,cocoa:55,honey:56,silk:57,gems:58,fungus:59,pelt:60,amber:61,field:62,market:63,"space mission":64,"stock exchange":65,monument:66},buildingTypes=[8,9,10,11,12,13,14,15,16,17,20,21,22,24,26,62,63,64,65,66],resourceTypes={fuel:-1,metal:-2,wealth:-3},listOfResourceTypes=[resourceTypes.fuel,resourceTypes.metal,resourceTypes.wealth];function setupStringFromTileType(){var e=Object.create(null);for(var t in tileTypes)e[tileTypes[t]]=t;for(var t in resourceTypes)e[resourceTypes[t]]=t;return e}var stringFromTileType=setupStringFromTileType(),tileVegetationTypeFromSteepness=[];function tileType(e,t){return t?tileVegetationTypeFromSteepness[e]:e}function heatmap(e,t,i,r,s){for(var n=0,a=0,o=0;o<s;o++){var l=Math.pow(2,o);n+=i.noise2D(e/r*l,t/r*l)/l,a+=1/l}return n/a}tileVegetationTypeFromSteepness[tileTypes.water]=tileTypes.swamp,tileVegetationTypeFromSteepness[tileTypes.steppe]=tileTypes.meadow,tileVegetationTypeFromSteepness[tileTypes.hill]=tileTypes.forest,tileVegetationTypeFromSteepness[tileTypes.mountain]=tileTypes.taiga;var distancesNormal=[17,2,4,16,8,3,8,24,,,,,,,,,1,32],distancesBoat=[1,4,8,16,1,8,16,24,,,,,,,,,1,32],distancesPlane=[1,1,2,2,1,1,2,2,,,,,,,,,1,8],MAX_INT=9007199254740992,manufacture={boat:1,car:2,plane:4,artillery:8,gun:16},buildingDependencies=[,,,,,,,,,[[2,tileTypes.farm]],[[6,tileTypes.residence]],[[3,tileTypes.residence]],[[1,tileTypes.residence],[1,tileTypes.water],[1,resourceTypes.fuel]],[[2,tileTypes.road]],[[1,tileTypes.gunsmith],[3,tileTypes.airland],[1,resourceTypes.fuel]],[[1,tileTypes.skyscraper],[1,tileTypes.factory]],,,,,[[1,tileTypes.residence]],[[1,resourceTypes.fuel],[1,tileTypes.factory]],[[10,resourceTypes.wealth],[1,tileTypes.mine],[5,tileTypes.road]],,[[1,tileTypes.meadow],[1,tileTypes.water],[2,tileTypes.residence]],,[[1,tileTypes.gunsmith],[1,resourceTypes.metal]],,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,[],[[1,tileTypes.dock],[1,tileTypes.skyscraper],[4,resourceTypes.metal]],[[2,tileTypes.airport],[20,resourceTypes.metal],[20,resourceTypes.fuel]],[[1,tileTypes.market],[1,tileTypes.university],[200,resourceTypes.wealth],[20,resourceTypes.metal]],[[3,tileTypes.skyscraper],[200,resourceTypes.wealth],[20,resourceTypes.fuel]]],buildingTileDependency=[,,,,,,,,,,,,,,,,,,,,[tileTypes.forest,tileTypes.taiga],[tileTypes.metal],,,,,[tileTypes.steppe]],planTypes={move:1,build:2};function Terrain(e){this.humanity=e,this.plans={}}Terrain.prototype={humanity:null,centerTile:{q:0,r:0},centerPoint:{x:0,y:0},tileTypes:tileTypes,buildingTypes:buildingTypes,resourceTypes:resourceTypes,listOfResourceTypes:listOfResourceTypes,stringFromTileType:function(e){return stringFromTileType[e]},tileType:tileType,heatmap:heatmap,setCenterTile:function(e){this.centerTile=e,this.centerPoint.x=Math.sqrt(3)*(e.q+e.r/2)|0,this.centerPoint.y=1.5*e.r},continent:function(e,t){var i=heatmap(e,t,simplex1,512,8),r=this.centerPoint,s=(e-r.x)*(e-r.x)+(t-r.y)*(t-r.y),n=heatmap(e,t,simplex1,2048,8),a=+(i+.7)*Math.exp(-s/262144);return a<n&&(a=n),a=Math.min(1,a)},continentLimit:.42,tile:function(e){var t,i;void 0===e.x?(t=Math.sqrt(3)*(e.q+e.r/2)|0,i=1.5*e.r):(t=e.x,i=e.y);var r=simplex2.noise2D(i/4/factor,t/4/factor),s=1-Math.abs((4*simplex1.noise2D(t/4/factor,i/4/factor)+2*simplex1.noise2D(t/2/factor,i/2/factor)+1*simplex1.noise2D(t/1/factor,i/1/factor)+.5*simplex1.noise2D(2*t/factor,2*i/factor))/7.5),n=Math.sin(-5*r*Math.abs(simplex1.noise2D(1/8*t/factor,1/8*i/factor))+simplex1.noise2D(t/factor,i/factor)-.5*simplex1.noise2D(2*t/factor,2*i/factor)+.25*simplex1.noise2D(4*t/factor,4*i/factor)-1/8*simplex1.noise2D(8*t/factor,8*i/factor)+1/16*simplex1.noise2D(16*t/factor,16*i/factor)),a=-simplex2.noise2D(i/factor/8,t/factor/8)+simplex2.noise2D(i/factor/4,t/factor/4)+n/2,o=r*simplex2.noise2D(t/factor,i/factor)+.5*simplex2.noise2D(2*t/factor,2*i/factor)+.25*simplex2.noise2D(4*t/factor,4*i/factor)+1/8*simplex2.noise2D(8*t/factor,8*i/factor)+1/16*simplex2.noise2D(16*t/factor,16*i/factor),l=n-s,p=this.continent(t,i);if(p>this.continentLimit)var h,u=o-((m=!(.6<n)&&.98<s||3*a/4+n/4<-1?(l=p*(h=(-1.5- -1.3)/(this.continentLimit-1))-1.3-h,tileTypes.water):o<-1?tileTypes.hill:l<-.2?tileTypes.steppe:l<.2?tileTypes.hill:tileTypes.mountain)===tileTypes.water?2*a:0)+Math.abs(n+.15)<0;else{var m=tileTypes.water;u=!1;l=p-1.92}var c={steepness:m,vegetation:u,type:this.tileType(m,u),height:l,rain:-o/2};return c},commodity:function(e,t){var i,r,s=e.q,n=e.r,a=(-simplex1.noise2D(s/60,n/60)/8+1)/2,o=(simplex1.noise2D(s/60,n/60)/8+1)/2,l=(-simplex2.noise2D(s/60,n/60)/8+1)/2,p=(simplex2.noise2D(s/60,n/60)/8+1)/2,h=a*simplex1.noise2D(s/4,n/4),u=o*simplex1.noise2D(s/16,n/16),m=l*simplex2.noise2D(s/2,n/2),c=p*simplex2.noise2D(s/8,n/8);if(.49<h)i=0;else if(.49<u)i=1;else if(.45<m)i=2;else{if(!(.45<c))return-1;i=3}return r=null!=t?t.type:this.tile(e).type,tileTypes.whales+(r<<2)+i},distances:distancesNormal,distance:function(e){var t=this.tile(e),i=this.humanity.tile(e),r=this.distances[i&&i.b?i.b:t.type];return void 0===r&&(r=this.distances[t.type]),r},distanceBetweenTiles:function(e,t){return(Math.abs(e.q-t.q)+Math.abs(e.r-t.r)+Math.abs(e.q+e.r-t.q-t.r))/2},neighborFromTile:function(e,t){return 0===t?{q:e.q+1,r:e.r}:1===t?{q:e.q+1,r:e.r-1}:2===t?{q:e.q,r:e.r-1}:3===t?{q:e.q-1,r:e.r}:4===t?{q:e.q-1,r:e.r+1}:5===t?{q:e.q,r:e.r+1}:void 0},keyFromTile:function(e){return e.q+":"+e.r},tileFromKey:function(e){var t=e.split(":");return{q:0|t[0],r:0|t[1]}},manufacture:manufacture,manufactureFromBuilding:function(e){return e===tileTypes.dock?manufacture.boat:e===tileTypes.factory?manufacture.car:e===tileTypes.airport?manufacture.plane:e===tileTypes.gunsmith?manufacture.gun:null},speedFromHuman:function(e){var t=8;return 0!=(e.o&manufacture.car)&&(t+=8),t},travelFrom:function(e,t){var i=this.humanity.tile(e).c,r={},s=this.keyFromTile(e);r[s]=null;var n={};n[s]=0;var a=[];for(a.push(s);0<a.length;){s=a.shift();var o=this.humanity.tile(this.tileFromKey(s));if(!o||null==o.c||o.c===i)for(var l=0;l<6;l++){var p=this.neighborFromTile(this.tileFromKey(s),l),h=n[s]+this.distance(p);if(h<=t){var u=this.keyFromTile(p);if(void 0!==n[u]&&h<n[u]&&delete n[u],void 0===n[u]&&void 0===r[u]){n[u]=h,r[u]=s;for(var m=-1,c=0;c<a.length;c++)if(void 0!==n[a[c]]){if(n[u]<=n[a[c]]){m=c;break}}else a.splice(c,1),c--;-1===m?a.push(u):a.splice(m,0,u)}}}}return r},travelTo:function(e,t,i,r,s,n){null==s&&(s=MAX_INT),null==n&&(n=this.humanity.tile(e));var a=n.c,o=this.keyFromTile(t),l={},p={},h={},u=[],m={},c=this.keyFromTile(e);for(m[c]=null,p[c]=0,u.push(c);0<u.length&&o!==c;){l[c=u.shift()]=!0;var f=this.humanity.tile(this.tileFromKey(c));if(!f||null==f.c||f.c===a)for(var y=0;y<6;y++){var T=this.neighborFromTile(this.tileFromKey(c),y),d=this.distance(T);if(!(i<d)){if(s<=0)return null;s--;var v=p[c]+d;if(!(r&&i<v)){var g=this.keyFromTile(T);if(void 0!==p[g]&&v<p[g]&&delete p[g],void 0===p[g]&&void 0===l[g]){p[g]=v,h[g]=v+(Math.abs(t.q-T.q)+Math.abs(t.r-T.r)+Math.abs(t.q+t.r-T.q-T.r))/2;for(var M=-1,w=0;w<u.length;w++)if(void 0!==h[u[w]]){if(h[g]<=h[u[w]]){M=w;break}}else u.splice(w,1),w--;-1===M?u.push(g):u.splice(M,0,g),m[g]=c}}}}}return o!==c?null:{endKey:o,parents:m,costs:p}},pathFromParents:function(e,t){var i=[];if(null==t[e])return[];for(;null!==t[e];)i.push(e),e=t[e];return i.push(e),i.reverse()},setDistancesForHuman:function(e){0!=(e.o&manufacture.plane)?this.distances=distancesPlane:0!=(e.o&manufacture.boat)&&(this.distances=distancesBoat)},unsetDistancesForHuman:function(e){this.distances=distancesNormal},humanTravelFrom:function(e){var t=this.humanity.tile(e);if(!t||t.h<=0)return{};this.setDistancesForHuman(t);var i=this.travelFrom(e,this.speedFromHuman(t));return this.unsetDistancesForHuman(t),i},humanTravelTo:function(e,t,i,r,s){if(null==s&&(s=this.humanity.tile(e)),!s||s.h<=0)return null;this.setDistancesForHuman(s);var n=this.travelTo(e,t,this.speedFromHuman(s),i,r,s);return this.unsetDistancesForHuman(s),n},humanTravelPath:function(e,t){var i=this.humanTravelTo(e,t);return null==i?[]:this.pathFromParents(i.endKey,i.parents)},humanTravelSpeedPath:function(e,t){var i=this.humanTravelTo(e,t,!0);return null==i?[]:this.pathFromParents(i.endKey,i.parents)},buildingDependencies:buildingDependencies,buildingTileDependency:buildingTileDependency,validConstruction:function(e,t,i){if(null==e)return!0;var r=this.humanity.tile(t),s=this.tile(t),n=i.fuel-i.usedFuel,a=i.metal-i.usedMetal,o=i.wealth-i.usedWealth;if(!r||r.h<=0)return!1;if(e===tileTypes.field)return 0<=this.commodity(t,s);if(s.type===tileTypes.water&&(e===tileTypes.farm||e===tileTypes.residence||e===tileTypes.skyscraper||e===tileTypes.factory||e===tileTypes.airland||e===tileTypes.airport||e===tileTypes.gunsmith))return!1;if(void 0!==buildingTileDependency[e]){for(var l=!1,p=0;p<buildingTileDependency[e].length;p++)buildingTileDependency[e][p]!==s.type&&buildingTileDependency[e][p]!==r.b||(l=!0);if(!l)return!1}if(void 0!==buildingDependencies[e]){var h=buildingDependencies[e],u=new Array(h.length);for(p=0;p<u.length;p++)u[p]=0;for(p=0;p<6;p++)for(var m=this.neighborFromTile(t,p),c=this.humanity.tile(m),f=this.tile(m),y=0;y<h.length;y++)if(0<=h[y][1]&&c&&c.b===h[y][1]||f.type===h[y][1])u[y]++;else if(h[y][1]<0){if(h[y][1]===resourceTypes.fuel&&n<h[y][0])return!1;if(h[y][1]===resourceTypes.metal&&a<h[y][0])return!1;if(h[y][1]===resourceTypes.wealth&&o<h[y][0])return!1;u[y]=h[y][0]}for(y=0;y<u.length;y++)if(u[y]<h[y][0])return!1;return!0}return!0},planTypes:planTypes,plans:{},addPlan:function(e){plans[e.at]=e},eachPlan:function(e){for(var t in plans)e(plans[t])},clearPlans:function(){plans={}}};var terrain=new Terrain;function intPointFromReal(e){var t=e.q,i=e.r,r=-t-i,s=Math.round(t),n=Math.round(r),a=Math.round(i),o=Math.abs(s-t),l=Math.abs(n-r),p=Math.abs(a-i);return l<o&&p<o?s=-n-a:p<l?n=-s-a:a=-s-n,{q:s,r:a}}function tileFromPixel(e,t,i){var r=e.x+t.x0,s=e.y+t.y0;return intPointFromReal({q:(Math.sqrt(3)*r-s)/3/i,r:2*s/3/i})}onmessage=function(e){e.data.centerTile?terrain.setCenterTile(e.data.centerTile):("raw"===e.data.type?paintTilesRaw(e.data.image,e.data.size,e.data.origin):"rainfall"===e.data.type&&paintRainfall(e.data.image,e.data.size,e.data.origin),postMessage({image:e.data.image,size:e.data.size,origin:e.data.origin}))};var cachedTerrainPaint={};function paintTilesRaw(e,t,i){var r=e.width,s=e.height,n=r*s*4,a=t+":"+i.x0+":"+i.y0;if(void 0===cachedTerrainPaint[a]){for(var o=new Uint8ClampedArray(n),l=0;l<s;l++)for(var p=!1,h=0;h<r;h++){var u=terrain.tile({x:(h+i.x0)/t,y:(l+i.y0)/t}),m=[0,0,0],c=0,f=0,y=0,T=0,d=-1,v=1;u.steepness===tileTypes.water?(m[2]=180,y=c=0,T=f=80,d=-2,v=-1.5):u.steepness===tileTypes.steppe?(c=100,y=160,f=85,T=140,d=-1.5,v=-.2,p&&(T=f=y=c=170)):u.steepness===tileTypes.hill?(c=100,y=140,f=150,T=110,d=-.2,v=.2):(c=150,y=100,f=40,T=10,d=.2,v=1),p=u.steepness===tileTypes.water,u.type===tileTypes.forest&&(c=20,f=50,T=y=100);var g=(u.height-d)/(v-d);m[0]=g*f+(1-g)*c,m[1]=g*T+(1-g)*y;var M=Math.min(Math.abs(m[0]-m[1])/2*u.rain,255);m[1]-=M,m[2]-=Math.min(20*u.rain,255),u.vegetation&&(m[0]-=50,m[1]-=25,m[2]-=50);var w=4*(h+l*r);o[w+0]=m[0],o[w+1]=m[1],o[w+2]=m[2],o[w+3]=255}cachedTerrainPaint[a]=o}e.data.set(cachedTerrainPaint[a])}function paintRainfall(e,t,i){for(var r=e.width,s=e.height,n=new Uint8ClampedArray(r*s*4),a=0;a<s;a++)for(var o=0;o<r;o++){var l=tileFromPixel({x:o,y:a},i,t),p=terrain.tile(l),h=(1-p.rain)/2,u=h=157*h+10|0,m=h;if(p.type===tileTypes.water);else{var c=0|Math.abs(h-78);h<78?(u-=c,m+=c):78<h&&(u+=2*c,m+=c)}var f=4*(o+a*r);n[f+0]=u,n[f+1]=m,n[f+2]=h,n[f+3]=60}e.data.set(n)}
+/*
+ * A fast javascript implementation of simplex noise by Jonas Wagner
+ *
+ * Based on a speed-improved simplex noise algorithm for 2D, 3D and 4D in Java.
+ * Which is based on example code by Stefan Gustavson (stegu@itn.liu.se).
+ * With Optimisations by Peter Eastman (peastman@drizzle.stanford.edu).
+ * Better rank ordering method by Stefan Gustavson in 2012.
+ *
+ *
+ * Copyright (C) 2012 Jonas Wagner
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ */
+(function () {
+
+var F2 = 0.5 * (Math.sqrt(3.0) - 1.0),
+    G2 = (3.0 - Math.sqrt(3.0)) / 6.0,
+    F3 = 1.0 / 3.0,
+    G3 = 1.0 / 6.0,
+    F4 = (Math.sqrt(5.0) - 1.0) / 4.0,
+    G4 = (5.0 - Math.sqrt(5.0)) / 20.0;
+
+
+function SimplexNoise(random) {
+    if (!random) random = Math.random;
+    this.p = new Uint8Array(256);
+    this.perm = new Uint8Array(512);
+    this.permMod12 = new Uint8Array(512);
+    for (var i = 0; i < 256; i++) {
+        this.p[i] = random() * 256;
+    }
+    for (i = 0; i < 512; i++) {
+        this.perm[i] = this.p[i & 255];
+        this.permMod12[i] = this.perm[i] % 12;
+    }
+
+}
+SimplexNoise.prototype = {
+    grad3: new Float32Array([1, 1, 0,
+                            - 1, 1, 0,
+                            1, - 1, 0,
+
+                            - 1, - 1, 0,
+                            1, 0, 1,
+                            - 1, 0, 1,
+
+                            1, 0, - 1,
+                            - 1, 0, - 1,
+                            0, 1, 1,
+
+                            0, - 1, 1,
+                            0, 1, - 1,
+                            0, - 1, - 1]),
+    grad4: new Float32Array([0, 1, 1, 1, 0, 1, 1, - 1, 0, 1, - 1, 1, 0, 1, - 1, - 1,
+                            0, - 1, 1, 1, 0, - 1, 1, - 1, 0, - 1, - 1, 1, 0, - 1, - 1, - 1,
+                            1, 0, 1, 1, 1, 0, 1, - 1, 1, 0, - 1, 1, 1, 0, - 1, - 1,
+                            - 1, 0, 1, 1, - 1, 0, 1, - 1, - 1, 0, - 1, 1, - 1, 0, - 1, - 1,
+                            1, 1, 0, 1, 1, 1, 0, - 1, 1, - 1, 0, 1, 1, - 1, 0, - 1,
+                            - 1, 1, 0, 1, - 1, 1, 0, - 1, - 1, - 1, 0, 1, - 1, - 1, 0, - 1,
+                            1, 1, 1, 0, 1, 1, - 1, 0, 1, - 1, 1, 0, 1, - 1, - 1, 0,
+                            - 1, 1, 1, 0, - 1, 1, - 1, 0, - 1, - 1, 1, 0, - 1, - 1, - 1, 0]),
+    noise2D: function (xin, yin) {
+        var permMod12 = this.permMod12,
+            perm = this.perm,
+            grad3 = this.grad3;
+        var n0=0, n1=0, n2=0; // Noise contributions from the three corners
+        // Skew the input space to determine which simplex cell we're in
+        var s = (xin + yin) * F2; // Hairy factor for 2D
+        var i = Math.floor(xin + s);
+        var j = Math.floor(yin + s);
+        var t = (i + j) * G2;
+        var X0 = i - t; // Unskew the cell origin back to (x,y) space
+        var Y0 = j - t;
+        var x0 = xin - X0; // The x,y distances from the cell origin
+        var y0 = yin - Y0;
+        // For the 2D case, the simplex shape is an equilateral triangle.
+        // Determine which simplex we are in.
+        var i1, j1; // Offsets for second (middle) corner of simplex in (i,j) coords
+        if (x0 > y0) {
+            i1 = 1;
+            j1 = 0;
+        } // lower triangle, XY order: (0,0)->(1,0)->(1,1)
+        else {
+            i1 = 0;
+            j1 = 1;
+        } // upper triangle, YX order: (0,0)->(0,1)->(1,1)
+        // A step of (1,0) in (i,j) means a step of (1-c,-c) in (x,y), and
+        // a step of (0,1) in (i,j) means a step of (-c,1-c) in (x,y), where
+        // c = (3-sqrt(3))/6
+        var x1 = x0 - i1 + G2; // Offsets for middle corner in (x,y) unskewed coords
+        var y1 = y0 - j1 + G2;
+        var x2 = x0 - 1.0 + 2.0 * G2; // Offsets for last corner in (x,y) unskewed coords
+        var y2 = y0 - 1.0 + 2.0 * G2;
+        // Work out the hashed gradient indices of the three simplex corners
+        var ii = i & 255;
+        var jj = j & 255;
+        // Calculate the contribution from the three corners
+        var t0 = 0.5 - x0 * x0 - y0 * y0;
+        if (t0 >= 0) {
+            var gi0 = permMod12[ii + perm[jj]] * 3;
+            t0 *= t0;
+            n0 = t0 * t0 * (grad3[gi0] * x0 + grad3[gi0 + 1] * y0); // (x,y) of grad3 used for 2D gradient
+        }
+        var t1 = 0.5 - x1 * x1 - y1 * y1;
+        if (t1 >= 0) {
+            var gi1 = permMod12[ii + i1 + perm[jj + j1]] * 3;
+            t1 *= t1;
+            n1 = t1 * t1 * (grad3[gi1] * x1 + grad3[gi1 + 1] * y1);
+        }
+        var t2 = 0.5 - x2 * x2 - y2 * y2;
+        if (t2 >= 0) {
+            var gi2 = permMod12[ii + 1 + perm[jj + 1]] * 3;
+            t2 *= t2;
+            n2 = t2 * t2 * (grad3[gi2] * x2 + grad3[gi2 + 1] * y2);
+        }
+        // Add contributions from each corner to get the final noise value.
+        // The result is scaled to return values in the interval [-1,1].
+        return 70.0 * (n0 + n1 + n2);
+    },
+    // 3D simplex noise
+    noise3D: function (xin, yin, zin) {
+        var permMod12 = this.permMod12,
+            perm = this.perm,
+            grad3 = this.grad3;
+        var n0, n1, n2, n3; // Noise contributions from the four corners
+        // Skew the input space to determine which simplex cell we're in
+        var s = (xin + yin + zin) * F3; // Very nice and simple skew factor for 3D
+        var i = Math.floor(xin + s);
+        var j = Math.floor(yin + s);
+        var k = Math.floor(zin + s);
+        var t = (i + j + k) * G3;
+        var X0 = i - t; // Unskew the cell origin back to (x,y,z) space
+        var Y0 = j - t;
+        var Z0 = k - t;
+        var x0 = xin - X0; // The x,y,z distances from the cell origin
+        var y0 = yin - Y0;
+        var z0 = zin - Z0;
+        // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
+        // Determine which simplex we are in.
+        var i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
+        var i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
+        if (x0 >= y0) {
+            if (y0 >= z0) {
+                i1 = 1;
+                j1 = 0;
+                k1 = 0;
+                i2 = 1;
+                j2 = 1;
+                k2 = 0;
+            } // X Y Z order
+            else if (x0 >= z0) {
+                i1 = 1;
+                j1 = 0;
+                k1 = 0;
+                i2 = 1;
+                j2 = 0;
+                k2 = 1;
+            } // X Z Y order
+            else {
+                i1 = 0;
+                j1 = 0;
+                k1 = 1;
+                i2 = 1;
+                j2 = 0;
+                k2 = 1;
+            } // Z X Y order
+        }
+        else { // x0<y0
+            if (y0 < z0) {
+                i1 = 0;
+                j1 = 0;
+                k1 = 1;
+                i2 = 0;
+                j2 = 1;
+                k2 = 1;
+            } // Z Y X order
+            else if (x0 < z0) {
+                i1 = 0;
+                j1 = 1;
+                k1 = 0;
+                i2 = 0;
+                j2 = 1;
+                k2 = 1;
+            } // Y Z X order
+            else {
+                i1 = 0;
+                j1 = 1;
+                k1 = 0;
+                i2 = 1;
+                j2 = 1;
+                k2 = 0;
+            } // Y X Z order
+        }
+        // A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
+        // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
+        // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z), where
+        // c = 1/6.
+        var x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
+        var y1 = y0 - j1 + G3;
+        var z1 = z0 - k1 + G3;
+        var x2 = x0 - i2 + 2.0 * G3; // Offsets for third corner in (x,y,z) coords
+        var y2 = y0 - j2 + 2.0 * G3;
+        var z2 = z0 - k2 + 2.0 * G3;
+        var x3 = x0 - 1.0 + 3.0 * G3; // Offsets for last corner in (x,y,z) coords
+        var y3 = y0 - 1.0 + 3.0 * G3;
+        var z3 = z0 - 1.0 + 3.0 * G3;
+        // Work out the hashed gradient indices of the four simplex corners
+        var ii = i & 255;
+        var jj = j & 255;
+        var kk = k & 255;
+        // Calculate the contribution from the four corners
+        var t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
+        if (t0 < 0) n0 = 0.0;
+        else {
+            var gi0 = permMod12[ii + perm[jj + perm[kk]]] * 3;
+            t0 *= t0;
+            n0 = t0 * t0 * (grad3[gi0] * x0 + grad3[gi0 + 1] * y0 + grad3[gi0 + 2] * z0);
+        }
+        var t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
+        if (t1 < 0) n1 = 0.0;
+        else {
+            var gi1 = permMod12[ii + i1 + perm[jj + j1 + perm[kk + k1]]] * 3;
+            t1 *= t1;
+            n1 = t1 * t1 * (grad3[gi1] * x1 + grad3[gi1 + 1] * y1 + grad3[gi1 + 2] * z1);
+        }
+        var t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
+        if (t2 < 0) n2 = 0.0;
+        else {
+            var gi2 = permMod12[ii + i2 + perm[jj + j2 + perm[kk + k2]]] * 3;
+            t2 *= t2;
+            n2 = t2 * t2 * (grad3[gi2] * x2 + grad3[gi2 + 1] * y2 + grad3[gi2 + 2] * z2);
+        }
+        var t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
+        if (t3 < 0) n3 = 0.0;
+        else {
+            var gi3 = permMod12[ii + 1 + perm[jj + 1 + perm[kk + 1]]] * 3;
+            t3 *= t3;
+            n3 = t3 * t3 * (grad3[gi3] * x3 + grad3[gi3 + 1] * y3 + grad3[gi3 + 2] * z3);
+        }
+        // Add contributions from each corner to get the final noise value.
+        // The result is scaled to stay just inside [-1,1]
+        return 32.0 * (n0 + n1 + n2 + n3);
+    },
+    // 4D simplex noise, better simplex rank ordering method 2012-03-09
+    noise4D: function (x, y, z, w) {
+        var permMod12 = this.permMod12,
+            perm = this.perm,
+            grad4 = this.grad4;
+
+        var n0, n1, n2, n3, n4; // Noise contributions from the five corners
+        // Skew the (x,y,z,w) space to determine which cell of 24 simplices we're in
+        var s = (x + y + z + w) * F4; // Factor for 4D skewing
+        var i = Math.floor(x + s);
+        var j = Math.floor(y + s);
+        var k = Math.floor(z + s);
+        var l = Math.floor(w + s);
+        var t = (i + j + k + l) * G4; // Factor for 4D unskewing
+        var X0 = i - t; // Unskew the cell origin back to (x,y,z,w) space
+        var Y0 = j - t;
+        var Z0 = k - t;
+        var W0 = l - t;
+        var x0 = x - X0; // The x,y,z,w distances from the cell origin
+        var y0 = y - Y0;
+        var z0 = z - Z0;
+        var w0 = w - W0;
+        // For the 4D case, the simplex is a 4D shape I won't even try to describe.
+        // To find out which of the 24 possible simplices we're in, we need to
+        // determine the magnitude ordering of x0, y0, z0 and w0.
+        // Six pair-wise comparisons are performed between each possible pair
+        // of the four coordinates, and the results are used to rank the numbers.
+        var rankx = 0;
+        var ranky = 0;
+        var rankz = 0;
+        var rankw = 0;
+        if (x0 > y0) rankx++;
+        else ranky++;
+        if (x0 > z0) rankx++;
+        else rankz++;
+        if (x0 > w0) rankx++;
+        else rankw++;
+        if (y0 > z0) ranky++;
+        else rankz++;
+        if (y0 > w0) ranky++;
+        else rankw++;
+        if (z0 > w0) rankz++;
+        else rankw++;
+        var i1, j1, k1, l1; // The integer offsets for the second simplex corner
+        var i2, j2, k2, l2; // The integer offsets for the third simplex corner
+        var i3, j3, k3, l3; // The integer offsets for the fourth simplex corner
+        // simplex[c] is a 4-vector with the numbers 0, 1, 2 and 3 in some order.
+        // Many values of c will never occur, since e.g. x>y>z>w makes x<z, y<w and x<w
+        // impossible. Only the 24 indices which have non-zero entries make any sense.
+        // We use a thresholding to set the coordinates in turn from the largest magnitude.
+        // Rank 3 denotes the largest coordinate.
+        i1 = rankx >= 3 ? 1 : 0;
+        j1 = ranky >= 3 ? 1 : 0;
+        k1 = rankz >= 3 ? 1 : 0;
+        l1 = rankw >= 3 ? 1 : 0;
+        // Rank 2 denotes the second largest coordinate.
+        i2 = rankx >= 2 ? 1 : 0;
+        j2 = ranky >= 2 ? 1 : 0;
+        k2 = rankz >= 2 ? 1 : 0;
+        l2 = rankw >= 2 ? 1 : 0;
+        // Rank 1 denotes the second smallest coordinate.
+        i3 = rankx >= 1 ? 1 : 0;
+        j3 = ranky >= 1 ? 1 : 0;
+        k3 = rankz >= 1 ? 1 : 0;
+        l3 = rankw >= 1 ? 1 : 0;
+        // The fifth corner has all coordinate offsets = 1, so no need to compute that.
+        var x1 = x0 - i1 + G4; // Offsets for second corner in (x,y,z,w) coords
+        var y1 = y0 - j1 + G4;
+        var z1 = z0 - k1 + G4;
+        var w1 = w0 - l1 + G4;
+        var x2 = x0 - i2 + 2.0 * G4; // Offsets for third corner in (x,y,z,w) coords
+        var y2 = y0 - j2 + 2.0 * G4;
+        var z2 = z0 - k2 + 2.0 * G4;
+        var w2 = w0 - l2 + 2.0 * G4;
+        var x3 = x0 - i3 + 3.0 * G4; // Offsets for fourth corner in (x,y,z,w) coords
+        var y3 = y0 - j3 + 3.0 * G4;
+        var z3 = z0 - k3 + 3.0 * G4;
+        var w3 = w0 - l3 + 3.0 * G4;
+        var x4 = x0 - 1.0 + 4.0 * G4; // Offsets for last corner in (x,y,z,w) coords
+        var y4 = y0 - 1.0 + 4.0 * G4;
+        var z4 = z0 - 1.0 + 4.0 * G4;
+        var w4 = w0 - 1.0 + 4.0 * G4;
+        // Work out the hashed gradient indices of the five simplex corners
+        var ii = i & 255;
+        var jj = j & 255;
+        var kk = k & 255;
+        var ll = l & 255;
+        // Calculate the contribution from the five corners
+        var t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0 - w0 * w0;
+        if (t0 < 0) n0 = 0.0;
+        else {
+            var gi0 = (perm[ii + perm[jj + perm[kk + perm[ll]]]] % 32) * 4;
+            t0 *= t0;
+            n0 = t0 * t0 * (grad4[gi0] * x0 + grad4[gi0 + 1] * y0 + grad4[gi0 + 2] * z0 + grad4[gi0 + 3] * w0);
+        }
+        var t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1 - w1 * w1;
+        if (t1 < 0) n1 = 0.0;
+        else {
+            var gi1 = (perm[ii + i1 + perm[jj + j1 + perm[kk + k1 + perm[ll + l1]]]] % 32) * 4;
+            t1 *= t1;
+            n1 = t1 * t1 * (grad4[gi1] * x1 + grad4[gi1 + 1] * y1 + grad4[gi1 + 2] * z1 + grad4[gi1 + 3] * w1);
+        }
+        var t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2 - w2 * w2;
+        if (t2 < 0) n2 = 0.0;
+        else {
+            var gi2 = (perm[ii + i2 + perm[jj + j2 + perm[kk + k2 + perm[ll + l2]]]] % 32) * 4;
+            t2 *= t2;
+            n2 = t2 * t2 * (grad4[gi2] * x2 + grad4[gi2 + 1] * y2 + grad4[gi2 + 2] * z2 + grad4[gi2 + 3] * w2);
+        }
+        var t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
+        if (t3 < 0) n3 = 0.0;
+        else {
+            var gi3 = (perm[ii + i3 + perm[jj + j3 + perm[kk + k3 + perm[ll + l3]]]] % 32) * 4;
+            t3 *= t3;
+            n3 = t3 * t3 * (grad4[gi3] * x3 + grad4[gi3 + 1] * y3 + grad4[gi3 + 2] * z3 + grad4[gi3 + 3] * w3);
+        }
+        var t4 = 0.6 - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
+        if (t4 < 0) n4 = 0.0;
+        else {
+            var gi4 = (perm[ii + 1 + perm[jj + 1 + perm[kk + 1 + perm[ll + 1]]]] % 32) * 4;
+            t4 *= t4;
+            n4 = t4 * t4 * (grad4[gi4] * x4 + grad4[gi4 + 1] * y4 + grad4[gi4 + 2] * z4 + grad4[gi4 + 3] * w4);
+        }
+        // Sum up and scale the result to cover the range [-1,1]
+        return 27.0 * (n0 + n1 + n2 + n3 + n4);
+    }
+
+
+};
+
+// amd
+if (typeof define !== 'undefined' && define.amd) define(function(){return SimplexNoise;});
+//common js
+if (typeof exports !== 'undefined') exports.SimplexNoise = SimplexNoise;
+// browser
+else if (typeof navigator !== 'undefined') this.SimplexNoise = SimplexNoise;
+// nodejs
+if (typeof module !== 'undefined') {
+    module.exports = SimplexNoise;
+}
+
+})();
+// This PRNG is inspired by PCG, but relies on a 32-bit state (instead of
+// 64-bit) for speed, as JS does not have native 64-bit numbers.
+class PCG {
+  constructor(seed, incr) {
+    this.state = 0;
+    this.incr = ((incr >>> 0) << 1) | 1;
+    this.random32();
+    this.state += seed >>> 0;
+    this.random32();
+  }
+  // Random 32-bit integer.
+  random32() {
+    const oldState = this.state >>> 0;
+    this.state = ((oldState * 0x5851f42d) >>> 0) + (this.incr|1);
+    const xorshifted = ((oldState >>> 9) ^ oldState) >>> 13;
+    const rot = oldState >>> 29;
+    return (xorshifted >>> rot) | (xorshifted << ((-rot) & 15));
+  }
+  // Random number in [0,1).
+  random() {
+    return this.random32() / 4294967296;
+  }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = PCG;
+}
+var prng1 = new PCG(0, 0);
+var prng2 = new PCG(0, 1);
+var simplex1 = new SimplexNoise(prng1.random.bind(prng1));
+var simplex2 = new SimplexNoise(prng2.random.bind(prng2));
+
+// Parameter to how stretched the map is.
+var factor = 50;
+
+// The following are actually constants.
+var tileTypes = {
+  water:        0,
+  steppe:       1,
+  hill:         2,
+  mountain:     3,
+  swamp:        4,
+  meadow:       5,
+  forest:       6,
+  taiga:        7,
+  farm:         8,
+  residence:    9,
+  skyscraper:   10,
+  factory:      11,
+  dock:         12,
+  airland:      13,
+  airport:      14,
+  gunsmith:     15,
+  road:         16,
+  wall:         17,
+  blackdeath:   18,
+  metal:        19,
+  lumber:       20,
+  mine:         21,
+  industry:     22,
+  citrus:       23,
+  university:   24,
+  beach:        25,
+  arsenal:      26,
+  smoke:        27,
+  impact:       28,
+  curvedRoad:   29,
+  // Commodities.
+  whales:       30,
+  pearls:       31,
+  fish:         32,
+  algae:        33,
+
+  glass:        34,
+  salt:         35,
+  cattle:       36,
+  poultry:      37,
+
+  ivory:        38,
+  limestone:    39,
+  wool:         40,
+  grapes:       41,
+
+  fur:          42,
+  pigments:     43,
+  rubber:       44,
+  coal:         45,
+
+  crocodile:    46,
+  petroleum:    47,
+  shrimp:       48,
+  clay:         49,
+
+  spices:       50,
+  cotton:       51,
+  coffee:       52,
+  tea:          53,
+
+  resin:        54,
+  cocoa:        55,
+  honey:        56,
+  silk:         57,
+
+  gems:         58,
+  fungus:       59,
+  pelt:         60,
+  amber:        61,
+
+  field:        62,
+  market:       63,
+  'space mission': 64,
+  'stock exchange': 65,
+  monument:     66
+};
+var buildingTypes = [ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24,
+    26, 62, 63, 64, 65, 66 ];
+
+var resourceTypes = {
+  fuel:       -1,
+  metal:      -2,
+  wealth:     -3
+};
+var listOfResourceTypes = [
+  resourceTypes.fuel,
+  resourceTypes.metal,
+  resourceTypes.wealth
+];
+
+function setupStringFromTileType() {
+  var map = Object.create(null);
+  for (var type in tileTypes) { map[tileTypes[type]] = type; }
+  for (var type in resourceTypes) { map[resourceTypes[type]] = type; }
+  return map;
+}
+var stringFromTileType = setupStringFromTileType();
+
+var tileVegetationTypeFromSteepness = [];
+tileVegetationTypeFromSteepness[tileTypes.water]    = tileTypes.swamp;
+tileVegetationTypeFromSteepness[tileTypes.steppe]   = tileTypes.meadow;
+tileVegetationTypeFromSteepness[tileTypes.hill]     = tileTypes.forest;
+tileVegetationTypeFromSteepness[tileTypes.mountain] = tileTypes.taiga;
+
+// Terrain generation
+
+function tileType(steepness, vegetation) {
+  if (vegetation) { return tileVegetationTypeFromSteepness[steepness]; }
+  else { return steepness; }
+}
+
+function heatmap(x, y, simplex, size, harmonics) {
+  var value = 0;
+  var sum = 0;
+  for (var i = 0; i < harmonics; i++) {
+    var coeff = Math.pow(2, i);
+    value += simplex.noise2D(x/size*coeff, y/size*coeff) / coeff;
+    sum += 1 / coeff;
+  }
+  return value / sum;
+}
+
+
+// Movements.
+var distancesNormal = [17,2,4,16,8,3,8,24,,,,,,,,,1,32];
+var distancesBoat = [1,4,8,16,1,8,16,24,,,,,,,,,1,32];
+var distancesPlane = [1,1,2,2,1,1,2,2,,,,,,,,,1,8];
+
+var MAX_INT = 9007199254740992;
+
+
+// Humanity
+
+var manufacture = {
+  boat: 1,
+  car: 2,
+  plane: 4,
+  artillery: 8,
+  gun: 16
+};
+
+// The index is the tileTypes id.
+// It is a list of [number, tileType] requirements to build something.
+// This is for tiles around the building.
+var buildingDependencies = [,,,,,,,,
+    ,
+    [[2, tileTypes.farm]],      // residence [9].
+    [[6, tileTypes.residence]],
+    [[3, tileTypes.residence]],
+    [[1, tileTypes.residence], [1, tileTypes.water], [1, resourceTypes.fuel]],
+    [[2, tileTypes.road]],
+    [[1, tileTypes.gunsmith], [3, tileTypes.airland], [1, resourceTypes.fuel]],
+    [[1, tileTypes.skyscraper], [1, tileTypes.factory]],
+    ,,,,
+    [[1, tileTypes.residence]],
+    [[1, resourceTypes.fuel], [1, tileTypes.factory]],
+    [[10, resourceTypes.wealth], [1, tileTypes.mine], [5, tileTypes.road]],
+    ,
+    [[1, tileTypes.meadow], [1, tileTypes.water], [2, tileTypes.residence]],
+    ,
+    [[1, tileTypes.gunsmith], [1, resourceTypes.metal]],
+    ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+    [],
+    [[1, tileTypes.dock], [1, tileTypes.skyscraper], [4, resourceTypes.metal]],
+    [[2, tileTypes.airport],
+      [20, resourceTypes.metal], [20, resourceTypes.fuel]],
+    [[1, tileTypes.market], [1, tileTypes.university],
+      [200, resourceTypes.wealth], [20, resourceTypes.metal]],
+    [[3, tileTypes.skyscraper], [200, resourceTypes.wealth],
+      [20, resourceTypes.fuel]]
+];
+
+// What the current tile must hold to allow a building to be constructed.
+var buildingTileDependency = [,,,,,,,, ,,,,,,,,,,,,
+    [tileTypes.forest, tileTypes.taiga],         // Lumber [20]
+    [tileTypes.metal],,,,,
+    [tileTypes.steppe]
+];
+
+var planTypes = {
+  move: 1,
+  build: 2
+};
+
+
+
+
+
+function Terrain(humanity) {
+  this.humanity = humanity;
+  this.plans = {};
+}
+
+Terrain.prototype = {
+  humanity: null,
+  centerTile: { q: 0, r: 0 },
+  centerPoint: { x: 0, y: 0 },
+
+  tileTypes: tileTypes,
+  buildingTypes: buildingTypes,
+  resourceTypes: resourceTypes,
+  listOfResourceTypes: listOfResourceTypes,
+  stringFromTileType: function(tile) { return stringFromTileType[tile]; },
+  tileType: tileType,
+  heatmap: heatmap,
+
+  setCenterTile: function setCenterTile(coord) {
+    this.centerTile = coord;
+    this.centerPoint.x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
+    this.centerPoint.y = (3/2 * coord.r);
+  },
+
+  // Returns true if it is part of the continent.
+  continent: function continent(x, y) {
+    var size = 512;
+    var hm = heatmap(x, y, simplex1, size, 8);
+    var center = this.centerPoint;
+    var squareDistanceFromCenter = (x - center.x) * (x - center.x)
+                                 + (y - center.y) * (y - center.y);
+    var continents = heatmap(x, y, simplex1, 4 * size, 8);
+    var island =
+      // Keep the center above ocean level.
+      + (hm + .7) * Math.exp(-squareDistanceFromCenter / (size * size));
+    if (island < continents) { island = continents; }
+    island = Math.min(1, island);
+    return island;
+  },
+
+  continentLimit: 0.42,
+
+  // Get information about the tile at hexagonal coordinates `coord` {q, r}.
+  // Returns
+  //  - steepness: altitude level. See `tileTypes`.
+  //  - vegetation: boolean; whether there is vegetation.
+  //  - type: tile type. See `tileTypes`.
+  //  - rain: floating point number between -1 and 1, representing how heavy
+  //  the rainfall is.
+  tile: function tile(coord) {
+    var x, y;
+    if (coord.x === undefined) {
+      x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
+      y = (3/2 * coord.r);
+    } else { x = coord.x; y = coord.y; }
+    var size = simplex2.noise2D(y/4/factor, x/4/factor);
+    var riverNoise = 1-Math.abs((
+        + 4 * (simplex1.noise2D(x/4/factor, y/4/factor))
+        + 2 * (simplex1.noise2D(x/2/factor, y/2/factor))
+        + 1 * (simplex1.noise2D(x/1/factor, y/1/factor))
+        + 1/2 * (simplex1.noise2D(x*2/factor, y*2/factor))
+        )/(1/2+1+2+4));
+    var heightNoise = Math.sin(
+        // Abs gives valleys.
+        - (size * 5) * Math.abs(simplex1.noise2D(1/8*x/factor, 1/8*y/factor))
+        + simplex1.noise2D(x/factor, y/factor)
+        - 1/2 * simplex1.noise2D(2*x/factor, 2*y/factor)
+        + 1/4 * simplex1.noise2D(4*x/factor, 4*y/factor)
+        - 1/8 * simplex1.noise2D(8*x/factor, 8*y/factor)
+        + 1/16 * simplex1.noise2D(16*x/factor, 16*y/factor));
+    var seaNoise = -simplex2.noise2D(y/factor/8, x/factor/8)
+        + simplex2.noise2D(y/factor/4, x/factor/4)
+        + heightNoise/2;
+    var vegetationNoise = (size) * simplex2.noise2D(x/factor, y/factor)
+        + 1/2 * simplex2.noise2D(2*x/factor, 2*y/factor)
+        + 1/4 * simplex2.noise2D(4*x/factor, 4*y/factor)
+        + 1/8 * simplex2.noise2D(8*x/factor, 8*y/factor)
+        + 1/16 * simplex2.noise2D(16*x/factor, 16*y/factor);
+    var height = heightNoise - riverNoise;
+    var continentNoise = this.continent(x, y);
+
+    if (continentNoise > this.continentLimit) {
+      var seaHeight = -1.3, seaHeightX;
+      var steepness = (
+      // Rivers are thinner in mountains.
+      (((heightNoise > 0.6)? false: (riverNoise > 0.98))
+      // Seas are smaller in mountains.
+      || seaNoise*3/4 + heightNoise/4 < -1.0) ?
+          // Inverse of oceanHeight.
+          // sea height = X * 1 + Y
+          // limit height = X * continentLimit + Y
+          // => X = sea height - Y
+          //    limit height = X * continentLimit + sea height - X
+          // => limit height = X * (continentLimit - 1) + sea height
+          // => X = (limit height - sea height) / (continentLimit - 1)
+          (seaHeightX = (-1.5 - seaHeight) / (this.continentLimit - 1),
+           height = (continentNoise * seaHeightX) + seaHeight - seaHeightX,
+           tileTypes.water):
+      (vegetationNoise < -1.0)?
+          tileTypes.hill:
+      (height < -0.2) ?
+          tileTypes.steppe:
+      // Mountains are cut off (by river) to avoid circular mountain formations.
+      (height < 0.2) ?
+          tileTypes.hill:
+          tileTypes.mountain);
+      var vegetation = (vegetationNoise
+          // Less vegetation on water.
+          - (steepness === tileTypes.water? 2 * seaNoise: 0)
+          + Math.abs(heightNoise + 0.15)) < 0;
+    } else {
+      var steepness = tileTypes.water;
+      var vegetation = false;
+      // When continentNoise is at maximum (continentLimit),
+      // height must be at -1.5 (-continentLimit - 1.5).
+      var oceanHeight = continentNoise - 1.92;
+      height = oceanHeight;
+    }
+
+    var tile = {
+      steepness: steepness,
+      vegetation: vegetation,
+      type: this.tileType(steepness, vegetation),
+      height: height,
+      rain: -vegetationNoise / 2
+    };
+    return tile;
+  },
+
+  // Get the commodity at the tile at hexagonal coordinates `coord` {q, r}.
+  // Returns -1 if there are no commodity.
+  // See `tileTypes`.
+  commodity: function commodity(coord, tile) {
+    var x = coord.q, y = coord.r;
+    //if (coord.x === undefined) {
+    //  x = ((Math.sqrt(3) * (coord.q + coord.r / 2))|0);
+    //  y = (3/2 * coord.r);
+    //} else { x = coord.x; y = coord.y; }
+
+    var magnitude1 = (-simplex1.noise2D(x/60,y/60)/8 + 1) / 2;
+    var magnitude2 = (simplex1.noise2D(x/60,y/60)/8 + 1) / 2;
+    var magnitude3 = (-simplex2.noise2D(x/60,y/60)/8 + 1) / 2;
+    var magnitude4 = (simplex2.noise2D(x/60,y/60)/8 + 1) / 2;
+    var hm1 = (magnitude1) * simplex1.noise2D(x/4, y/4);
+    var hm2 = (magnitude2) * simplex1.noise2D(x/16, y/16);
+    var hm3 = (magnitude3) * simplex2.noise2D(x/2, y/2);
+    var hm4 = (magnitude4) * simplex2.noise2D(x/8, y/8);
+    var frequency;
+    if (hm1 > 0.49) {         // rare spread
+      frequency = 0;
+    } else if (hm2 > 0.49) {  // rare packed
+      frequency = 1;
+    } else if (hm3 > 0.45) {  // frequent spread
+      frequency = 2;
+    } else if (hm4 > 0.45) {  // frequent packed
+      frequency = 3;
+    } else {
+      return -1;  // No commodity.
+    }
+    var tileType;
+    if (tile != null) { tileType = tile.type; }
+    else { tileType = this.tile(coord).type; }
+    return tileTypes.whales + (tileType << 2) + frequency;
+  },
+
+  // Movements.
+  distances: distancesNormal,
+
+  distance: function distance(tpos) {
+    var t = this.tile(tpos);
+    var h = this.humanity.tile(tpos);
+    var d = this.distances[(h && h.b)? h.b: t.type];
+    if (d === undefined) { d = this.distances[t.type]; }
+    return d;
+  },
+
+  // a and b are tiles = {q,r}.
+  distanceBetweenTiles: function distanceBetweenTiles(a, b) {
+    return (Math.abs(a.q - b.q) +
+            Math.abs(a.r - b.r) +
+            Math.abs(a.q + a.r - b.q - b.r)) / 2;
+  },
+
+
+  // Find a neighboring tile.
+  // `tile` is {q, r}.
+  // `orientation` is 0 for right, 1 for top right, and
+  // so on counter-clockwise until 5 for bottom right.
+  neighborFromTile: function neighborFromTile(tile, orientation) {
+    if (orientation === 0) { return { q: tile.q + 1, r: tile.r };
+    } else if (orientation === 1) { return { q: tile.q + 1, r: tile.r - 1 };
+    } else if (orientation === 2) { return { q: tile.q, r: tile.r - 1};
+    } else if (orientation === 3) { return { q: tile.q - 1, r: tile.r };
+    } else if (orientation === 4) { return { q: tile.q - 1, r: tile.r + 1 };
+    } else if (orientation === 5) { return { q: tile.q, r: tile.r + 1 };
+    }
+  },
+
+  // Return a string key unique to the tile.
+  keyFromTile: function keyFromTile(tile) { return tile.q + ':' + tile.r; },
+  tileFromKey: function tileFromKey(key) {
+    var values = key.split(':');
+    return { q: values[0]|0, r: values[1]|0 };
+  },
+
+
+  // Humanity.
+
+  manufacture: manufacture,
+
+  manufactureFromBuilding: function manufactureFromBuilding(b) {
+    if (b === tileTypes.dock) { return manufacture.boat;
+    } else if (b === tileTypes.factory) { return manufacture.car;
+    } else if (b === tileTypes.airport) { return manufacture.plane;
+    } else if (b === tileTypes.gunsmith) { return manufacture.gun;
+    } else { return null; }
+  },
+
+  speedFromHuman: function speedFromHuman(human) {
+    var speed = 8;
+    if ((human.o & manufacture.car) !== 0) {
+      speed += 8;
+    }
+    return speed;
+  },
+
+  // Find the set of tiles one can move to, from a starter tile.
+  // Requires humans to be on that tile.
+  // `tstart` is a {q, r} tile position. (It's Dijkstra.)
+  // Returns a map from tileKey (see keyFromTile) to the tile key whence we come.
+  travelFrom: function travelFrom(tstart, speed) {
+    var camp = this.humanity.tile(tstart).c;  // Camp which wants to travel.
+    var walkedTiles = {};     // Valid accessible tiles mapped to parents.
+    var current = this.keyFromTile(tstart);
+    walkedTiles[current] = null;
+    var consideredTiles = {}; // Map from tile keys to distance walked.
+    consideredTiles[current] = 0;
+    var fastest = [];         // List of tile keys from fastest to slowest.
+    fastest.push(current);
+    // Going through each considered tile.
+    while (fastest.length > 0) {
+      current = fastest.shift();
+      // Check the camp. Is there a potential battle?
+      var humanityNeighbor = this.humanity.tile(this.tileFromKey(current));
+      if (humanityNeighbor && humanityNeighbor.c != null
+          && humanityNeighbor.c !== camp) {
+        continue;
+      }
+      for (var i = 0; i < 6; i++) {
+        var neighbor = this.neighborFromTile(this.tileFromKey(current), i);
+        var newDistance = consideredTiles[current] + this.distance(neighbor);
+        if (newDistance <= speed) {
+          // Update data.
+          var neighborKey = this.keyFromTile(neighbor);
+          if (consideredTiles[neighborKey] !== undefined &&
+              newDistance < consideredTiles[neighborKey]) {
+            // We have a better path to this tile.
+            delete consideredTiles[neighborKey];
+          }
+          if (consideredTiles[neighborKey] === undefined &&
+              walkedTiles[neighborKey] === undefined) {
+            consideredTiles[neighborKey] = newDistance;
+            walkedTiles[neighborKey] = current;
+            // Where should we insert it in `fastest`?
+            var insertionIndex = -1;
+            for (var k = 0; k < fastest.length; k++) {
+              if (consideredTiles[fastest[k]] === undefined) {
+                fastest.splice(k, 1);  // Has been removed before.
+                k--;
+                continue;
+              }
+              if (consideredTiles[neighborKey] <= consideredTiles[fastest[k]]) {
+                insertionIndex = k;
+                break;
+              }
+            }
+            if (insertionIndex === -1) { fastest.push(neighborKey); }
+            else { fastest.splice(insertionIndex, 0, neighborKey); }
+          }
+        }
+      }
+    }
+    return walkedTiles;
+  },
+
+  // Find the path from tstart = {q, r} to tend = {q, r}
+  // with a minimal distance, at a certain speed. (It's A*.)
+  // Requires humans to be on that tile.
+  // Returns a list of tiles = "q:r" through the trajectory.
+  // - endKey: the "q:r" tile of the target.
+  // - parents: map from "q:r" tiles to the "q:r" tile you would walk from
+  //   to get there.
+  // - costs: map from "q:r" tiles to the speed cost to get there.
+  travelTo: function travelTo(tstart, tend, speed,
+                              limitToSpeed, maxTiles, human) {
+    // Optional parameters.
+    if (maxTiles == null) { maxTiles = MAX_INT; }
+    if (human == null) { human = this.humanity.tile(tstart); }
+    var camp = human.c;       // Camp which wants to travel.
+    var endKey = this.keyFromTile(tend);
+    var walkedTiles = {};     // Valid accessed tiles.
+    var consideredTiles = {}; // Map from tile keys to distance walked.
+    var heuristic = {};       // Just like consideredTiles, with heuristic.
+    var fastest = [];         // List of tile keys from fastest to slowest.
+    var parents = {};         // Map from tile keys to parent tile keys.
+    var current = this.keyFromTile(tstart);
+    parents[current] = null;
+    consideredTiles[current] = 0;
+    fastest.push(current);
+    // Going through each considered tile.
+    while (fastest.length > 0 && endKey !== current) {
+      current = fastest.shift();
+      walkedTiles[current] = true;
+      // Check the camp. Is there a potential battle?
+      var humanityNeighbor = this.humanity.tile(this.tileFromKey(current));
+      if (humanityNeighbor && humanityNeighbor.c != null
+          && humanityNeighbor.c !== camp) {
+        continue;
+      }
+      for (var i = 0; i < 6; i++) {
+        var neighbor = this.neighborFromTile(this.tileFromKey(current), i);
+        var distanceCost = this.distance(neighbor);
+        // Can we go there at that speed?
+        if (speed < distanceCost) { continue; }
+        if (maxTiles <= 0) { return null; }
+        else { maxTiles--; }
+        // Here, we can go there.
+        var newDistance = consideredTiles[current] + distanceCost;
+        if (!!limitToSpeed && speed < newDistance) { continue; }
+        var neighborKey = this.keyFromTile(neighbor);
+        if (consideredTiles[neighborKey] !== undefined &&
+            newDistance < consideredTiles[neighborKey]) {
+          // We have a better path to this tile.
+          delete consideredTiles[neighborKey];
+        }
+        if (consideredTiles[neighborKey] === undefined &&
+            walkedTiles[neighborKey] === undefined) {
+          consideredTiles[neighborKey] = newDistance;
+          heuristic[neighborKey] = newDistance + (
+              Math.abs(tend.q - neighbor.q) +
+              Math.abs(tend.r - neighbor.r) +
+              Math.abs(tend.q + tend.r - neighbor.q - neighbor.r)) / 2;
+          // Where should we insert it in `fastest`?
+          var insertionIndex = -1;
+          for (var k = 0; k < fastest.length; k++) {
+            if (heuristic[fastest[k]] === undefined) {
+              fastest.splice(k, 1);  // Has been removed before.
+              k--;
+              continue;
+            }
+            if (heuristic[neighborKey] <= heuristic[fastest[k]]) {
+              insertionIndex = k;
+              break;
+            }
+          }
+          if (insertionIndex === -1) { fastest.push(neighborKey); }
+          else { fastest.splice(insertionIndex, 0, neighborKey); }
+          parents[neighborKey] = current;
+        }
+      }
+    }
+    if (endKey !== current) { return null; }  // No dice. ☹
+    return {
+      endKey: endKey,
+      parents: parents,
+      costs: consideredTiles,
+    };
+  },
+
+  // Given a target tileKey `endKey`
+  // and `parents`, a map from tileKey to the previous tileKey,
+  // return a list from the start position to `endKey`, tile by tile.
+  pathFromParents: function pathFromParents(endKey, parents) {
+    var path = [];
+    if (parents[endKey] == null) { return []; }
+    while (parents[endKey] !== null) {
+      path.push(endKey);
+      endKey = parents[endKey];
+    }
+    path.push(endKey);
+    return path.reverse();
+  },
+
+  setDistancesForHuman: function setDistancesForHuman(h) {
+    if ((h.o & manufacture.plane) !== 0) {
+      this.distances = distancesPlane;
+    } else if ((h.o & manufacture.boat) !== 0) {
+      this.distances = distancesBoat;
+    }
+  },
+  unsetDistancesForHuman: function unsetDistancesForHuman(h) {
+    this.distances = distancesNormal;
+  },
+  humanTravelFrom: function humanTravelFrom(tpos) {
+    var h = this.humanity.tile(tpos);
+    if (!h || h.h <= 0) { return {}; }
+    this.setDistancesForHuman(h);
+    var tiles = this.travelFrom(tpos, this.speedFromHuman(h));
+    this.unsetDistancesForHuman(h);
+    return tiles;
+  },
+
+  humanTravelTo: function humanTravelTo(tpos, tend, limitToSpeed, maxTiles, h) {
+    if (h == null) { h = this.humanity.tile(tpos); }
+    if (!h || h.h <= 0) { return null; }
+    this.setDistancesForHuman(h);
+    var tiles = this.travelTo(tpos, tend, this.speedFromHuman(h),
+        limitToSpeed, maxTiles, h);
+    this.unsetDistancesForHuman(h);
+    return tiles;
+  },
+
+  humanTravelPath: function humanTravelPath(tpos, tend) {
+    var travel = this.humanTravelTo(tpos, tend);
+    if (travel == null) { return []; }
+    return this.pathFromParents(travel.endKey, travel.parents);
+  },
+
+  humanTravelSpeedPath: function humanTravelPath(tpos, tend) {
+    var travel = this.humanTravelTo(tpos, tend, true);
+    if (travel == null) { return []; }
+    return this.pathFromParents(travel.endKey, travel.parents);
+  },
+
+
+  // Buildings.
+
+  buildingDependencies: buildingDependencies,
+  buildingTileDependency: buildingTileDependency,
+
+  // Given a building (see tileTypes) and a tile = {q, r},
+  // check whether the building can be built there.
+  // resources = {fuel, usedFuel, metal, usedMetal, wealth,
+  // usedWealth}
+  // is the resources available for use in the current camp.
+  validConstruction: function validConstruction(building, tile, resources) {
+    if (building == null) { return true; }   // Destruction is always valid.
+    var humanityTile = this.humanity.tile(tile);
+    var tileInfo = this.tile(tile);
+    var spareFuel = resources.fuel - resources.usedFuel;
+    var spareMetal = resources.metal - resources.usedMetal;
+    var spareFarm = resources.wealth - resources.usedWealth;
+    if (!humanityTile || humanityTile.h <= 0) { return false; }
+    // Special requirements for fields
+    if (building === tileTypes.field) {
+      return this.commodity(tile, tileInfo) >= 0;
+    }
+    // Requirements on the current tile.
+    if (tileInfo.type === tileTypes.water &&
+        (building === tileTypes.farm || building === tileTypes.residence ||
+         building === tileTypes.skyscraper || building === tileTypes.factory ||
+         building === tileTypes.airland || building === tileTypes.airport ||
+         building === tileTypes.gunsmith)) { return false; }
+    if (buildingTileDependency[building] !== undefined) {
+      var validCurrentTile = false;
+      for (var i = 0; i < buildingTileDependency[building].length; i++) {
+        if (buildingTileDependency[building][i] === tileInfo.type ||
+            buildingTileDependency[building][i] === humanityTile.b) {
+              validCurrentTile = true;
+            }
+      }
+      if (!validCurrentTile) { return false; }
+    }
+    // Requirements on the surrounding tiles.
+    if (buildingDependencies[building] !== undefined) {
+      // There are dependency requirements.
+      var requiredDependencies = buildingDependencies[building];
+      var dependencies = new Array(requiredDependencies.length);
+      for (var i = 0; i < dependencies.length; i++) { dependencies[i] = 0; }
+      for (var i = 0; i < 6; i++) {
+        // Check all neighbors for dependencies.
+        var neighbor = this.neighborFromTile(tile, i);
+        var humanityNeighbor = this.humanity.tile(neighbor);
+        var terrainNeighbor = this.tile(neighbor);
+        for (var j = 0; j < requiredDependencies.length; j++) {
+          if (requiredDependencies[j][1] >= 0 && (humanityNeighbor
+                && humanityNeighbor.b === requiredDependencies[j][1]) ||
+              terrainNeighbor.type === requiredDependencies[j][1]) {
+            dependencies[j]++;
+          } else if (requiredDependencies[j][1] < 0) {
+            // Resources.
+            if (requiredDependencies[j][1] === resourceTypes.fuel
+                && spareFuel < requiredDependencies[j][0]) {
+              return false;
+            } else if (requiredDependencies[j][1] === resourceTypes.metal
+                && spareMetal < requiredDependencies[j][0]) {
+              return false;
+            } else if (requiredDependencies[j][1] === resourceTypes.wealth
+                && spareFarm < requiredDependencies[j][0]) {
+              return false;
+            }
+            dependencies[j] = requiredDependencies[j][0];
+          }
+        }
+      }
+      // Check that we have the correct number of buildings around.
+      for (var j = 0; j < dependencies.length; j++) {
+        if (dependencies[j] < requiredDependencies[j][0]) {
+          return false;
+        }
+      }
+      return true;
+    } else { return true; }
+    return false;
+  },
+
+
+  // Remote connection.
+  //
+
+  planTypes: planTypes,
+  plans: {},
+
+  addPlan: function addPlan(plan) { plans[plan.at] = plan; },
+  eachPlan: function eachPlan(f) {
+    for (var tileKey in plans) { f(plans[tileKey]); }
+  },
+  clearPlans: function clearPlans() { plans = {}; },
+
+
+};
+var terrain = new Terrain();
+
+onmessage = function workerRecv(e) {
+  if (e.data.centerTile) { terrain.setCenterTile(e.data.centerTile); return; }
+  if (e.data.type === 'raw') {
+    paintTilesRaw(e.data.image, e.data.size, e.data.origin);
+  } else if (e.data.type === 'rainfall') {
+    paintRainfall(e.data.image, e.data.size, e.data.origin);
+  }
+  postMessage({image:e.data.image,size:e.data.size,origin:e.data.origin});
+};
+
+// Rendering primitives.
+
+
+// Given real hexagonal coordinates p = {q, r}, round to the nearest integer
+// hexagonal coordinate.
+function intPointFromReal(p) {
+  var x = p.q;
+  var z = p.r;
+  var y = - x - z;
+  var rx = Math.round(x);
+  var ry = Math.round(y);
+  var rz = Math.round(z);
+  var x_err = Math.abs(rx - x);
+  var y_err = Math.abs(ry - y);
+  var z_err = Math.abs(rz - z);
+  if (x_err > y_err && x_err > z_err) {
+    rx = - ry - rz;
+  } else if (y_err > z_err) {
+    ry = - rx - rz;
+  } else {
+    rz = - rx - ry;
+  }
+
+  return {
+    q: rx,
+    r: rz
+  };
+}
+
+// Given a point px = {x, y} representing a pixel position on the screen,
+// and given a position px0 = {x0, y0} of the screen on the map,
+// return a point {q, r} of the hexagon on the map.
+// `size` is the radius of the smallest disk containing the hexagon.
+function tileFromPixel(px, px0, size) {
+  var xm = px.x + px0.x0;
+  var ym = px.y + px0.y0;
+  return intPointFromReal({
+    q: (Math.sqrt(3) * xm - ym) / 3 / size,
+    r: 2 * ym / 3 / size
+  });
+}
+
+// From 'size:x:y' to cached terrain, centered on the map origin.
+var cachedTerrainPaint = {};
+
+// Paint on a canvas with hexagonal tiles with `size` being the radius of the
+// smallest disk containing the hexagon.
+// The `origin` {x0, y0} is the position of the top left pixel on the screen,
+// compared to the pixel (0, 0) on the map.
+function paintTilesRaw(imgdata, size, origin) {
+  var width = imgdata.width;
+  var height = imgdata.height;
+  var arraySize = width * height * 4;
+  var pos = size + ':' + origin.x0 + ':' + origin.y0;
+  if (cachedTerrainPaint[pos] === undefined) {
+    var data = new Uint8ClampedArray(arraySize);
+    for (var y = 0; y < height; y++) {
+      var wasWater = false;
+      for (var x = 0; x < width; x++) {
+        var t = terrain.tile({
+          x: (x + origin.x0)/size,
+          y: (y + origin.y0)/size
+        });
+        var color = [0,0,0];
+        var fromRed = 0, toRed = 0, fromGreen = 0, toGreen = 0;
+        var heightMin = -1, heightMax = 1;
+        if (t.steepness === tileTypes.water) {
+          color[2] = 180;
+          fromRed = 0;
+          fromGreen = 0;
+          toRed = 80;
+          toGreen = 80;
+          heightMin = -2;
+          heightMax = -1.5;
+        } else if (t.steepness === tileTypes.steppe) {
+          fromRed = 100;
+          fromGreen = 160;
+          toRed = 85;
+          toGreen = 140;
+          heightMin = -1.5;
+          heightMax = -0.2;
+          if (wasWater) {
+            fromRed = 170;
+            fromGreen = 170;
+            toRed = 170;
+            toGreen = 170;
+          }
+        } else if (t.steepness === tileTypes.hill) {
+          fromRed = 100;
+          fromGreen = 140;
+          toRed = 150;
+          toGreen = 110;
+          heightMin = -0.2;
+          heightMax = 0.2;
+        } else {
+          fromRed = 150;
+          fromGreen = 100;
+          toRed = 40;
+          toGreen = 10;
+          heightMin = 0.2;
+          heightMax = 1;
+        }
+        wasWater = (t.steepness === tileTypes.water);
+        if (t.type === tileTypes.forest) {
+          fromRed = 20;
+          fromGreen = 100;
+          toRed = 50;
+          toGreen = 100;
+        }
+        var grey = (t.height - heightMin) / (heightMax - heightMin);
+        var inverseGrey = 1 - grey;
+        color[0] = grey * toRed + (1 - grey) * fromRed;
+        color[1] = grey * toGreen + (1 - grey) * fromGreen;
+        // Rainfall
+        var rain = Math.min(Math.abs(color[0] - color[1]) / 2 * t.rain, 255);
+        color[1] -= rain; // darker green
+        color[2] -= Math.min(t.rain * 20, 255);   // darker blue
+        // Vegetation
+        if (t.vegetation) {
+          color[0] -= 50;
+          color[1] -= 25;
+          color[2] -= 50;
+        }
+        var position = (x + y * width) * 4;
+        data[position + 0] = color[0];
+        data[position + 1] = color[1];
+        data[position + 2] = color[2];
+        data[position + 3] = 255;
+      }
+    }
+    cachedTerrainPaint[pos] = data;
+  }
+  // Set the contents of imgdata.data.
+  imgdata.data.set(cachedTerrainPaint[pos]);
+}
+
+// Paint on a canvas with hexagonal tiles with `size` being the radius of the
+// smallest disk containing the hexagon.
+// The `origin` {x0, y0} is the position of the top left pixel on the screen,
+// compared to the pixel (0, 0) on the map.
+function paintRainfall(imgdata, size, origin) {
+  var width = imgdata.width;
+  var height = imgdata.height;
+  var arraySize = width * height * 4;
+  var data = new Uint8ClampedArray(arraySize);
+  for (var y = 0; y < height; y++) {
+    for (var x = 0; x < width; x++) {
+      var tile = tileFromPixel({ x: x , y: y }, origin, size);
+      var t = terrain.tile(tile);
+      var grey = (1 - t.rain) / 2;
+      var greyMin = 10;
+      var greySpan = 157;
+      var halfGreySpan = (greySpan / 2)|0;
+      grey = (grey * greySpan + greyMin)|0;
+      var red = grey;
+      var green = grey;
+      if (t.type === tileTypes.water) {
+      } else {
+        var delta = (Math.abs(grey - halfGreySpan))|0;
+        if (grey < halfGreySpan) { red -= delta; green += delta; }
+        else if (grey > halfGreySpan) { red += 2*delta; green += delta; }
+      }
+      var position = (x + y * width) * 4;
+      data[position + 0] = red;
+      data[position + 1] = green;
+      data[position + 2] = grey;
+      data[position + 3] = 60;
+    }
+  }
+  imgdata.data.set(data);
+}

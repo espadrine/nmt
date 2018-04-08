@@ -1,6 +1,7 @@
-var prng = new MersenneTwister(0);
-var simplex1 = new SimplexNoise(prng.random.bind(prng));
-var simplex2 = new SimplexNoise(prng.random.bind(prng));
+var prng1 = new PCG(0, 0);
+var prng2 = new PCG(0, 1);
+var simplex1 = new SimplexNoise(prng1.random.bind(prng1));
+var simplex2 = new SimplexNoise(prng2.random.bind(prng2));
 
 // Parameter to how stretched the map is.
 var factor = 50;

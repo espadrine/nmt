@@ -150,7 +150,7 @@ function sendBuild(at, building) {
 }
 
 // Send the center tile to workers, etc.
-var sendCenterTile = function(centerTile) {
+function sendCenterTile(centerTile) {
   for (var i = 0; i < workerPool.length; i++) {
     workerPool[i].postMessage({centerTile: centerTile});
   }
@@ -431,6 +431,7 @@ function surrender(tile, campId) {
 // Focus the screen on tile t = {q, r}.
 // Changes `origin`.
 function gotoPlace(t) {
+  currentTile = t;
   var placePixel = pixelFromTile(t, { x0:0, y0:0 }, gs.hexSize);
   gs.origin.x0 = placePixel.x - ((gs.width / 2)|0);
   gs.origin.y0 = placePixel.y - ((gs.height / 2)|0);

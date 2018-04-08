@@ -15,20 +15,20 @@ function main() {
     'terrain-node-before.js',
     'terrain.js',
     'terrain-node-after.js',
-  ]);
+  ], {compress: false});
 
   // Client-side terrain.
   bundle('web/display.js', [
-    'web/simplex-noise.js',
-    'web/mersenne-twister.js',
+    'simplex-noise.js',
+    'pcg.js',
     'terrain.js',
     'web/input.js',
   ]);
 
   // Rendering worker thread.
   bundle('web/render-worker.js', [
-    'web/simplex-noise.js',
-    'web/mersenne-twister.js',
+    'simplex-noise.js',
+    'pcg.js',
     'terrain.js',
     'web/render.js',
   ]);

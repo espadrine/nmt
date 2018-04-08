@@ -1,3 +1,3 @@
-var SimplexNoise = require('simplex-noise');
-var MersenneTwister = require('./mersenne-twister');
+var SimplexNoise = require('./simplex-noise');
+var PCG = require('./pcg');
 

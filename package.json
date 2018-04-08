@@ -10,15 +10,14 @@
   },
   "main": "app.js",
   "scripts": {
-    "build": "node make",
+    "build": "node make --debug",
     "start": "PORT=8080 node app"
   },
   "dependencies": {
     "camp": "^17.2.1"
   },
   "devDependencies": {
-    "uglify-js": ">=3.3.21",
-    "simplex-noise": ">=2.1.1"
+    "uglify-js": ">=3.3.21"
   },
   "optionalDependencies": {},
   "engines": {
