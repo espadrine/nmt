@@ -20,7 +20,7 @@ function main() {
   // Client-side terrain.
   bundle('web/display.js', [
     'simplex-noise.js',
-    'pcg.js',
+    'prng.js',
     'terrain.js',
     'web/input.js',
   ]);
@@ -28,7 +28,7 @@ function main() {
   // Rendering worker thread.
   bundle('web/render-worker.js', [
     'simplex-noise.js',
-    'pcg.js',
+    'prng.js',
     'terrain.js',
     'web/render.js',
   ]);

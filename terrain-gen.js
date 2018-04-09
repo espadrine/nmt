@@ -1,8 +1,8 @@
 var SimplexNoise = require('./simplex-noise');
-var PCG = require('./pcg');
+var PRNG = require('./prng');
 
-var prng1 = new PCG(0, 0);
-var prng2 = new PCG(0, 1);
+var prng1 = new PRNG(0);
+var prng2 = new PRNG(1);
 var simplex1 = new SimplexNoise(prng1.random.bind(prng1));
 var simplex2 = new SimplexNoise(prng2.random.bind(prng2));
 
